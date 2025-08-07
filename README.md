@@ -1,53 +1,74 @@
 # Sota
 
-> Functional Hexagonal Architecture Framework for TypeScript  
-> Inspired by the Russian word "Сота" (honeycomb) — a symbol of modular, efficient, and natural structure.
+> A Functional, Hexagonal Architecture Framework for TypeScript  
+> Inspired by the Russian word "Сота" (honeycomb) — a symbol of a modular, efficient, and natural structure.
 
 ---
 
-## Что такое Sota?
+## What is Sota?
 
-Sota — это современный фреймворк для построения масштабируемых приложений на TypeScript с использованием принципов **DDD**, **Гексагональной Архитектуры** и **Функционального Программирования**.
+Sota is a modern TypeScript framework for building scalable applications using the principles of **Domain-Driven Design**, **Hexagonal Architecture**, and **Functional Programming**.
 
-В отличие от классических ООП-фреймворков (например, Nest.js), где основой служат классы и объекты, в Sota весь код организован через **функции**. Это позволяет достичь максимальной лаконичности и чистоты архитектуры без избыточности.
-
----
-
-## Почему Sota?
-
-- **Hexagonal architecture** — модульность и чёткое разграничение ответственности через порты и адаптеры.
-- **Functional programming** — все паттерны выражены через чистые функции, что облегчает тестирование и поддержку.
-- **Domain-Driven Design** — фокус на моделировании предметной области и бизнес-логики.
-- **Лаконичность и минимализм** — без классов и лишних абстракций, только то, что действительно нужно.
+Unlike traditional OOP frameworks (like Nest.js) that are built around classes and objects, Sota organizes all code through **functions**. This approach promotes a concise and clean architecture, free from unnecessary boilerplate.
 
 ---
 
-## Основные концепции
+## Why Sota?
 
-- **Агрегаты и доменные сущности** описываются через функции и immutable структуры.
-- **Порты и адаптеры** реализуются как функции, которые подключаются к бизнес-логике.
-- **Use Cases** — это чистые функции, обрабатывающие входные данные и возвращающие результат.
-- **Event-driven** и CQRS — заложены в архитектуру, позволяя легко масштабировать и поддерживать код.
+- **Hexagonal Architecture:** Achieve modularity and a clear separation of concerns through Ports and Adapters.
+- **Functional Programming:** All patterns are expressed through pure functions, which simplifies testing and maintenance.
+- **Domain-Driven Design:** A strong focus on modeling the domain and business logic.
+- **Concise and Minimalist:** No classes or unnecessary abstractions—only what's essential.
 
 ---
 
-## Быстрый старт
+## Core Concepts
 
-```ts
-import { createUseCase, createPort } from '@sota/core'
+- **Aggregates and Domain Entities** are described through functions and immutable structures.
+- **Ports and Adapters** are implemented as functions that connect to the business logic.
+- **Use Cases** are pure functions that process input and return a result.
+- **Event-Driven** and **CQRS** principles are baked into the architecture, enabling easy scaling and maintenance.
 
-// Пример Use Case
-const getUser = createUseCase((userId: string, { userRepo }) => {
-  return userRepo.findById(userId)
-})
+---
 
-// Пример Порта
-const userRepo = createPort({
-  findById: async (id: string) => {
-    // реализация доступа к БД или API
+## Quick Start
+
+The example below demonstrates the core DI workflow in Sota.
+
+```typescript
+import { createPort, setPortAdapter, usePort } from '@sota/core';
+
+// 1. Define a Port in your domain layer.
+// A Port is a contract for a piece of infrastructure the application needs.
+const findUserByIdPort = createPort<(id: string) => Promise<{ id: string; name: string } | null>>();
+
+// 2. Implement a Use Case in your application layer.
+// It uses `usePort` to get the implementation of the port it needs.
+const getUserUseCase = async (userId: string) => {
+  const findUserById = usePort(findUserByIdPort);
+  const user = await findUserById(userId);
+
+  if (!user) {
+    throw new Error('User not found');
   }
-})
+  return user;
+};
 
-// Использование
-const user = await getUser('123', { userRepo })
+// 3. Create an Adapter in your infrastructure layer.
+// An Adapter is the concrete implementation of a Port.
+const userDbAdapter = async (id: string) => {
+  console.log(`Fetching user ${id} from the database...`);
+  // In a real app, you would query a database or call an API.
+  if (id === '123') {
+    return { id: '123', name: 'John Doe' };
+  }
+  return null;
+};
 
+// 4. At your application's entry point, bind the adapter to the port.
+setPortAdapter(findUserByIdPort, userDbAdapter);
+
+// 5. Now, you can execute the use case.
+const user = await getUserUseCase('123');
+console.log(user); // Outputs: { id: '123', name: 'John Doe' }
+```
