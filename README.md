@@ -1,2 +1,53 @@
-# sotajs
-Functional Hexagonal Architecture Framework for TypeScript  
+# Sota
+
+> Functional Hexagonal Architecture Framework for TypeScript  
+> Inspired by the Russian word "Сота" (honeycomb) — a symbol of modular, efficient, and natural structure.
+
+---
+
+## Что такое Sota?
+
+Sota — это современный фреймворк для построения масштабируемых приложений на TypeScript с использованием принципов **DDD**, **Гексагональной Архитектуры** и **Функционального Программирования**.
+
+В отличие от классических ООП-фреймворков (например, Nest.js), где основой служат классы и объекты, в Sota весь код организован через **функции**. Это позволяет достичь максимальной лаконичности и чистоты архитектуры без избыточности.
+
+---
+
+## Почему Sota?
+
+- **Hexagonal architecture** — модульность и чёткое разграничение ответственности через порты и адаптеры.
+- **Functional programming** — все паттерны выражены через чистые функции, что облегчает тестирование и поддержку.
+- **Domain-Driven Design** — фокус на моделировании предметной области и бизнес-логики.
+- **Лаконичность и минимализм** — без классов и лишних абстракций, только то, что действительно нужно.
+
+---
+
+## Основные концепции
+
+- **Агрегаты и доменные сущности** описываются через функции и immutable структуры.
+- **Порты и адаптеры** реализуются как функции, которые подключаются к бизнес-логике.
+- **Use Cases** — это чистые функции, обрабатывающие входные данные и возвращающие результат.
+- **Event-driven** и CQRS — заложены в архитектуру, позволяя легко масштабировать и поддерживать код.
+
+---
+
+## Быстрый старт
+
+```ts
+import { createUseCase, createPort } from '@sota/core'
+
+// Пример Use Case
+const getUser = createUseCase((userId: string, { userRepo }) => {
+  return userRepo.findById(userId)
+})
+
+// Пример Порта
+const userRepo = createPort({
+  findById: async (id: string) => {
+    // реализация доступа к БД или API
+  }
+})
+
+// Использование
+const user = await getUser('123', { userRepo })
+
