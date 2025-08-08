@@ -47,7 +47,8 @@ describe('Sota DI Workflow', () => {
       return { id, name: 'Real User from DB' };
     };
 
-    // 6. Replace the mock with the real adapter
+    // 6. Reset the container and bind the real adapter
+    resetDI();
     setPortAdapter(findUserPort, userPostgresAdapter);
 
     // 7. Call the use case again and check that it now uses the real adapter

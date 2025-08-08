@@ -89,5 +89,4 @@ export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
  */
 export function resetDI() {
 	container = new Bottle();
-	portRegistry.clear();
 }

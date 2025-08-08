@@ -43,19 +43,19 @@ Sota encourages an "inside-out" development process that puts your business logi
 4.  **Implement Adapters:** Only after your business logic is proven correct, write the infrastructure code that connects your application to the real world.
 
 For a complete, step-by-step guide, see our primary implementation document:
--   **[Implementation Workflow: Building a Hexagon in Sota](./implementation-workflow.md)**
+-   **[Implementation Workflow: Building a Hexagon in Sota](./docs/implementation-workflow.md)**
 
 ## Dive Deeper
 
--   **[Domain Modeling in Sota](./domain-modeling.md)**: Learn how to create rich, robust domain models.
--   **[Domain Design Guidelines](./domain-design-guidelines.md)**: A practical guide to help you choose between Aggregates, Entities, and Value Objects.
--   **[Orchestration with Use Cases and Hooks](./use-cases.md)**: Understand how to write and test your application's use cases.
+-   **[Domain Modeling in Sota](./docs/docs/domain-modeling.md)**: Learn how to create rich, robust domain models.
+-   **[Domain Design Guidelines](./docs/domain-design-guidelines.md)**: A practical guide to help you choose between Aggregates, Entities, and Value Objects.
+-   **[Orchestration with Use Cases and Hooks](./docs/use-cases.md)**: Understand how to write and test your application's use cases.
 
 ---
 
 ## Quick Glimpse
 
-Here is a brief example of the Sota style. For a full explanation, please see the [Implementation Workflow](./implementation-workflow.md).
+Here is a brief example of the Sota style. For a full explanation, please see the [Implementation Workflow](./docs/implementation-workflow.md).
 
 ```typescript
 import { createPort, setPortAdapter, usePort } from '@sota/core';
