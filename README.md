@@ -24,29 +24,38 @@ Unlike traditional OOP frameworks (like Nest.js) that are built around classes a
 
 ## Core Concepts
 
-- **Aggregates and Domain Entities** are described through functions and immutable structures.
-- **Ports and Adapters** are implemented as functions that connect to the business logic.
-- **Use Cases** are pure functions that process input and return a result.
+- **Domain Layer** is responsible for its own validation and consistency.
+- **Ports** accept a single DTO (`type` or `interface`) for readable and scalable signatures.
+- **Use Cases** are pure functions that orchestrate logic. They are responsible for validating all incoming data before passing it to the domain or ports. For a detailed guide, see [Orchestration with Use Cases and Hooks](./use-cases.md).
 - **Event-Driven** and **CQRS** principles are baked into the architecture, enabling easy scaling and maintenance.
 
 ---
 
 ## Quick Start
 
-The example below demonstrates the core DI workflow in Sota.
+The example below demonstrates the core workflow in Sota.
 
 ```typescript
 import { createPort, setPortAdapter, usePort } from '@sota/core';
+import { z } from 'zod';
 
-// 1. Define a Port in your domain layer.
-// A Port is a contract for a piece of infrastructure the application needs.
-const findUserByIdPort = createPort<(id: string) => Promise<{ id: string; name: string } | null>>();
+// 1. Define a Port and its DTO in your domain layer.
+// The DTO is a simple interface, defining the data shape.
+interface FindUserByIdDto {
+  id: string;
+}
+const findUserByIdPort = createPort<(dto: FindUserByIdDto) => Promise<{ id: string; name: string } | null>>();
 
-// 2. Implement a Use Case in your application layer.
-// It uses `usePort` to get the implementation of the port it needs.
-const getUserUseCase = async (userId: string) => {
+// 2. Implement a Use Case that validates its input.
+// The use case is the application boundary where validation occurs.
+const GetUserUseCaseInput = z.object({ id: z.string().uuid() });
+
+const getUserUseCase = async (input: unknown) => {
+  // Validate input at the boundary
+  const validInput = GetUserUseCaseInput.parse(input);
+
   const findUserById = usePort(findUserByIdPort);
-  const user = await findUserById(userId);
+  const user = await findUserById(validInput);
 
   if (!user) {
     throw new Error('User not found');
@@ -55,20 +64,20 @@ const getUserUseCase = async (userId: string) => {
 };
 
 // 3. Create an Adapter in your infrastructure layer.
-// An Adapter is the concrete implementation of a Port.
-const userDbAdapter = async (id: string) => {
-  console.log(`Fetching user ${id} from the database...`);
-  // In a real app, you would query a database or call an API.
-  if (id === '123') {
-    return { id: '123', name: 'John Doe' };
+// It implements the Port's contract, receiving the clean DTO.
+const userDbAdapter = async (dto: FindUserByIdDto) => {
+  console.log(`Fetching user ${dto.id} from the database...`);
+  if (dto.id === 'f47ac10b-58cc-4372-a567-0e02b2c3d479') {
+    return { id: dto.id, name: 'John Doe' };
   }
   return null;
 };
 
-// 4. At your application's entry point, bind the adapter to the port.
+// 4. At the application's entry point, bind the adapter to the port.
 setPortAdapter(findUserByIdPort, userDbAdapter);
 
 // 5. Now, you can execute the use case.
-const user = await getUserUseCase('123');
-console.log(user); // Outputs: { id: '123', name: 'John Doe' }
+const user = await getUserUseCase({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
+
+console.log(user); // Outputs: { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', name: 'John Doe' }
 ```

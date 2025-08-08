@@ -1,0 +1,15 @@
+{
+  "name": "sotajs",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "bottlejs": "^2.0.1"
+  }
+}
