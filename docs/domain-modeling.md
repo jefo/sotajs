@@ -146,6 +146,135 @@ public addItem(item: { productId: string; quantity: number; price: number }): vo
 }
 ```
 
+## Modeling Semantic Relationships
+
+Modeling relationships between different domain objects is crucial, but it's also a common source of architectural pitfalls. While it might seem intuitive to embed references directly within an Aggregate's schema, this can quickly lead to the "God Aggregate" anti-pattern and other significant problems.
+
+For a detailed explanation of the **naive approach** and the problems it creates (such as violating the Single Responsibility Principle, performance bottlenecks, and complex actions), please refer to: 
+- **[Anti-Pattern: Naive Semantic Relationships](./anti-patterns/naive-semantic-relationships.md)**
+
+### The Core Principle: Reference by ID
+
+To preserve the integrity of Aggregate boundaries and avoid tight coupling, **Aggregates should only reference other Aggregates by their unique ID, not by direct object references.** This rule applies whether the referenced object is an Aggregate Root itself or an Entity that serves as an Aggregate Root.
+
+Within a single Aggregate, direct object references between its internal Entities and Value Objects are permissible, as the Aggregate Root is responsible for managing their lifecycle and ensuring their consistency.
+
+### Using `createBrandedId` for Type Safety
+
+Our `createBrandedId` utility is essential for implementing these ID-based references with strong type safety. It ensures that you cannot accidentally assign a `UserId` where an `OrderId` is expected.
+
+### Types of Relationships and Their Implementation
+
+Modeling relationships between different domain objects is crucial, but it's also a common source of architectural pitfalls. As discussed in [Anti-Pattern: Naive Semantic Relationships](./anti-patterns/naive-semantic-relationships.md), simply embedding all references within a single Aggregate can lead to the "God Aggregate" problem.
+
+For complex, cross-domain relationships, especially between independent Aggregates, a more sophisticated strategy is required. This is where the **Relationship Aggregate** pattern comes into play.
+
+#### Pattern: Relationship Aggregate
+
+Instead of embedding references directly into the participating Aggregates, the relationship itself becomes a first-class citizen of the domain, modeled as its own Aggregate. This new Aggregate (the "Relationship Aggregate") is responsible for managing the lifecycle and invariants of the connection between two or more other Aggregates/Entities.
+
+**Key Characteristics:**
+
+-   **Dedicated Aggregate:** The relationship (e.g., `RequirementDerivation`, `TestCaseSatisfaction`) is an Aggregate Root itself.
+-   **Manages Participating Entities' Properties:** Its schema contains the `BrandedId`s of the Aggregates/Entities it connects, **along with the actual instances of those entities (or their relevant properties) that must be updated symmetrically and atomically with the relationship itself.** This means the Relationship Aggregate directly holds and modifies the properties of the participating entities that define the link.
+-   **Encapsulated Logic:** All business rules pertaining to the relationship (e.g., a `Requirement` can only be derived from a `Requirement` of a higher level) are enforced within this Relationship Aggregate's actions and invariants.
+-   **Atomic Operations:** Operations on the *relationship itself* (e.g., creating a link, breaking a link) and the symmetric updates of participating entities' properties are **atomic within the boundary of this Relationship Aggregate**. When this Aggregate is saved via its repository, the repository ensures all these changes are persisted atomically.
+
+**Benefits:**
+
+-   **Adherence to SRP:** The responsibility for managing the relationship and its immediate, symmetrically updated properties is clearly separated.
+-   **Strong Consistency:** Guarantees atomicity for the relationship and its directly managed properties.
+-   **Clear Boundaries:** Reinforces the independent consistency boundaries of the participating Aggregates for *their other properties*.
+-   **Flexibility:** Allows relationships to have their own properties and lifecycle.
+
+##### Example: Requirement Derivation (1:M Relationship via Relationship Aggregate)
+
+Let's model the relationship where a `Requirement` can derive from another `Requirement`, and a `Requirement` can have multiple derived `Requirement`s. Both `Requirement` and `DerivedRequirement` are independent Entities (which might be part of larger Aggregates, or be Aggregate Roots themselves).
+
+We introduce a new Relationship Aggregate: `RequirementDerivation`.
+
+```typescript
+// domain/requirement/requirement.entity.ts (Illustrative - simplified)
+import { z } from 'zod';
+import { createEntity } from '@sota/core'; // Assuming createEntity is available
+import { RequirementId } from './requirement.ids'; // Assuming BrandedId
+
+export const RequirementSchema = z.object({
+  id: RequirementId.schema,
+  text: z.string(),
+  derives: z.array(RequirementId.schema).default([]), // IDs of requirements this one derives
+  derivedFrom: RequirementId.schema.optional(), // ID of requirement this one is derived from
+});
+
+type RequirementProps = z.infer<typeof RequirementSchema>;
+
+export const Requirement = createEntity({
+  schema: RequirementSchema,
+  actions: {
+    // Actions to manage its own internal state, not direct relationship updates
+    addDerived: (state: RequirementProps, derivedId: RequirementId) => {
+      return { ...state, derives: [...state.derives, derivedId] };
+    },
+    setDerivedFrom: (state: RequirementProps, parentId: RequirementId) => {
+      return { ...state, derivedFrom: parentId };
+    },
+  },
+});
+
+export type Requirement = InstanceType<typeof Requirement>;
+
+// domain/requirement-derivation/requirement-derivation.schema.ts
+import { z } from 'zod';
+import { RequirementId } from '../requirement/requirement.ids';
+import { RequirementSchema } from '../requirement/requirement.entity'; // Import the full entity schema
+
+export const RequirementDerivationSchema = z.object({
+  id: z.string().uuid(), // ID of the derivation link itself
+  parentRequirement: RequirementSchema, // Full instance of the parent Requirement entity
+  childRequirement: RequirementSchema,   // Full instance of the child Requirement entity
+});
+
+type RequirementDerivationState = z.infer<typeof RequirementDerivationSchema>;
+
+// domain/requirement-derivation/requirement-derivation.aggregate.ts
+import { createAggregate } from '@sota/core';
+import { RequirementDerivationSchema, RequirementDerivationState } from './requirement-derivation.schema';
+
+export const RequirementDerivation = createAggregate({
+  name: 'RequirementDerivation',
+  schema: RequirementDerivationSchema,
+  invariants: [
+    (state) => {
+      if (state.parentRequirement.id.equals(state.childRequirement.id)) {
+        throw new Error('Requirement cannot derive from itself.');
+      }
+    },
+  ],
+  actions: {
+    // This action directly modifies the nested Requirement entities' properties
+    establishDerivation: (state: RequirementDerivationState) => {
+      // Update parent's 'derives' list
+      state.parentRequirement.actions.addDerived(state.childRequirement.id);
+      // Update child's 'derivedFrom' property
+      state.childRequirement.actions.setDerivedFrom(state.parentRequirement.id);
+      
+      // Return the updated state of the Relationship Aggregate
+      return { state: state }; // State is already updated by nested actions
+    },
+  },
+});
+
+export type RequirementDerivation = InstanceType<typeof RequirementDerivation>;
+```
+
+**How Atomicity and Symmetry are Achieved:**
+
+1.  **Atomicity:** The `establishDerivation` action on `RequirementDerivation` is atomic. It directly modifies the properties of the nested `Requirement` entities *within its own state*. When this `RequirementDerivation` Aggregate is saved via its repository, the repository ensures all these changes (to the derivation link itself and to the `derives`/`derivedFrom` properties of the participating `Requirement` entities) are persisted atomically to the underlying storage.
+
+2.  **Symmetry:** The symmetric update of properties (`derives` on parent, `derivedFrom` on child) is handled directly by the `actions` of the `RequirementDerivation` Aggregate. This ensures that the relationship and these specific properties are always consistent together.
+
+This pattern provides a robust and scalable way to manage complex semantic relationships in a DDD-compliant manner, adhering to Aggregate boundaries and SOLID principles. It centralizes the consistency of the relationship and its directly managed properties, relying on the repository to handle the atomic persistence. It centralizes the consistency of the relationship and its directly managed properties, relying on the repository to handle the atomic persistence.
+
 ## Rules for Aggregate Interaction
 
 To maintain loose coupling and clear boundaries, follow these three critical rules.
