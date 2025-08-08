@@ -148,7 +148,7 @@ public addItem(item: { productId: string; quantity: number; price: number }): vo
 
 ## Rules for Aggregate Interaction
 
-To maintain loose coupling and clear boundaries, follow these two critical rules.
+To maintain loose coupling and clear boundaries, follow these three critical rules.
 
 1.  **Reference Other Aggregates by ID Only**
 
@@ -161,5 +161,22 @@ To maintain loose coupling and clear boundaries, follow these two critical rules
     Each transaction should only ever create or modify a single aggregate instance. 
 
     - **Why?** This rule simplifies transaction management and avoids complex distributed transaction scenarios. If a business process needs to update multiple aggregates (e.g., a customer placing an order should also update their "loyalty points"), this is orchestrated at the use case layer, often using domain events.
+
+3.  **Segregate Read and Write Ports (CQRS)**
+
+    To protect your aggregate's invariants, you must treat read and write operations differently at the port level.
+
+    - **Write Ports (Commands):** These ports (`save`, `update`, `delete`) **must always** operate on the full Aggregate Root. This is the only way to guarantee that all business rules and invariants are checked before the state is changed.
+      ```typescript
+      // A write port ALWAYS takes the full aggregate
+      export const saveOrderPort = createPort<(order: Order) => Promise<void>>();
+      ```
+
+    - **Read Ports (Queries):** These ports are more flexible. You are free to create ports that return whatever data shape is most efficient for a given use case. This can be:
+        - The full Aggregate Root: `findOrderByIdPort`
+        - A specific Entity within an aggregate: `findOrderItemByIdPort`
+        - A custom, read-optimized DTO: `findOrderSummaryPort`
+
+    - **Why?** This Command-Query Responsibility Segregation (CQRS) approach provides both safety for writes and performance/flexibility for reads.
 
 By following these principles, you create a domain model that is robust, expressive, and a true reflection of your business processes. Your code becomes easier to understand, maintain, and test.
