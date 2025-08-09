@@ -65,12 +65,10 @@ This seemingly straightforward approach quickly leads to severe architectural an
 5.  **Testing Nightmare:**
     *   Testing a single action on such a large Aggregate requires setting up a massive amount of test data, making tests slow, brittle, and hard to write.
 
-## The Correct Approach (To Be Detailed)
+## The Correct Approach
 
-For complex, cross-domain relationships, especially between independent Aggregates, a different strategy is required. This typically involves:
+The correct approach is to model relationships based on their type (one-to-one, one-to-many, many-to-many) while strictly adhering to Aggregate boundaries. This involves referencing other aggregates by ID and, in some cases, creating dedicated "Relationship Aggregates".
 
--   **Domain Events:** Using events to signal changes that need to be propagated to other Aggregates.
--   **Eventual Consistency:** Accepting that consistency across Aggregate boundaries is achieved over time, not within a single, monolithic transaction.
--   **Dedicated Relationship Management:** Often, relationships are not managed directly by the participating Aggregates but by a separate mechanism (e.g., a dedicated Domain Service, a Process Manager, or even a separate Aggregate if the relationship itself has complex business rules).
+For a complete guide with practical examples for each type of relationship, please see our primary documentation on this topic:
 
-This document serves as a warning against the naive approach. The correct, DDD-compliant solution for managing complex semantic relationships will be detailed in a subsequent guide.
+- **[Primary Guide: Modeling Relationships in Sota](../modeling-relationships.md)**
