@@ -24,7 +24,7 @@ export function createRelation<TEntityA extends IAggregate, TEntityB extends IAg
   return createAggregate({
     name,
     schema: z.object({ entityA: schemaA, entityB: schemaB }).optional(),
-    invariants: [], // Linkers typically don't have their own invariants
+    invariants: [], // Relations typically don't have their own invariants
     actions: {
       link: (state, payload: { entityA: TEntityA; entityB: TEntityB }) => {
         const { entityA, entityB } = payload;

@@ -31,15 +31,15 @@ const EntityB = createAggregate({
 });
 
 describe('createRelation', () => {
-  it('should create a linker that correctly orchestrates the linking of two entities', () => {
+  it('should create a relation that correctly orchestrates the linking of two entities', () => {
     // 2. Arrange
     const mockLinkLogic = mock(({ entityA, entityB }) => {
       entityA.actions.updateName('linked');
       entityB.actions.incrementValue();
     });
 
-    const TestLinker = createRelation({
-      name: 'TestLinker',
+    const TestRelation = createRelation({
+      name: 'TestRelation',
       schemaA: EntityA.schema,
       schemaB: EntityB.schema,
       link: mockLinkLogic,
@@ -47,18 +47,18 @@ describe('createRelation', () => {
 
     const entityA = EntityA.create({ id: 'a1', name: 'initial' });
     const entityB = EntityB.create({ id: 'b1', value: 10 });
-    const linker = TestLinker.create();
+    const relation = TestRelation.create();
 
     // 3. Act
-    linker.actions.link({ entityA, entityB });
+    relation.actions.link({ entityA, entityB });
 
     // 4. Assert
     expect(mockLinkLogic).toHaveBeenCalledTimes(1);
     expect(mockLinkLogic).toHaveBeenCalledWith({ entityA, entityB });
 
-    expect(linker.state).toBeDefined();
-    expect(linker.state?.entityA.state.name).toBe('linked');
-    expect(linker.state?.entityB.state.value).toBe(11);
+    expect(relation.state).toBeDefined();
+    expect(relation.state?.entityA.state.name).toBe('linked');
+    expect(relation.state?.entityB.state.value).toBe(11);
 
     expect(entityA.state.name).toBe('linked');
     expect(entityB.state.value).toBe(11);
@@ -67,15 +67,15 @@ describe('createRelation', () => {
   it('should have an undefined state before the link action is called', () => {
     const mockLinkLogic = mock(() => {});
 
-    const TestLinker = createRelation({
-      name: 'TestLinker',
+    const TestRelation = createRelation({
+      name: 'TestRelation',
       schemaA: EntityA.schema,
       schemaB: EntityB.schema,
       link: mockLinkLogic,
     });
 
-    const linker = TestLinker.create();
+    const relation = TestRelation.create();
 
-    expect(linker.state).toEqual({});
+    expect(relation.state).toEqual({});
   });
 });

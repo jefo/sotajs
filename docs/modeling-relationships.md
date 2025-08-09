@@ -126,6 +126,6 @@ By extracting this logic into a dedicated linker, we solve all these problems.
 
 3.  **It is Highly Testable:**
     - You can unit test the internal logic of the `Order` and `Shipment` aggregates in isolation.
-    - You can unit test the orchestration logic of the `OrderShipmentLinker` in isolation by providing mock entities and asserting that their actions were called correctly.
+    - You can unit test the orchestration logic of the `OrderShipmentRelation` in isolation by providing mock entities and asserting that their actions were called correctly.
 
 This pattern provides a clean, robust, and scalable way to manage complex, transactional state changes between independent aggregates, forming a cornerstone of the Sota development methodology.
