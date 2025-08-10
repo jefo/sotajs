@@ -53,9 +53,22 @@ export function createAggregate<TProps extends { id: string }, TActions extends 
      * This method also clears the list of pending events.
      */
     public getPendingEvents(): IDomainEvent[] {
-      const events = [...this.pendingEvents];
+      return [...this.pendingEvents];
+    }
+
+    /**
+     * Clears the pending event queue. Should be called by the repository after events are dispatched.
+     */
+    public clearEvents(): void {
       this.pendingEvents = [];
-      return events;
+    }
+
+    /**
+     * A protected method to add a domain event to the pending list.
+     * Used by the static `create` method or within actions.
+     */
+    public addDomainEvent(event: IDomainEvent): void {
+      this.pendingEvents.push(event);
     }
 
     /**
