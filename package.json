@@ -1,8 +1,8 @@
 {
-  "name": "sotajs",
+  "name": "@jefo/sotajs",
+  "version": "0.0.1",
   "module": "index.ts",
   "type": "module",
-  "private": true,
   "scripts": {
     "test": "bun test"
   },
@@ -13,8 +13,16 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.0",
     "bottlejs": "^2.0.1",
     "hono": "^4.9.0",
     "zod": "^4.0.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jefo/sotajs.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

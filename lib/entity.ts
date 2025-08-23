@@ -53,7 +53,7 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
      * Entities are equal if they are of the same type and have the same ID.
      * @param other - The other Entity to compare with.
      */
-    public equals(other?: Entity): boolean {
+    public equals(other?: any): boolean {
       if (other === null || other === undefined) {
         return false;
       }
@@ -68,7 +68,9 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
     public readonly actions = Object.keys(config.actions).reduce((acc, actionName) => {
       acc[actionName as keyof TActions] = (...args: any[]) => {
         // Execute the action's pure function to get the new state.
-        const nextState = config.actions[actionName](this.props, ...args);
+        const action = config.actions[actionName];
+        if (!action) return;
+        const nextState = action(this.props, ...args);
 
         // Commit the new state.
         this.props = nextState;

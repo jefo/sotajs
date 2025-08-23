@@ -1,4 +1,8 @@
-import { z } from 'zod';
+import { z } from "zod";
+
+// This is a manual way to create a branded type, similar to what Zod's .brand() does.
+// We use this to avoid some TypeScript inference issues.
+type BrandType<T extends string> = { __brand: T };
 
 /**
  * A higher-order function that creates a strongly-typed, branded ID class.
@@ -9,46 +13,52 @@ import { z } from 'zod';
  * @returns A class for the branded ID.
  */
 export const createBrandedId = <Brand extends string>(brand: Brand) => {
-  // 1. Define a Zod schema for a UUID string, branded with the provided type.
-  const BrandedIdSchema = z.string().uuid().brand(brand);
+	// Manually define the branded type.
+	type BrandedIdType = string & BrandType<Brand>;
 
-  // 2. Infer the TypeScript type from the schema.
-  type BrandedIdProps = z.infer<typeof BrandedIdSchema>;
+	// A simple Zod schema just for validating the UUID format.
+	const UuidSchema = z.uuid();
 
-  // 3. Return a class that encapsulates the branded ID.
-  return class BrandedId {
-    public readonly value: BrandedIdProps;
+	return class BrandedId {
+		public readonly value: BrandedIdType;
 
-    private constructor(value: BrandedIdProps) {
-      this.value = value;
-    }
+		private constructor(value: BrandedIdType) {
+			this.value = value;
+		}
 
-    /**
-     * The only public way to create an instance of the BrandedId.
-     * It validates the input string to ensure it is a valid UUID.
-     * @param value - The raw string ID (must be a UUID).
-     * @returns A new instance of the BrandedId.
-     */
-    public static create(value: string): BrandedId {
-      // The `.parse()` method will throw an error if the value is not a valid UUID.
-      return new BrandedId(BrandedIdSchema.parse(value));
-    }
+		/**
+		 * The only public way to create an instance of the BrandedId.
+		 * It validates the input string to ensure it is a valid UUID.
+		 * @param value - The raw string ID (must be a UUID).
+		 * @returns A new instance of the BrandedId.
+		 */
+		public static create(value: string): BrandedId {
+			// 1. Validate the input to ensure it's a UUID. This will throw if invalid.
+			UuidSchema.parse(value);
 
-    /**
-     * Checks for equality against another BrandedId.
-     * @param other - The other BrandedId to compare with.
-     * @returns `true` if the values are identical, `false` otherwise.
-     */
-    public equals(other: BrandedId): boolean {
-      return this.value === other.value;
-    }
+			// 2. Cast the validated string to our branded type. This is safe because
+			//    we just validated it.
+			const brandedValue = value as BrandedIdType;
 
-    /**
-     * Returns the raw string value of the ID.
-     * @returns The UUID string.
-     */
-    public toString(): string {
-      return this.value;
-    }
-  };
+			// 3. Create the new instance.
+			return new BrandedId(brandedValue);
+		}
+
+		/**
+		 * Checks for equality against another BrandedId.
+		 * @param other - The other BrandedId to compare with.
+		 * @returns `true` if the values are identical, `false` otherwise.
+		 */
+		public equals(other: BrandedId): boolean {
+			return this.value === other.value;
+		}
+
+		/**
+		 * Returns the raw string value of the ID.
+		 * @returns The UUID string.
+		 */
+		public toString(): string {
+			return this.value;
+		}
+	};
 };

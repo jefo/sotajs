@@ -53,7 +53,9 @@ export function createAggregate<TProps extends { id: string }, TActions extends 
      * This method also clears the list of pending events.
      */
     public getPendingEvents(): IDomainEvent[] {
-      return [...this.pendingEvents];
+      const events = [...this.pendingEvents];
+      this.pendingEvents = [];
+      return events;
     }
 
     /**
@@ -78,7 +80,9 @@ export function createAggregate<TProps extends { id: string }, TActions extends 
     public readonly actions = Object.keys(config.actions).reduce((acc, actionName) => {
       acc[actionName as keyof TActions] = (...args: any[]) => {
         // 1. Execute the action's pure function to get the potential new state and event.
-        const { state: nextState, event } = config.actions[actionName](this.props, ...args);
+        const action = config.actions[actionName];
+        if (!action) return;
+        const { state: nextState, event } = action(this.props, ...args);
 
         // 2. Check all invariants against the potential new state.
         for (const invariant of config.invariants) {

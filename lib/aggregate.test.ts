@@ -79,8 +79,8 @@ describe('createAggregate', () => {
     order.actions.pay('credit-card');
     const events = order.getPendingEvents();
     expect(events).toHaveLength(1);
-    expect(events[0]).toBeInstanceOf(OrderPaidEvent);
-    expect(events[0].aggregateId).toBe(validOrderData.id);
+    expect(events[0]!).toBeInstanceOf(OrderPaidEvent);
+    expect(events[0]!.aggregateId).toBe(validOrderData.id);
   });
 
   it('getPendingEvents should clear the event queue', () => {
@@ -108,7 +108,6 @@ describe('createAggregate', () => {
     // We need a way to test an action that *would* violate an invariant.
     // Let's add a faulty action to the config for this test.
     const FaultyOrder = createAggregate({
-        ...Order.config, // This is not directly possible, so we re-define for the test
         name: 'FaultyOrder',
         schema: OrderSchema,
         invariants: [(state) => { if (state.amount < 0) throw new Error('Amount cannot be negative.'); }],
