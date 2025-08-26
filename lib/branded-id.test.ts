@@ -4,10 +4,9 @@ import type z from "zod";
 
 // Create two distinct ID types for testing
 const UserId = createBrandedId("UserId");
-type UserId = z.Infer<typeof UserId>;
+// type UserId = z.Infer<typeof UserId>;
 
 const OrderId = createBrandedId("OrderId");
-type OrderId = z.Infer<typeof OrderId>;
 
 describe("createBrandedId", () => {
 	const validUUID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";

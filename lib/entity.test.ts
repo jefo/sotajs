@@ -5,9 +5,9 @@ import { randomUUIDv7 } from "bun";
 
 // Define a simple schema for testing
 const UserSchema = z.object({
-	id: z.string().uuid(),
+	id: z.uuid(),
 	name: z.string().min(1),
-	email: z.string().email(),
+	email: z.email(),
 	isActive: z.boolean().default(true),
 });
 type UserProps = z.infer<typeof UserSchema>;
@@ -84,7 +84,7 @@ describe("createEntity", () => {
 
 		// Test equality with a different entity type (if we had one)
 		const AnotherUser = createEntity({
-			schema: z.object({ id: z.string().uuid(), username: z.string() }),
+			schema: z.object({ id: z.uuid(), username: z.string() }),
 			actions: {},
 		});
 		const anotherUser = AnotherUser.create({
