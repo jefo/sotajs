@@ -94,3 +94,79 @@ describe("createEntity", () => {
 		expect(user1.equals(anotherUser)).toBe(false); // Different type, even if same ID
 	});
 });
+
+import { createBrandedId } from "./branded-id";
+
+// --- Tests for BrandedId ---
+
+const ProductId = createBrandedId('ProductId');
+type ProductId = InstanceType<typeof ProductId>;
+
+const ProductSchema = z.object({
+    id: z.string().uuid().transform((id) => ProductId.create(id)),
+    name: z.string(),
+    price: z.number(),
+});
+type ProductProps = z.infer<typeof ProductSchema>;
+
+const Product = createEntity({
+    schema: ProductSchema,
+    actions: {
+        changeName: (state: ProductProps, newName: string) => {
+            return { ...state, name: newName };
+        }
+    }
+});
+
+describe('createEntity with BrandedId', () => {
+    const id1_string = randomUUIDv7();
+    const id2_string = randomUUIDv7();
+
+    const validProductData = {
+        id: id1_string,
+        name: 'Laptop',
+        price: 1200,
+    };
+
+    it('should create an Entity instance with a BrandedId', () => {
+        const product = Product.create(validProductData);
+        expect(product).toBeInstanceOf(Product);
+        expect(product.state.id).toBeInstanceOf(ProductId);
+        expect(product.state.id.value).toBe(id1_string);
+    });
+
+    it('should return the string representation of the BrandedId from the id getter', () => {
+        const product = Product.create(validProductData);
+        expect(product.id).toBe(id1_string);
+    });
+
+    it('should allow state modification through actions with BrandedId', () => {
+        const product = Product.create(validProductData);
+        product.actions.changeName('Ultrabook');
+        expect(product.state.name).toBe('Ultrabook');
+        expect(product.id).toBe(id1_string);
+    });
+
+    it('should correctly check for identity equality with BrandedIds', () => {
+        const product1 = Product.create(validProductData);
+        const product2 = Product.create({ ...validProductData }); // Same ID, different instance
+        const product3 = Product.create({ ...validProductData, id: id2_string }); // Different ID
+
+        expect(product1.equals(product2)).toBe(true);
+        expect(product1.equals(product3)).toBe(false);
+    });
+
+    it('should not be equal to a different Entity type, even with the same ID string', () => {
+        const user = User.create({
+            id: id1_string,
+            name: 'Test User',
+            email: 'test@user.com',
+            isActive: true,
+        });
+
+        const product = Product.create(validProductData);
+
+        // This will be false because they have different constructors
+        expect(product.equals(user)).toBe(false);
+    });
+});

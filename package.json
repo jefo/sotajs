@@ -1,5 +1,5 @@
 {
-  "name": "@jefo/sotajs",
+  "name": "@maxdev1/sotajs",
   "version": "0.0.2",
   "module": "index.ts",
   "type": "module",
@@ -21,8 +21,5 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jefo/sotajs.git"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
   }
 }

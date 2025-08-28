@@ -14,12 +14,15 @@ export interface AggregateConfig<TProps, TActions extends Record<string, any>> {
   actions: TActions;
 }
 
+// The ID can be a string or any object with a `toString()` method.
+type AnyId = { toString(): string };
+
 /**
  * A factory function that creates a robust, behavior-rich Aggregate class.
  * @param config - The declarative configuration for the aggregate.
  * @returns A class representing the configured Aggregate.
  */
-export function createAggregate<TProps extends { id: string }, TActions extends Record<string, (state: TProps, ...args: any[]) => { state: TProps; event?: IDomainEvent }>>(
+export function createAggregate<TProps extends { id: AnyId }, TActions extends Record<string, (state: TProps, ...args: any[]) => { state: TProps; event?: IDomainEvent }>>(
   config: AggregateConfig<TProps, TActions>
 ) {
   return class Aggregate {

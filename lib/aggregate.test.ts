@@ -133,3 +133,101 @@ describe("createAggregate", () => {
 		expect(faultyOrder.state.amount).toBe(100); // State should NOT have changed.
 	});
 });
+
+import { createBrandedId } from "./branded-id";
+import { randomUUIDv7 } from "bun";
+
+// --- Test Setup for BrandedId ---
+
+const PostId = createBrandedId('PostId');
+type PostId = InstanceType<typeof PostId>;
+
+class PostPublishedEvent {
+    constructor(
+        public readonly aggregateId: string,
+        public readonly publishedAt: Date,
+        public readonly timestamp = new Date(),
+    ) {}
+}
+
+const PostSchema = z.object({
+    id: z.string().uuid().transform((id) => PostId.create(id)),
+    status: z.enum(["draft", "published"]),
+    title: z.string(),
+});
+type PostState = z.infer<typeof PostSchema>;
+
+const Post = createAggregate({
+    name: "Post",
+    schema: PostSchema,
+    invariants: [
+        (state) => {
+            if (state.title.length < 3) {
+                throw new Error("Title must be at least 3 characters long.");
+            }
+        },
+    ],
+    actions: {
+        publish: (state: PostState) => {
+            if (state.status === "published") {
+                throw new Error("Post is already published.");
+            }
+            return {
+                state: { ...state, status: "published" as const },
+                event: new PostPublishedEvent(state.id.toString(), new Date()),
+            };
+        },
+        changeTitle: (state: PostState, newTitle: string) => {
+            return { state: { ...state, title: newTitle } };
+        }
+    },
+});
+
+
+describe("createAggregate with BrandedId", () => {
+    const validPostData = {
+        id: randomUUIDv7(),
+        status: "draft" as const,
+        title: "My First Post",
+    };
+
+    it("should create an aggregate instance with a BrandedId", () => {
+        const post = Post.create(validPostData);
+        expect(post).toBeInstanceOf(Post);
+        expect(post.state.id).toBeInstanceOf(PostId);
+        expect(post.state.id.toString()).toBe(validPostData.id);
+        expect(post.state.status).toBe("draft");
+    });
+
+    it("should successfully execute an action and change state", () => {
+        const post = Post.create(validPostData);
+        post.actions.publish();
+        expect(post.state.status).toBe("published");
+    });
+
+    it("should collect domain events with a string aggregateId", () => {
+        const post = Post.create(validPostData);
+        post.actions.publish();
+        const events = post.getPendingEvents();
+
+        expect(events).toHaveLength(1);
+        const event = events[0] as PostPublishedEvent;
+        expect(event).toBeInstanceOf(PostPublishedEvent);
+        expect(event.aggregateId).toBe(validPostData.id);
+        expect(typeof event.aggregateId).toBe('string');
+    });
+
+    it("getPendingEvents should clear the event queue", () => {
+        const post = Post.create(validPostData);
+        post.actions.publish();
+        post.getPendingEvents(); // First call gets the event
+        const subsequentEvents = post.getPendingEvents(); // Second call should be empty
+        expect(subsequentEvents).toHaveLength(0);
+    });
+
+    it("should not change state if an invariant fails with BrandedId", () => {
+        const post = Post.create(validPostData);
+        expect(() => post.actions.changeTitle("a")).toThrow("Title must be at least 3 characters long.");
+        expect(post.state.title).toBe("My First Post");
+    });
+});
