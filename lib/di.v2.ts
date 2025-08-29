@@ -9,11 +9,11 @@ const portRegistry = new Map<string, Port<any>>();
 
 /**
  * A unique descriptor object for a port.
- * This is just a "tag" or a "key", not a real function.
+ * This is a simple object used as a "tag" or a "key".
  */
 export interface Port<T extends (...args: any[]) => any> {
-	// This signature is here to maintain type compatibility with the adapter function.
-	(...args: Parameters<T>): ReturnType<T>;
+	// This property is just for holding the type T, it's not meant to be used at runtime.
+	__TYPE__: T;
 	[PORT_ID_SYMBOL]?: string;
 }
 
@@ -26,18 +26,14 @@ export interface Port<T extends (...args: any[]) => any> {
 export function createPort<T extends (...args: any[]) => any>(): Port<T> {
 	const portId = crypto.randomUUID();
 
-	// Create a placeholder function that will serve as the port descriptor.
-	// It is not intended to be called directly.
-	const port = (() => {
-		throw new Error(
-			`Port with ID "${portId}" is an interface and cannot be called directly. ` +
-				`Use setPortAdapter() to provide an implementation.`,
-		);
-	}) as Port<T>;
+	// Create a simple object that will serve as the port descriptor.
+	const port: Port<T> = {
+		// This is a trick to make the type T available to TypeScript's inference
+		// It will be compiled away and doesn't exist at runtime.
+		__TYPE__: undefined as any,
+		[PORT_ID_SYMBOL]: portId,
+	};
 
-	port[PORT_ID_SYMBOL] = portId;
-
-	// Register the port in our internal registry.
 	portRegistry.set(portId, port);
 
 	return port;
@@ -45,9 +41,9 @@ export function createPort<T extends (...args: any[]) => any>(): Port<T> {
 
 /**
  * Binds a specific implementation (adapter) to a port.
- * Only this function registers anything in the DI container.
  * @param port - The port descriptor created via createPort().
  * @param adapter - The implementation function matching the port's signature.
+ * @throws {Error} If the port is invalid or unregistered.
  */
 export function setPortAdapter<T extends (...args: any[]) => any>(
 	port: Port<T>,
@@ -58,14 +54,31 @@ export function setPortAdapter<T extends (...args: any[]) => any>(
 		throw new Error("An invalid or unregistered port was provided.");
 	}
 
-	// Now, register the new implementation as a factory.
 	container.factory(portId, () => adapter);
+}
+
+/**
+ * Binds a specific implementation (adapter) to a port with dependencies.
+ * @param port - The port descriptor created via createPort().
+ * @param factory - A function that creates the adapter implementation, potentially using other ports.
+ * @throws {Error} If the port is invalid or unregistered.
+ */
+export function setPortAdapterWithDependencies<
+	T extends (...args: any[]) => any,
+>(port: Port<T>, factory: () => T): void {
+	const portId = port[PORT_ID_SYMBOL];
+	if (!portId || !portRegistry.has(portId)) {
+		throw new Error("An invalid or unregistered port was provided.");
+	}
+
+	container.factory(portId, factory);
 }
 
 /**
  * Retrieves a port's implementation from the DI container.
  * @param port - The port descriptor for which to retrieve the implementation.
  * @returns T - The implementation function (adapter).
+ * @throws {Error} If the port is invalid, unregistered, or has no implementation.
  */
 export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
 	const portId = port[PORT_ID_SYMBOL];
@@ -76,11 +89,28 @@ export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
 	const implementation = container.container[portId];
 	if (!implementation) {
 		throw new Error(
-			`No implementation found for the port. Did you forget to call setPortAdapter()?`,
+			`No implementation found for the port. Did you forget to call setPortAdapter() or setPortAdapterWithDependencies()?`,
 		);
 	}
 
 	return implementation as T;
+}
+
+/**
+ * Binds a specific implementation (adapter) to a port with dependencies.
+ * @param port - The port descriptor created via createPort().
+ * @param factory - A function that creates the adapter implementation, potentially using other ports.
+ * @throws {Error} If the port is invalid or unregistered.
+ */
+export function setPortAdapterWithDependencies<
+	T extends (...args: any[]) => any,
+>(port: Port<T>, factory: () => T): void {
+	const portId = port[PORT_ID_SYMBOL];
+	if (!portId || !portRegistry.has(portId)) {
+		throw new Error("An invalid or unregistered port was provided.");
+	}
+
+	container.factory(portId, factory);
 }
 
 /**

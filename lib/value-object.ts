@@ -34,7 +34,7 @@ export function createValueObject<T extends z.ZodTypeAny>(
      * Checks for structural equality against another Value Object.
      * @param other - The other Value Object to compare with.
      */
-    public equals(other?: any): boolean {
+    public equals(other?: ValueObject): boolean {
       if (other === null || other === undefined) {
         return false;
       }

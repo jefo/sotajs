@@ -1,25 +1,22 @@
 import { z } from "zod";
 
-// This is a manual way to create a branded type, similar to what Zod's .brand() does.
-// We use this to avoid some TypeScript inference issues.
-type BrandType<T extends string> = { __brand: T };
-
 /**
  * A higher-order function that creates a strongly-typed, branded ID class.
  * This utility helps ensure that you cannot accidentally mix up different types of IDs
  * (e.g., passing a `ProductId` where a `UserId` is expected).
  *
  * @param brand - A unique string literal to serve as the brand.
- * @returns A class for the branded ID.
+ * @returns A class for the branded ID with schema property.
  */
 export const createBrandedId = <Brand extends string>(brand: Brand) => {
-	// Manually define the branded type.
-	type BrandedIdType = string & BrandType<Brand>;
+	// 1. Create a branded type using TypeScript's branded pattern
 
-	// A simple Zod schema just for validating the UUID format.
-	const UuidSchema = z.uuid();
-
-	return class BrandedId {
+	// 2. Create a Zod schema that validates UUID and transforms to branded type
+	const BrandedIdSchema = z.uuid().brand();
+  type BrandedIdType = z.Infer<typeof BrandedIdSchema>;
+	
+	// 3. Return a class that encapsulates the branded ID.
+	class BrandedId {
 		public readonly value: BrandedIdType;
 
 		private constructor(value: BrandedIdType) {
@@ -33,15 +30,8 @@ export const createBrandedId = <Brand extends string>(brand: Brand) => {
 		 * @returns A new instance of the BrandedId.
 		 */
 		public static create(value: string): BrandedId {
-			// 1. Validate the input to ensure it's a UUID. This will throw if invalid.
-			UuidSchema.parse(value);
-
-			// 2. Cast the validated string to our branded type. This is safe because
-			//    we just validated it.
-			const brandedValue = value as BrandedIdType;
-
-			// 3. Create the new instance.
-			return new BrandedId(brandedValue);
+			// The `.parse()` method will throw an error if the value is not a valid UUID.
+			return new BrandedId(BrandedIdSchema.parse(value));
 		}
 
 		/**
@@ -60,5 +50,13 @@ export const createBrandedId = <Brand extends string>(brand: Brand) => {
 		public toString(): string {
 			return this.value;
 		}
-	};
+
+		/**
+		 * The Zod schema for this branded ID type.
+		 * This can be used for validation in other schemas.
+		 */
+		public static readonly schema = BrandedIdSchema;
+	}
+
+	return BrandedId;
 };

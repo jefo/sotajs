@@ -1,11 +1,7 @@
 import { z } from 'zod';
 import { deepFreeze } from './utils';
 
-// The ID can be a string or any object with a `toString()` method.
-// For comparison, it's best if it also has an `equals()` method.
-type AnyId = { toString(): string };
-
-export interface EntityConfig<TProps extends { id: AnyId }, TActions extends Record<string, any>> {
+export interface EntityConfig<TProps extends { id: string }, TActions extends Record<string, any>> {
   schema: z.ZodType<TProps>;
   actions: TActions;
 }
@@ -18,7 +14,7 @@ export interface EntityConfig<TProps extends { id: AnyId }, TActions extends Rec
  * @param config - The configuration for the entity, including its schema and actions.
  * @returns A class for the Entity.
  */
-export function createEntity<TProps extends { id: AnyId }, TActions extends Record<string, (state: TProps, ...args: any[]) => TProps>>(
+export function createEntity<TProps extends { id: string }, TActions extends Record<string, (state: TProps, ...args: any[]) => TProps>>(
   config: EntityConfig<TProps, TActions>
 ) {
   return class Entity {
@@ -39,10 +35,10 @@ export function createEntity<TProps extends { id: AnyId }, TActions extends Reco
     }
 
     /**
-     * The unique identifier of the Entity, returned as a string.
+     * The unique identifier of the Entity.
      */
     get id(): string {
-      return this.props.id.toString();
+      return this.props.id;
     }
 
     /**
@@ -57,25 +53,12 @@ export function createEntity<TProps extends { id: AnyId }, TActions extends Reco
      * Entities are equal if they are of the same type and have the same ID.
      * @param other - The other Entity to compare with.
      */
-    public equals(other?: any): boolean {
+    public equals(other?: Entity): boolean {
       if (other === null || other === undefined) {
         return false;
       }
-      // Check if they are instances of the same Entity class
-      if (this.constructor !== other.constructor) {
-        return false;
-      }
-
-      const thisId = this.props.id as any;
-      const otherId = other.props.id;
-
-      // If the ID has an `equals` method, use it for comparison.
-      if (typeof thisId === 'object' && thisId !== null && typeof thisId.equals === 'function') {
-        return thisId.equals(otherId);
-      }
-
-      // Otherwise, fall back to strict equality on their string representation.
-      return this.id === other.id;
+      // Check if they are instances of the same Entity class and have the same ID
+      return this.constructor === other.constructor && this.id === other.id;
     }
 
     /**
@@ -85,9 +68,7 @@ export function createEntity<TProps extends { id: AnyId }, TActions extends Reco
     public readonly actions = Object.keys(config.actions).reduce((acc, actionName) => {
       acc[actionName as keyof TActions] = (...args: any[]) => {
         // Execute the action's pure function to get the new state.
-        const action = config.actions[actionName];
-        if (!action) return;
-        const nextState = action(this.props, ...args);
+        const nextState = config.actions[actionName](this.props, ...args);
 
         // Commit the new state.
         this.props = nextState;

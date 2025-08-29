@@ -1,8 +1,8 @@
 {
-  "name": "@maxdev1/sotajs",
   "version": "0.0.3",
   "module": "index.ts",
   "type": "module",
+  "private": true,
   "scripts": {
     "test": "bun test"
   },
@@ -13,13 +13,10 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.0",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "bottlejs": "^2.0.1",
-    "hono": "^4.9.0",
+    "hono": "^4.9.1",
+    "ts-morph": "^26.0.0",
     "zod": "^4.0.15"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jefo/sotajs.git"
   }
 }

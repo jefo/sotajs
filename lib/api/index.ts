@@ -1,25 +1,25 @@
+
 import { Hono } from 'hono';
-import type { Env, Context, MiddlewareHandler } from 'hono';
 import { serve } from '@hono/node-server';
-import { z, ZodError } from 'zod';
+import { z } from 'zod';
 
 // --- Типы для конфигурации ---
 
 type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
-type Middleware<E extends Env> = MiddlewareHandler<E>;
+type Middleware<T> = (c: T, next: () => Promise<void>) => Promise<void> | void;
 
-interface RouteConfig<E extends Env> {
+interface RouteConfig<T> {
   useCase: (input: any) => Promise<any>;
   path?: string;
   method?: HttpMethod;
-  middlewares?: Middleware<E>[];
+  middlewares?: Middleware<T>[];
 }
 
-interface ApiConfig<E extends Env> {
+interface ApiConfig<T> {
   port?: number;
   cors?: any; // TODO: Уточнить тип для CORS
-  middlewares?: Middleware<E>[];
-  routes: (RouteConfig<E> | ((input: any) => Promise<any>))[];
+  middlewares?: Middleware<T>[];
+  routes: (RouteConfig<T> | ((input: any) => Promise<any>))[];
 }
 
 const toKebabCase = (str: string) => {
@@ -28,17 +28,17 @@ const toKebabCase = (str: string) => {
 
 // --- Реализация ---
 
-export const createApi = <E extends Env>(config: ApiConfig<E>) => {
-  const app = new Hono<E>();
+export const createApi = <T>(config: ApiConfig<T>) => {
+  const app = new Hono<T>();
 
   // 1. Применяем глобальные middleware
   if (config.middlewares) {
-    app.use('*', ...config.middlewares);
+    app.use('*_string', ...config.middlewares);
   }
 
   // 2. Обрабатываем роуты
   config.routes.forEach(routeOrUseCase => {
-    const route: RouteConfig<E> = typeof routeOrUseCase === 'function' 
+    const route: RouteConfig<T> = typeof routeOrUseCase === 'function' 
       ? { useCase: routeOrUseCase }
       : routeOrUseCase;
 
@@ -52,23 +52,21 @@ export const createApi = <E extends Env>(config: ApiConfig<E>) => {
     const path = route.path || `/${toKebabCase(methodName)}`;
     const method = route.method || httpMethod;
 
-    const finalHandler = async (c: Context<E>) => {
+    const handlers = [ ...(route.middlewares || []), async (c: any) => {
         try {
             const input = await c.req.json(); // TODO: add support for query and params
             const result = await route.useCase(input);
             return c.json(result);
         } catch (error) {
-            if (error instanceof ZodError) {
-                return c.json({ message: 'Validation failed', errors: error.issues }, 400);
+            if (error instanceof z.ZodError) {
+                return c.json({ message: 'Validation failed', errors: error.errors }, 400);
             }
             // TODO: add more specific error handling
             return c.json({ message: 'Internal Server Error' }, 500);
         }
-    };
+    }];
 
-    const handlers = [ ...(route.middlewares || []), finalHandler];
-
-    app[method](path, ...handlers as any);
+    app[method](path, ...handlers);
   });
 
   // 3. Возвращаем инстанс для запуска

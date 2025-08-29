@@ -220,25 +220,8 @@ export class Order {
 
 ### 3.0. Утилита для создания портов
 
-Для удобства и типобезопасности DI, порты создаются с помощью утилиты `createPort`, которая добавляет метаданные (имя) к функции-порту. Это имя используется `bottle.js` для регистрации и разрешения зависимостей.
+Для удобства и типобезопасности DI, порты создаются с помощью утилиты `createPort`, которая добавляет метаданные (имя) к функции-порту.
 
-```typescript
-// di/create-port.ts
-
-// Расширяем тип функции, добавляя свойство _name
-type NamedFunction<T extends (...args: any[]) => any> = T & { _name: string };
-
-// Утилита для создания порта с метаданными для DI
-// TODO: Создает порт и регистрирует его в DI без импоементации. Позже мы сможем на СОЗДАННЫЙ порт навесить имплементацию
-export function createPort<T extends (...args: any[]) => any>(
-  name: string,
-  portFunction: T
-): NamedFunction<T> {
-  // Присваиваем имя функции для использования в DI
-  (portFunction as NamedFunction<T>)._name = name;
-  return portFunction as NamedFunction<T>;
-}
-```
 
 ### 3.1. Domain Ports (Заменяют Репозитории)
 
@@ -353,35 +336,6 @@ export type ProcessPaymentPort = typeof ProcessPaymentPort;
 ## 4. Слой Приложения: Use Cases (Команды и Запросы)
 
 Use Cases реализуются как чистые функции, использующие хуки для получения зависимостей.
-
-### 4.1. Dependency Injection с `bottle.js`
-
-`bottle.js` используется для регистрации и разрешения зависимостей. Порты регистрируются по их `_name` свойству.
-
-```typescript
-// di/container.ts
-import Bottle from 'bottlejs';
-
-export const container = new Bottle();
-
-// Generic метод для получения зависимостей (портов) внутри слоя приложения
-export function usePort<T extends (...args: any[]) => any>(port: T & { _name: string }): T {
-  return container.get(port._name);
-}
-
-// 1) TODO: добавить функцию которая зарегистрирует порт в DI - createPort.
-// 2) TODO: добавить фцнкцию которая для зарегистрированного порта добавит реализацию, что позволит использовать usePort.
-
-// TODO: implement setPortAdapter(port, adapterClass);
-
-// Пример регистрации зависимостей (в инфраструктурном слое или при старте приложения)
-// import { FindUserByIdPort, SaveOrderPort, SendEmailNotificationPort, ProcessPaymentPort } from '../domain/...'; // Импорт всех портов
-
-// container.service(FindUserByIdPort._name, () => async (id) => { /* ... */ });
-// container.service(SaveOrderPort._name, () => async (order) => { /* ... */ });
-// container.service(SendEmailNotificationPort._name, () => async (dto) => { /* ... */ });
-// container.service(ProcessPaymentPort._name, () => async (request) => { /* ... */ });
-```
 
 ### 4.2. Command Use Case (Команда)
 
