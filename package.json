@@ -1,8 +1,8 @@
 {
+  "name": "@maxdev1/sotajs",
   "version": "0.0.3",
   "module": "index.ts",
   "type": "module",
-  "private": true,
   "scripts": {
     "test": "bun test"
   },
