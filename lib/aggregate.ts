@@ -27,12 +27,12 @@ export function createAggregate<
 	>,
 >(config: AggregateConfig<TProps, TActions>) {
 	return class Aggregate {
-		// Use # prefix for truly private fields (ES2022)
-		#props: TProps;
-		#pendingEvents: IDomainEvent[] = [];
+		// Use $ prefix instead of _ to avoid TypeScript issues
+		private $props: TProps;
+		private $pendingEvents: IDomainEvent[] = [];
 
-		constructor(props: TProps) {
-			this.#props = props;
+		private constructor(props: TProps) {
+			this.$props = props;
 		}
 
 		/**
@@ -54,11 +54,18 @@ export function createAggregate<
 		}
 
 		/**
+		 * Provides access to the aggregate's ID.
+		 */
+		public get id(): string {
+			return this.$props.id;
+		}
+
+		/**
 		 * Provides access to a frozen copy of the aggregate's state.
 		 * This ensures the internal state cannot be mutated from outside.
 		 */
 		public get state(): Readonly<TProps> {
-			return Object.freeze({ ...this.#props });
+			return Object.freeze({ ...this.$props });
 		}
 
 		/**
@@ -66,9 +73,16 @@ export function createAggregate<
 		 * but not yet consumed. After calling this, the internal event queue is cleared.
 		 */
 		public getPendingEvents(): IDomainEvent[] {
-			const events = [...this.#pendingEvents];
-			this.#pendingEvents = [];
+			const events = [...this.$pendingEvents];
+			this.$pendingEvents = [];
 			return events;
+		}
+
+		/**
+		 * Clears the event queue without returning the events.
+		 */
+		public clearEvents(): void {
+			this.$pendingEvents = [];
 		}
 
 		/**
@@ -87,7 +101,7 @@ export function createAggregate<
 			for (const [actionName, actionFn] of Object.entries(config.actions)) {
 				actionMethods[actionName] = (...args: any[]) => {
 					// 1. Apply the action function to get the new state and optional event
-					const result = actionFn(this.#props, ...args);
+					const result = actionFn(this.$props, ...args);
 
 					// 2. Check invariants on the new state
 					for (const invariant of config.invariants) {
@@ -95,11 +109,11 @@ export function createAggregate<
 					}
 
 					// 3. Update the internal state
-					this.#props = result.state;
+					this.$props = result.state;
 
 					// 4. If an event was generated, add it to the queue
 					if (result.event) {
-						this.#pendingEvents.push(result.event);
+						this.$pendingEvents.push(result.event);
 					}
 				};
 			}

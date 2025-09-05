@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { deepFreeze } from './utils';
 
+// WeakMaps to store internal state
+const entityProps = new WeakMap<any, any>();
+
 export interface EntityConfig<TProps extends { id: string }, TActions extends Record<string, any>> {
   schema: z.ZodType<TProps>;
   actions: TActions;
@@ -18,11 +21,8 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
   config: EntityConfig<TProps, TActions>
 ) {
   return class Entity {
-    // Use # prefix for truly private fields (ES2022)
-    #props: TProps;
-
     private constructor(props: TProps) {
-      this.#props = props;
+      entityProps.set(this, props);
     }
 
     /**
@@ -36,10 +36,28 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
     }
 
     /**
+     * Provides access to the entity's ID.
+     */
+    public get id(): string {
+      return entityProps.get(this).id;
+    }
+
+    /**
      * Provides access to a frozen copy of the entity's state.
      */
     public get state(): Readonly<TProps> {
-      return deepFreeze({ ...this.#props });
+      return deepFreeze({ ...entityProps.get(this) });
+    }
+
+    /**
+     * Checks for identity equality against another Entity.
+     * @param other - The other Entity to compare with.
+     */
+    public equals(other?: Entity): boolean {
+      if (other === null || other === undefined) {
+        return false;
+      }
+      return entityProps.get(this).id === entityProps.get(other).id;
     }
 
     /**
@@ -56,8 +74,9 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
 
       for (const [actionName, actionFn] of Object.entries(config.actions)) {
         actionMethods[actionName] = (...args: any[]) => {
-          const newState = actionFn(this.#props, ...args);
-          this.#props = newState;
+          const currentState = entityProps.get(this);
+          const newState = actionFn(currentState, ...args);
+          entityProps.set(this, newState);
         };
       }
 

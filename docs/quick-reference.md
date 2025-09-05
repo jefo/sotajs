@@ -60,12 +60,15 @@ setPortAdapter(myPort, myAdapter);
 
 1. **Define Use Case**
    - Create input/output schemas with Zod
-   - Declare required ports with `usePort`
+   - Declare required appication-level ports with `usePort`
+   - Declare required domain-level ports with `usePort`
 
 2. **Model Domain**
-   - Create aggregates with `createAggregate`
-   - Define entities and value objects
+   - Define entities with `createAggregate`
+   - Define value objects
    - Establish invariants and actions
+   
+   - When you need a transaction and atomic operation with few Entities, define Aggregate - owner of that entities. A smallest transactional unit. Awoid god-object. Use SOLID principle.
 
 3. **Write Tests**
    - Mock ports with `setPortAdapter`
