@@ -97,23 +97,6 @@ export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
 }
 
 /**
- * Binds a specific implementation (adapter) to a port with dependencies.
- * @param port - The port descriptor created via createPort().
- * @param factory - A function that creates the adapter implementation, potentially using other ports.
- * @throws {Error} If the port is invalid or unregistered.
- */
-export function setPortAdapterWithDependencies<
-	T extends (...args: any[]) => any,
->(port: Port<T>, factory: () => T): void {
-	const portId = port[PORT_ID_SYMBOL];
-	if (!portId || !portRegistry.has(portId)) {
-		throw new Error("An invalid or unregistered port was provided.");
-	}
-
-	container.factory(portId, factory);
-}
-
-/**
  * Resets the state of the DI container and port registry.
  * Necessary for test isolation.
  */

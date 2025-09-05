@@ -18,10 +18,11 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
   config: EntityConfig<TProps, TActions>
 ) {
   return class Entity {
-    private props: TProps;
+    // Use # prefix for truly private fields (ES2022)
+    #props: TProps;
 
     private constructor(props: TProps) {
-      this.props = props;
+      this.#props = props;
     }
 
     /**
@@ -30,50 +31,37 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
      * @param data - The raw data for creating the Entity.
      */
     public static create(data: unknown): Entity {
-      const validatedProps = config.schema.parse(data);
-      return new Entity(validatedProps);
+      const props = config.schema.parse(data);
+      return new Entity(props);
     }
 
     /**
-     * The unique identifier of the Entity.
+     * Provides access to a frozen copy of the entity's state.
      */
-    get id(): string {
-      return this.props.id;
+    public get state(): Readonly<TProps> {
+      return deepFreeze({ ...this.#props });
     }
 
     /**
-     * Read-only access to the entity's current state.
+     * An object containing all the defined actions for this entity.
      */
-    get state(): Readonly<TProps> {
-      return deepFreeze({ ...this.props }); // Ensure immutability of returned state
-    }
+    public get actions(): {
+      [K in keyof TActions]: (
+        ...args: TActions[K] extends (state: TProps, ...args: infer P) => any
+          ? P
+          : never
+      ) => void;
+    } {
+      const actionMethods: any = {};
 
-    /**
-     * Checks for identity equality against another Entity.
-     * Entities are equal if they are of the same type and have the same ID.
-     * @param other - The other Entity to compare with.
-     */
-    public equals(other?: Entity): boolean {
-      if (other === null || other === undefined) {
-        return false;
+      for (const [actionName, actionFn] of Object.entries(config.actions)) {
+        actionMethods[actionName] = (...args: any[]) => {
+          const newState = actionFn(this.#props, ...args);
+          this.#props = newState;
+        };
       }
-      // Check if they are instances of the same Entity class and have the same ID
-      return this.constructor === other.constructor && this.id === other.id;
+
+      return actionMethods;
     }
-
-    /**
-     * A proxy-like object that exposes the actions as callable methods.
-     * This is the only way to modify the entity's state.
-     */
-    public readonly actions = Object.keys(config.actions).reduce((acc, actionName) => {
-      acc[actionName as keyof TActions] = (...args: any[]) => {
-        // Execute the action's pure function to get the new state.
-        const nextState = config.actions[actionName](this.props, ...args);
-
-        // Commit the new state.
-        this.props = nextState;
-      };
-      return acc;
-    }, {} as { [K in keyof TActions]: (...args: Parameters<TActions[K]>[1][]) => void });
   };
 }

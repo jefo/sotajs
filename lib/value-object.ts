@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { deepFreeze } from './utils'; // We will create this utility
+import { deepFreeze } from './utils';
 
 /**
  * A factory function that creates a Value Object class.
@@ -18,7 +18,7 @@ export function createValueObject<T extends z.ZodTypeAny>(
 
     private constructor(props: Props) {
       // Deep freeze the properties to ensure true immutability
-      this.props = deepFreeze(props);
+      this.props = deepFreeze(props as unknown as object) as Readonly<Props>;
     }
 
     /**
@@ -27,7 +27,8 @@ export function createValueObject<T extends z.ZodTypeAny>(
      * @param data - The raw data for creating the VO.
      */
     public static create(data: unknown): ValueObject {
-      return new ValueObject(schema.parse(data));
+      const parsedData = schema.parse(data);
+      return new ValueObject(parsedData);
     }
 
     /**
