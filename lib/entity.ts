@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { produce } from 'immer';
 import { deepFreeze } from './utils';
 
 // WeakMaps to store internal state
@@ -17,7 +18,7 @@ export interface EntityConfig<TProps extends { id: string }, TActions extends Re
  * @param config - The configuration for the entity, including its schema and actions.
  * @returns A class for the Entity.
  */
-export function createEntity<TProps extends { id: string }, TActions extends Record<string, (state: TProps, ...args: any[]) => TProps>>(
+export function createEntity<TProps extends { id: string }, TActions extends Record<string, (state: TProps, ...args: any[]) => void>>(
   config: EntityConfig<TProps, TActions>
 ) {
   return class Entity {
@@ -75,8 +76,10 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
       for (const [actionName, actionFn] of Object.entries(config.actions)) {
         actionMethods[actionName] = (...args: any[]) => {
           const currentState = entityProps.get(this);
-          const newState = actionFn(currentState, ...args);
-          entityProps.set(this, newState);
+          const nextState = produce(currentState, (draft: TProps) => {
+            actionFn(draft, ...args);
+          });
+          entityProps.set(this, nextState);
         };
       }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { produce } from "immer";
 
 // A generic type for any domain event
 interface IDomainEvent {
@@ -27,7 +28,7 @@ export function createAggregate<
 	TProps extends { id: string },
 	TActions extends Record<
 		string,
-		(state: TProps, ...args: any[]) => { state: TProps; event?: IDomainEvent }
+		(state: TProps, ...args: any[]) => { event?: IDomainEvent } | void
 	>,
 >(config: AggregateConfig<TProps, TActions>) {
 	return class Aggregate {
@@ -101,24 +102,27 @@ export function createAggregate<
 
 			for (const [actionName, actionFn] of Object.entries(config.actions)) {
 				actionMethods[actionName] = (...args: any[]) => {
-					// 1. Apply the action function to get the new state and optional event
 					const currentState = aggregateProps.get(this);
-					const result = actionFn(currentState, ...args);
 
-					// 2. Check invariants on the new state
+					// Use Immer's produce to handle state updates immutably
+					const nextState = produce(currentState, (draft: TProps) => {
+						const result = actionFn(draft, ...args);
+
+						// If an event was generated, add it to the queue
+						if (result && result.event) {
+							const events = aggregateEvents.get(this) || [];
+							events.push(result.event);
+							aggregateEvents.set(this, events);
+						}
+					});
+
+					// Check invariants on the new state
 					for (const invariant of config.invariants) {
-						invariant(result.state);
+						invariant(nextState);
 					}
 
-					// 3. Update the internal state
-					aggregateProps.set(this, result.state);
-
-					// 4. If an event was generated, add it to the queue
-					if (result.event) {
-						const events = aggregateEvents.get(this) || [];
-						events.push(result.event);
-						aggregateEvents.set(this, events);
-					}
+					// Update the internal state
+					aggregateProps.set(this, nextState);
 				};
 			}
 

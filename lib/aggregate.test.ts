@@ -17,7 +17,7 @@ const OrderSchema = z.object({
 });
 type OrderState = z.infer<typeof OrderSchema>;
 
-// 3. Define the aggregate using our factory
+// 3. Define the aggregate using our factory with the new Immer-based actions
 const Order = createAggregate({
   name: 'Order',
   schema: OrderSchema,
@@ -34,8 +34,9 @@ const Order = createAggregate({
         throw new Error('Only pending orders can be paid.');
       }
       console.log(`Paid with ${paymentMethod}`);
+      // Direct mutation of draft state
+      state.status = 'paid';
       return {
-        state: { ...state, status: 'paid' as const },
         event: new OrderPaidEvent(state.id),
       };
     },
@@ -43,14 +44,15 @@ const Order = createAggregate({
       if (state.status !== 'paid') {
         throw new Error('Only paid orders can be shipped.');
       }
-      return { state: { ...state, status: 'shipped' as const } }; // Action without an event
+      // Direct mutation, no event returned
+      state.status = 'shipped';
     },
   },
 });
 
 // --- Tests ---
 
-describe('createAggregate', () => {
+describe('createAggregate with Immer', () => {
   const validOrderData = {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     status: 'pending' as const,
@@ -70,8 +72,15 @@ describe('createAggregate', () => {
 
   it('should successfully execute an action and change state', () => {
     const order = Order.create(validOrderData);
+    const originalState = order.state;
+
     order.actions.pay('credit-card');
-    expect(order.state.status).toBe('paid');
+    
+    const newState = order.state;
+    expect(newState.status).toBe('paid');
+    // Verify immutability
+    expect(newState).not.toBe(originalState);
+    expect(originalState.status).toBe('pending');
   });
 
   it('should collect domain events when an action is executed', () => {
@@ -83,15 +92,20 @@ describe('createAggregate', () => {
     expect(events[0].aggregateId).toBe(validOrderData.id);
   });
 
-  it('clearEvents should clear the event queue', () => {
+  it('getPendingEvents should clear the event queue', () => {
     const order = Order.create(validOrderData);
     order.actions.pay('credit-card');
     
-    // Verify event exists before clearing
+    // First call gets the event
     expect(order.getPendingEvents()).toHaveLength(1);
+    // Second call gets nothing because the queue was cleared
+    expect(order.getPendingEvents()).toHaveLength(0);
+  });
 
+  it('clearEvents should clear the event queue', () => {
+    const order = Order.create(validOrderData);
+    order.actions.pay('credit-card');
     order.clearEvents(); // Explicitly clear the queue
-
     const subsequentEvents = order.getPendingEvents();
     expect(subsequentEvents).toHaveLength(0);
   });
@@ -102,31 +116,22 @@ describe('createAggregate', () => {
     expect(() => order.actions.pay('credit-card')).toThrow('Only pending orders can be paid.');
   });
 
-  
-
   it('should not change state if an invariant fails', () => {
-    const orderDataWithInvalidAmount = { ...validOrderData, amount: -5 };
-    // The invariant should be checked on creation via the schema if possible, but this tests the runtime invariant logic.
-    // Let's assume it was created and then an action leads to an invalid state.
-    const order = Order.create(validOrderData);
-
-    // We need a way to test an action that *would* violate an invariant.
-    // Let's add a faulty action to the config for this test.
     const FaultyOrder = createAggregate({
-        ...Order.config, // This is not directly possible, so we re-define for the test
         name: 'FaultyOrder',
         schema: OrderSchema,
         invariants: [(state) => { if (state.amount < 0) throw new Error('Amount cannot be negative.'); }],
         actions: {
-            setBadAmount: (state: OrderState) => ({ state: { ...state, amount: -10 } })
+            setBadAmount: (state: OrderState) => {
+                state.amount = -10;
+            }
         }
     });
 
     const faultyOrder = FaultyOrder.create(validOrderData);
+    const originalState = faultyOrder.state;
 
-    expect(() => faultyOrder.actions.setBadAmount()).toThrow(
-      'Amount cannot be negative.'
-    );
-    expect(faultyOrder.state.amount).toBe(100); // State should NOT have changed.
+    expect(() => faultyOrder.actions.setBadAmount()).toThrow('Amount cannot be negative.');
+    expect(faultyOrder.state).toEqual(originalState); // State should NOT have changed.
   });
 });

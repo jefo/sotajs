@@ -1,5 +1,14 @@
 import { z, ZodType } from "zod";
-import { createAggregate, IAggregate } from "./aggregate";
+import { createAggregate } from "./aggregate";
+
+// A generic interface to represent an Aggregate instance, exposing state and id.
+// This helps in creating generic functions that operate on any aggregate type.
+export interface IAggregate {
+  readonly id: string;
+  readonly state: any;
+  readonly actions: any;
+}
+
 
 // Define the configuration for the linker factory
 interface RelationConfig<
@@ -32,8 +41,12 @@ export function createRelation<TEntityA extends IAggregate, TEntityB extends IAg
         // 1. Execute the user-defined linking logic which mutates the entities
         linkFn({ entityA, entityB });
 
-        // 2. Return the new state containing the modified entities, as required by createAggregate
-        return { state: { entityA, entityB } };
+        // 2. Update the relation's state with the modified entities
+        if (!state) {
+          state = {} as any;
+        }
+        state.entityA = entityA;
+        state.entityB = entityB;
       },
     },
   });
