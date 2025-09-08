@@ -6,6 +6,10 @@ interface IDomainEvent {
 	timestamp: Date;
 }
 
+// WeakMaps to store internal state
+const aggregateProps = new WeakMap<any, any>();
+const aggregateEvents = new WeakMap<any, any[]>();
+
 // The configuration object that a developer provides
 export interface AggregateConfig<TProps, TActions extends Record<string, any>> {
 	name: string;
@@ -27,12 +31,9 @@ export function createAggregate<
 	>,
 >(config: AggregateConfig<TProps, TActions>) {
 	return class Aggregate {
-		// Use $ prefix instead of _ to avoid TypeScript issues
-		private $props: TProps;
-		private $pendingEvents: IDomainEvent[] = [];
-
 		private constructor(props: TProps) {
-			this.$props = props;
+			aggregateProps.set(this, props);
+			aggregateEvents.set(this, []);
 		}
 
 		/**
@@ -57,7 +58,7 @@ export function createAggregate<
 		 * Provides access to the aggregate's ID.
 		 */
 		public get id(): string {
-			return this.$props.id;
+			return aggregateProps.get(this).id;
 		}
 
 		/**
@@ -65,7 +66,7 @@ export function createAggregate<
 		 * This ensures the internal state cannot be mutated from outside.
 		 */
 		public get state(): Readonly<TProps> {
-			return Object.freeze({ ...this.$props });
+			return Object.freeze({ ...aggregateProps.get(this) });
 		}
 
 		/**
@@ -73,8 +74,8 @@ export function createAggregate<
 		 * but not yet consumed. After calling this, the internal event queue is cleared.
 		 */
 		public getPendingEvents(): IDomainEvent[] {
-			const events = [...this.$pendingEvents];
-			this.$pendingEvents = [];
+			const events = [...(aggregateEvents.get(this) || [])];
+			aggregateEvents.set(this, []);
 			return events;
 		}
 
@@ -82,7 +83,7 @@ export function createAggregate<
 		 * Clears the event queue without returning the events.
 		 */
 		public clearEvents(): void {
-			this.$pendingEvents = [];
+			aggregateEvents.set(this, []);
 		}
 
 		/**
@@ -101,7 +102,8 @@ export function createAggregate<
 			for (const [actionName, actionFn] of Object.entries(config.actions)) {
 				actionMethods[actionName] = (...args: any[]) => {
 					// 1. Apply the action function to get the new state and optional event
-					const result = actionFn(this.$props, ...args);
+					const currentState = aggregateProps.get(this);
+					const result = actionFn(currentState, ...args);
 
 					// 2. Check invariants on the new state
 					for (const invariant of config.invariants) {
@@ -109,11 +111,13 @@ export function createAggregate<
 					}
 
 					// 3. Update the internal state
-					this.$props = result.state;
+					aggregateProps.set(this, result.state);
 
 					// 4. If an event was generated, add it to the queue
 					if (result.event) {
-						this.$pendingEvents.push(result.event);
+						const events = aggregateEvents.get(this) || [];
+						events.push(result.event);
+						aggregateEvents.set(this, events);
 					}
 				};
 			}

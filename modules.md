@@ -19,7 +19,8 @@ const profile: ReturnType<typeof QualificationProfile.create>;
 
 - Придумат ьрешение 
 
-
+## Доработка entities & Aggregates
+Есл в create не передан идентификатор, он должен генерироваться с помощью bun createRandomUuidv7
 
 
 ## Семантических Выходных Портов
