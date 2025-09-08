@@ -114,7 +114,7 @@ export function createAggregate<
 							events.push(result.event);
 							aggregateEvents.set(this, events);
 						}
-					});
+					}) as unknown as TProps;
 
 					// Check invariants on the new state
 					for (const invariant of config.invariants) {

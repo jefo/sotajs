@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./lib",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,17 +13,12 @@
     "resolveJsonModule": true
   },
   "include": [
+    "index.ts",
     "lib/di.v2.ts",
     "lib/entity.ts",
     "lib/value-object.ts",
     "lib/aggregate.ts",
     "lib/branded-id.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "examples",
-    "docs",
-    "lib/**/*.test.ts"
-  ]
+  "exclude": ["node_modules", "dist", "examples", "docs", "lib/**/*.test.ts"]
 }
