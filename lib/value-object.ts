@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { deepFreeze } from './utils';
+import { z } from "zod";
+import { deepFreeze } from "./utils";
 
 /**
  * A factory function that creates a Value Object class.
@@ -8,39 +8,37 @@ import { deepFreeze } from './utils';
  * @param schema - The Zod schema defining the shape and validation of the VO.
  * @returns A class for the Value Object.
  */
-export function createValueObject<T extends z.ZodTypeAny>(
-  schema: T
-) {
-  type Props = z.infer<T>;
+export function createValueObject<T extends z.ZodTypeAny>(schema: T) {
+	type Props = z.infer<T>;
 
-  return class ValueObject {
-    public readonly props: Readonly<Props>;
+	return class ValueObject {
+		public readonly props: Readonly<Props>;
 
-    private constructor(props: Props) {
-      // Deep freeze the properties to ensure true immutability
-      this.props = deepFreeze(props as unknown as object) as Readonly<Props>;
-    }
+		private constructor(props: Props) {
+			// Deep freeze the properties to ensure true immutability
+			this.props = deepFreeze(props as unknown as object) as Readonly<Props>;
+		}
 
-    /**
-     * The only public way to create an instance of the Value Object.
-     * It validates the input data against the schema.
-     * @param data - The raw data for creating the VO.
-     */
-    public static create(data: unknown): ValueObject {
-      const parsedData = schema.parse(data);
-      return new ValueObject(parsedData);
-    }
+		/**
+		 * The only public way to create an instance of the Value Object.
+		 * It validates the input data against the schema.
+		 * @param data - The raw data for creating the VO.
+		 */
+		public static create(data: unknown): ValueObject {
+			const parsedData = schema.parse(data);
+			return new ValueObject(parsedData);
+		}
 
-    /**
-     * Checks for structural equality against another Value Object.
-     * @param other - The other Value Object to compare with.
-     */
-    public equals(other?: ValueObject): boolean {
-      if (other === null || other === undefined) {
-        return false;
-      }
-      // A simple but effective way to check for deep equality.
-      return JSON.stringify(this.props) === JSON.stringify(other.props);
-    }
-  };
+		/**
+		 * Checks for structural equality against another Value Object.
+		 * @param other - The other Value Object to compare with.
+		 */
+		public equals(other?: ValueObject | null): boolean {
+			if (other === null || other === undefined) {
+				return false;
+			}
+			// A simple but effective way to check for deep equality.
+			return JSON.stringify(this.props) === JSON.stringify(other.props);
+		}
+	};
 }
