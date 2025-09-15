@@ -1,10 +1,12 @@
-import { test, expect, beforeEach } from "bun:test";
+import { test, expect, beforeEach, describe } from "bun:test";
 import {
 	createPort,
 	setPortAdapter,
 	setPortAdapterWithDependencies,
 	usePort,
 	resetDI,
+  setPortAdapters,
+  usePorts,
 } from "./di.v2";
 
 // 1. Reset DI container before each test for isolation
@@ -146,4 +148,80 @@ test("should handle dependencies between services", () => {
 	const user = getUser(1);
 
 	expect(user).toEqual({ id: 1, name: "User 1" });
+});
+
+describe("setPortAdapters", () => {
+  test("should bind multiple adapters at once", () => {
+    const portA = createPort<() => string>();
+    const portB = createPort<(n: number) => number>();
+
+    const adapterA = () => "A";
+    const adapterB = (n: number) => n * 2;
+
+    setPortAdapters([
+      [portA, adapterA],
+      [portB, adapterB],
+    ]);
+
+    const serviceA = usePort(portA);
+    const serviceB = usePort(portB);
+
+    expect(serviceA()).toBe("A");
+    expect(serviceB(10)).toBe(20);
+  });
+
+  test("should throw if any port is invalid", () => {
+    const portA = createPort<() => string>();
+    const adapterA = () => "A";
+    const fakePort = { __TYPE__: undefined as any };
+
+    expect(() => {
+      setPortAdapters([
+        [portA, adapterA],
+        [fakePort as any, () => {}],
+      ]);
+    }).toThrow("An invalid or unregistered port was provided in the array.");
+  });
+});
+
+describe("usePorts", () => {
+  test("should resolve multiple ports in the correct order", () => {
+    const portA = createPort<() => string>();
+    const portB = createPort<(n: number) => number>();
+    const portC = createPort<() => boolean>();
+
+    setPortAdapters([
+      [portA, () => "A"],
+      [portB, (n: number) => n * 2],
+      [portC, () => true],
+    ]);
+
+    const [serviceA, serviceB, serviceC] = usePorts(portA, portB, portC);
+
+    expect(serviceA()).toBe("A");
+    expect(serviceB(10)).toBe(20);
+    expect(serviceC()).toBe(true);
+  });
+
+  test("should throw if any port is not bound", () => {
+    const portA = createPort<() => string>();
+    const portB = createPort<() => string>(); // This one won't be bound
+
+    setPortAdapter(portA, () => "A");
+
+    expect(() => {
+      usePorts(portA, portB);
+    }).toThrow("No implementation found for the port");
+  });
+
+  test("should throw if any port is invalid", () => {
+    const portA = createPort<() => string>();
+    const fakePort = { __TYPE__: undefined as any };
+
+    setPortAdapter(portA, () => "A");
+
+    expect(() => {
+      usePorts(portA, fakePort as any);
+    }).toThrow("Attempted to use an invalid or unregistered port.");
+  });
 });

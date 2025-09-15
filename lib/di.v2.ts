@@ -96,6 +96,38 @@ export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
 	return implementation as T;
 }
 
+export type PortAdapterPair<T extends (...args: any[]) => any = any> = [Port<T>, T];
+
+/**
+ * Binds multiple implementations (adapters) to their corresponding ports in a single call.
+ * @param pairs - An array of [port, adapter] tuples.
+ * @throws {Error} If any port is invalid or unregistered.
+ */
+export function setPortAdapters(pairs: ReadonlyArray<PortAdapterPair>): void {
+  for (const [port, adapter] of pairs) {
+    const portId = port[PORT_ID_SYMBOL];
+    if (!portId || !portRegistry.has(portId)) {
+      throw new Error("An invalid or unregistered port was provided in the array.");
+    }
+    container.factory(portId, () => adapter);
+  }
+}
+
+export type PortsToAdapters<T extends readonly Port<any>[]> = {
+  -readonly [P in keyof T]: T[P] extends Port<infer U> ? U : never;
+};
+
+/**
+ * Retrieves multiple port implementations from the DI container at once.
+ * @param ports - An array of port descriptors for which to retrieve the implementations.
+ * @returns T - An array of implementation functions (adapters), in the same order as the input ports.
+ * @throws {Error} If any port is invalid, unregistered, or has no implementation.
+ */
+export function usePorts<T extends readonly Port<any>[]>(...ports: T): PortsToAdapters<T> {
+  const implementations = ports.map(port => usePort(port));
+  return implementations as PortsToAdapters<T>;
+}
+
 /**
  * Resets the state of the DI container and port registry.
  * Necessary for test isolation.

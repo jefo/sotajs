@@ -164,14 +164,16 @@ export const createOrderUseCase = async (input: CreateOrderInput): Promise<void>
 
 ## 5. Внедрение зависимостей: связующее звено
 
-Механизм DI в Sota построен на трех функциях:
+Механизм DI в Sota построен на нескольких ключевых функциях:
 - `createPort`: Создает типизированный контракт для зависимости.
 - `setPortAdapter`: Связывает порт с его конкретной реализацией (адаптером).
 - `usePort`: Получает реализацию порта внутри Use Case.
+- `setPortAdapters`: Позволяет связать несколько пар порт-адаптер за один вызов.
+- `usePorts`: Позволяет получить несколько реализаций портов за один вызов.
 
 **Пример полного цикла DI**
 ```typescript
-import { createPort, setPortAdapter, usePort, resetDI } from '@maxdev1/sotajs/lib/di.v2';
+import { createPort, setPortAdapter, usePort, resetDI } from '@maxdev1/sotajs';
 
 // 1. Определение порта данных и DTO
 interface FindUserByIdDto { id: string; }
@@ -214,6 +216,32 @@ setPortAdapter(userFoundOutPort, consolePresenterAdapter);
 resetDI(); // Очистка контейнера перед тестом
 setPortAdapter(findUserByIdPort, mockUserAdapter);
 setPortAdapter(userFoundOutPort, mockPresenter);
+```
+
+### Массовое связывание и использование портов
+
+Для удобства можно регистрировать и получать несколько адаптеров за один раз.
+
+```typescript
+import { createPort, setPortAdapters, usePorts } from '@maxdev1/sotajs';
+
+// Определение портов
+const portA = createPort<() => string>();
+const portB = createPort<(n: number) => number>();
+
+// Массовое связывание
+setPortAdapters([
+  [portA, () => 'Результат A'],
+  [portB, (n: number) => n * 10],
+]);
+
+// Массовое получение зависимостей внутри Use Case
+const myUseCase = async () => {
+  const [adapterA, adapterB] = usePorts(portA, portB);
+
+  console.log(adapterA()); // 'Результат A'
+  console.log(adapterB(5)); // 50
+};
 ```
 
 ## 6. Процесс разработки в Sota
