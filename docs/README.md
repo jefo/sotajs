@@ -73,22 +73,60 @@ export type UserProfile = ReturnType<typeof UserProfile.create>;
 > **Критерий выбора:** Необходимость в агрегате возникает, когда бизнес-правило требует, чтобы изменения в нескольких сущностях происходили атомарно, в рамках одной транзакции. Если для сохранения консистентности вам нужно обновить Сущность А и Сущность Б вместе, они являются кандидатами на объединение в один агрегат.
 
 **Пример: Агрегат `Order`**
+
+В этом примере мы создадим агрегат `Order`, который включает в себя вложенную сущность `CustomerInfo`. Это покажет, как работать с богатой доменной моделью внутри агрегата, а также как использовать вычисляемые свойства.
+
 ```typescript
 import { z } from 'zod';
-import { createAggregate } from '@maxdev1/sotajs';
+import { createAggregate, createEntity } from '@maxdev1/sotajs';
 
+// 1. Определяем дочернюю сущность для информации о клиенте
+const CustomerInfoSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  address: z.string(),
+});
+type CustomerInfoState = z.infer<typeof CustomerInfoSchema>;
+
+const CustomerInfo = createEntity({
+  schema: CustomerInfoSchema,
+  actions: {
+    updateAddress: (state: CustomerInfoState, newAddress: string) => {
+      if (newAddress.length < 10) {
+        throw new Error('Address is too short');
+      }
+      state.address = newAddress;
+    },
+  },
+});
+
+// 2. Определяем схему для самого агрегата Order
 const OrderSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(['pending', 'paid', 'shipped']),
   items: z.array(z.object({ productId: z.string(), price: z.number() })),
-  customerId: z.string().uuid(),
+  // Включаем схему CustomerInfo как часть схемы Order
+  customer: CustomerInfoSchema,
 });
 
 type OrderState = z.infer<typeof OrderSchema>;
 
+// 3. Создаем агрегат с расширенной конфигурацией
 export const Order = createAggregate({
   name: 'Order',
   schema: OrderSchema,
+
+  // 3a. Указываем, какие свойства состояния являются сущностями
+  entities: {
+    customer: CustomerInfo,
+  },
+
+  // 3b. Добавляем вычисляемые свойства
+  computed: {
+    isPaid: (state) => state.status === 'paid',
+    totalPrice: (state) => state.items.reduce((sum, item) => sum + item.price, 0),
+  },
+
   invariants: [
     (state) => {
       if (state.status === 'shipped' && state.items.length === 0) {
@@ -96,18 +134,39 @@ export const Order = createAggregate({
       }
     },
   ],
+
+  // 3c. Actions теперь работают с "гидрированным" состоянием
   actions: {
-    pay: (state: OrderState) => {
+    pay: (state) => {
       if (state.status !== 'pending') {
         throw new Error('Only pending orders can be paid.');
       }
-      // Просто мутируем состояние. Immer сделает все остальное.
       state.status = 'paid';
+    },
+    // Action, который вызывает метод дочерней сущности
+    updateCustomerAddress: (state, newAddress: string) => {
+      // state.customer - это полноценный экземпляр CustomerInfo
+      // с доступом к его методам.
+      state.customer.actions.updateAddress(newAddress);
     },
   },
 });
 
+// Тип экземпляра агрегата будет включать вычисляемые свойства
 export type Order = ReturnType<typeof Order.create>;
+
+// --- Использование ---
+// const order = Order.create({ id: '...', status: 'pending', ..., customer: { ... } });
+//
+// // Доступ к вычисляемому свойству
+// console.log(order.totalPrice);
+//
+// // Вызов action, который делегирует работу сущности
+// order.actions.updateCustomerAddress('Новый адрес клиента');
+//
+// // Получение чистого состояния для сохранения
+// const cleanState = order.state;
+// console.log(cleanState.customer.address); // 'Новый адрес клиента'
 ```
 
 ## 4. Оркестрация: Use Cases и Порты
