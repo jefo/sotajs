@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { produce } from 'immer';
+import { z } from "zod";
+import { produce } from "immer";
 
 // A generic type for any domain event
 interface IDomainEvent {
@@ -13,7 +13,7 @@ const aggregateEvents = new WeakMap<any, any[]>();
 
 // --- Types for Hydration & Configuration ---
 
-type EntityClass = { new (...args: any[]): any; create(data: any): any };
+type EntityClass = { create(data: any): any };
 type EntitiesMap<TProps> = {
 	[K in keyof TProps]?: EntityClass;
 };
@@ -21,22 +21,17 @@ type EntitiesMap<TProps> = {
 type HydratedState<TProps, TEntities> = {
 	[K in keyof TProps]: K extends keyof TEntities
 		? TEntities[K] extends EntityClass
-			? InstanceType<TEntities[K]>
+			? ReturnType<TEntities[K]['create']>
 			: TProps[K]
 		: TProps[K];
 };
 
-export interface AggregateConfig<TProps, TEntities, TActions, TComputed> {
-	name: string;
-	schema: z.ZodType<TProps>;
-	invariants: Array<(state: HydratedState<TProps, TEntities>) => void>;
-	actions: TActions;
-	computed?: TComputed;
-	entities?: TEntities;
-}
-
 type ComputedGetters<TComputed> = TComputed extends Record<string, any>
-	? { [K in keyof TComputed]: TComputed[K] extends (state: any) => infer R ? R : never }
+	? {
+			[K in keyof TComputed]: TComputed[K] extends (state: any) => infer R
+				? R
+				: never;
+		}
 	: {};
 
 /**
@@ -44,14 +39,25 @@ type ComputedGetters<TComputed> = TComputed extends Record<string, any>
  * @param config - The declarative configuration for the aggregate.
  * @returns A class representing the configured Aggregate.
  */
-export function createAggregate<const TConfig extends AggregateConfig<any, any, any, any>>(
-	config: TConfig,
-) {
-	type TProps = z.infer<TConfig['schema']>;
-	type TEntities = TConfig['entities'];
-	type TActions = TConfig['actions'];
-	type TComputed = TConfig['computed'];
-
+export function createAggregate<
+	TProps extends { id: string },
+	TEntities extends EntitiesMap<TProps>,
+	TActions extends Record<
+		string,
+		(state: HydratedState<TProps, TEntities>, ...args: any[]) => any
+	>,
+	TComputed extends Record<
+		string,
+		(state: HydratedState<TProps, TEntities>) => any
+	>,
+>(config: {
+	name: string;
+	schema: z.ZodType<TProps>;
+	entities?: TEntities;
+	invariants: Array<(state: HydratedState<TProps, TEntities>) => void>;
+	actions: TActions;
+	computed?: TComputed;
+}) {
 	const Aggregate = class {
 		private constructor(props: HydratedState<TProps, TEntities>) {
 			aggregateProps.set(this, props);
@@ -95,7 +101,7 @@ export function createAggregate<const TConfig extends AggregateConfig<any, any, 
 					if (
 						Object.prototype.hasOwnProperty.call(hydratedState, key) &&
 						hydratedState[key] &&
-						typeof hydratedState[key].state !== 'undefined'
+						typeof hydratedState[key].state !== "undefined"
 					) {
 						dehydratedState[key] = hydratedState[key].state;
 					}
@@ -118,7 +124,7 @@ export function createAggregate<const TConfig extends AggregateConfig<any, any, 
 		public get actions(): {
 			[K in keyof TActions]: (
 				...args: TActions[K] extends (
-					state: any,
+					state: HydratedState<TProps, TEntities>,
 					...args: infer P
 				) => any
 					? P
@@ -170,7 +176,7 @@ export function createAggregate<const TConfig extends AggregateConfig<any, any, 
 		}
 	}
 
-	type AggregateInstance = ReturnType<(typeof Aggregate)['create']> &
+	type AggregateInstance = ReturnType<(typeof Aggregate)["create"]> &
 		ComputedGetters<TComputed>;
 
 	return Aggregate as {
