@@ -5,9 +5,19 @@ import { deepFreeze } from './utils';
 // WeakMaps to store internal state
 const entityProps = new WeakMap<any, any>();
 
-export interface EntityConfig<TProps extends { id: string }, TActions extends Record<string, any>> {
+// Type for computed properties
+type ComputedGetters<TComputed> = TComputed extends Record<string, any>
+  ? { [K in keyof TComputed]: TComputed[K] extends (state: any) => infer R ? R : never }
+  : {};
+
+export interface EntityConfig<
+  TProps extends { id: string },
+  TActions extends Record<string, any>,
+  TComputed extends Record<string, (state: TProps) => any> = {}
+> {
   schema: z.ZodType<TProps>;
   actions: TActions;
+  computed?: TComputed;
 }
 
 /**
@@ -18,10 +28,12 @@ export interface EntityConfig<TProps extends { id: string }, TActions extends Re
  * @param config - The configuration for the entity, including its schema and actions.
  * @returns A class for the Entity.
  */
-export function createEntity<TProps extends { id: string }, TActions extends Record<string, (state: TProps, ...args: any[]) => void>>(
-  config: EntityConfig<TProps, TActions>
-) {
-  return class Entity {
+export function createEntity<
+  TProps extends { id: string },
+  TActions extends Record<string, (state: TProps, ...args: any[]) => void>,
+  TComputed extends Record<string, (state: TProps) => any> = {}
+>(config: EntityConfig<TProps, TActions, TComputed>) {
+  class Entity {
     private constructor(props: TProps) {
       entityProps.set(this, props);
     }
@@ -85,5 +97,28 @@ export function createEntity<TProps extends { id: string }, TActions extends Rec
 
       return actionMethods;
     }
+  }
+
+  // Add computed properties as getters on the prototype
+  if (config.computed) {
+    for (const key in config.computed) {
+      if (Object.prototype.hasOwnProperty.call(config.computed, key)) {
+        Object.defineProperty(Entity.prototype, key, {
+          get: function () {
+            const state = entityProps.get(this);
+            return (config.computed as TComputed)[key](state);
+          },
+          enumerable: true,
+        });
+      }
+    }
+  }
+
+  // Return type with computed properties
+  type EntityInstance = Entity & ComputedGetters<TComputed>;
+  
+  return Entity as {
+    new (props: TProps): EntityInstance;
+    create(data: unknown): EntityInstance;
   };
 }

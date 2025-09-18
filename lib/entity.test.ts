@@ -26,6 +26,10 @@ const User = createEntity({
 			state.isActive = false;
 		},
 	},
+	computed: {
+		displayName: (state: UserProps) => `${state.name} (${state.email})`,
+		isActiveText: (state: UserProps) => state.isActive ? "Active" : "Inactive",
+	},
 });
 
 describe("createEntity with Immer", () => {
@@ -85,5 +89,21 @@ describe("createEntity with Immer", () => {
 
 		expect(user1.equals(user2)).toBe(true);
 		expect(user1.equals(user3)).toBe(false);
+	});
+
+	it("should correctly calculate and access computed properties", () => {
+		const user = User.create(validUserData);
+
+		// 1. Check initial computed values
+		expect(user.displayName).toBe("John Doe (john.doe@example.com)");
+		expect(user.isActiveText).toBe("Active");
+
+		// 2. Execute an action to change the state
+		user.actions.updateName("Jane Doe");
+		user.actions.deactivate();
+
+		// 3. Check if computed values updated
+		expect(user.displayName).toBe("Jane Doe (john.doe@example.com)");
+		expect(user.isActiveText).toBe("Inactive");
 	});
 });
