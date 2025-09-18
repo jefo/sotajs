@@ -349,6 +349,67 @@ const createOrderUseCase = async (userId: string) => {
 - Логически группировать связанные порты
 - Сохранить явность зависимостей без "магии"
 
+### Composition Roots для Модулей
+
+Для еще большей гибкости можно создавать composition roots для модулей, которые позволяют использовать разные реализации адаптеров в зависимости от среды выполнения (тестирование, разработка, production):
+
+```typescript
+import { createPort } from '@maxdev1/sotajs';
+import { createModule, useModule } from '@maxdev1/sotajs/lib/module';
+import { 
+  createModuleComposition,
+  createEnvironmentModuleComposition,
+  applyModuleComposition
+} from '@maxdev1/sotajs/lib/module-composition';
+
+// Определение портов
+const findUserPort = createPort<() => Promise<{ id: string; name: string }>>();
+const saveOrderPort = createPort<(order: { id: string; userId: string }) => Promise<void>>();
+const sendEmailPort = createPort<(email: { to: string; subject: string }) => Promise<void>>();
+
+// Создание модуля
+const orderModule = createModule({
+  findUser: findUserPort,
+  saveOrder: saveOrderPort,
+  sendEmail: sendEmailPort
+});
+
+// Определение compositions для разных сред
+const testComposition = createModuleComposition({
+  findUser: async () => ({ id: "test-1", name: "Test User" }),
+  saveOrder: async (order) => { /* in-memory implementation */ },
+  sendEmail: async (email) => { /* mock implementation */ }
+});
+
+const productionComposition = createModuleComposition({
+  findUser: async () => { /* database implementation */ },
+  saveOrder: async (order) => { /* database implementation */ },
+  sendEmail: async (email) => { /* email service implementation */ }
+});
+
+// Создание environment compositions
+const compositions = {
+  test: testComposition,
+  development: testComposition,
+  production: productionComposition
+};
+
+// Применение соответствующей composition в зависимости от среды
+const environment = process.env.NODE_ENV || 'test';
+const environmentComposition = createEnvironmentModuleComposition(environment, compositions);
+applyModuleComposition(orderModule, environmentComposition);
+
+// Теперь модуль использует правильные адаптеры для текущей среды
+const { findUser, saveOrder, sendEmail } = useModule(orderModule);
+```
+
+Этот подход позволяет:
+- Легко переключаться между разными средами выполнения
+- Иметь чистую конфигурацию для тестирования с in-memory адаптерами
+- Использовать production адаптеры в реальной среде
+- Сохранять четкое разделение между бизнес-логикой и инфраструктурой
+- Создавать любое количество пользовательских compositions для разных нужд
+
 ## 6. Процесс разработки в Sota
 
 Sota предлагает строгий "inside-out" подход к разработке.

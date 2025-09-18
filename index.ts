@@ -16,6 +16,14 @@ export { deepFreeze } from "./lib/utils";
 export { createModule, useModule } from "./lib/module";
 export type { Module } from "./lib/module";
 
+// Module composition exports
+export {
+	createModuleComposition,
+	applyModuleComposition,
+	createEnvironmentModuleComposition
+} from "./lib/module-composition";
+export type { ModuleComposition } from "./lib/module-composition";
+
 // Types exports
 export type { AggregateConfig } from "./lib/aggregate";
 export type { EntityConfig } from "./lib/entity";

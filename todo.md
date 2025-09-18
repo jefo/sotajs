@@ -24,8 +24,6 @@ const { findUser, saveOrder, sendEmail } = useModule(orderPorts);
 - Encourages better organization of dependencies into logical groups.
 - Maintains explicitness without introducing "magic".
 
----
-
 ## 2. Differentiate Queries and Commands (CQRS-like approach)
 
 **Concept:** The current Use Case pattern (fire-and-forget with Output Ports) is excellent for **Commands** but can be verbose for simple **Queries**. Introduce a new, simpler pattern for queries.
@@ -53,9 +51,46 @@ const getUserQuery = async ({ id }: { id: string }) => {
 - **CQRS Alignment:** Creates a clear conceptual separation between state-changing Commands and data-reading Queries.
 - **Reduced Boilerplate:** Eliminates the need for output ports for simple queries.
 
----
+## 3. Module Composition Roots ✅ COMPLETED
 
-## 3. Improve Domain Object Ergonomics with Direct Method Access
+**Concept:** Create composition roots for modules that can be used in different hexagons (testing, production, etc.).
+
+**Implementation:**
+```typescript
+// Define environment-specific compositions
+const testComposition = createModuleComposition({
+  findUser: async () => ({ id: "test-1", name: "Test User" }),
+  saveOrder: async (order) => { /* in-memory implementation */ },
+  sendEmail: async (email) => { /* mock implementation */ }
+});
+
+const productionComposition = createModuleComposition({
+  findUser: async () => { /* database implementation */ },
+  saveOrder: async (order) => { /* database implementation */ },
+  sendEmail: async (email) => { /* email service implementation */ }
+});
+
+// Create environment compositions
+const compositions = {
+  test: testComposition,
+  development: testComposition,
+  production: productionComposition
+};
+
+// Apply the appropriate composition based on environment
+const environment = process.env.NODE_ENV || 'test';
+const environmentComposition = createEnvironmentModuleComposition(environment, compositions);
+applyModuleComposition(orderModule, environmentComposition);
+```
+
+**Benefits:**
+- Enables easy switching between different environments
+- Provides clean configuration for testing with in-memory adapters
+- Allows using production adapters in real environment
+- Maintains clear separation between business logic and infrastructure
+- Type-safe validation of port-adapter mappings
+
+## 4. Improve Domain Object Ergonomics with Direct Method Access
 
 **Concept:** Make the API for interacting with domain objects more natural by attaching action methods directly to the instance.
 
