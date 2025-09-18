@@ -303,6 +303,52 @@ const myUseCase = async () => {
 };
 ```
 
+### Группировка портов в Модули
+
+Для еще большего удобства можно группировать связанные порты в модули:
+
+```typescript
+import { createPort, setPortAdapter } from '@maxdev1/sotajs';
+import { createModule, useModule } from '@maxdev1/sotajs/lib/module';
+
+// Определение портов
+const findUserPort = createPort<() => Promise<{ id: string; name: string }>>();
+const saveOrderPort = createPort<(order: { id: string; userId: string }) => Promise<void>>();
+const sendEmailPort = createPort<(email: { to: string; subject: string }) => Promise<void>>();
+
+// Создание модуля, объединяющего связанные порты
+const orderModule = createModule({
+  findUser: findUserPort,
+  saveOrder: saveOrderPort,
+  sendEmail: sendEmailPort
+});
+
+// Связывание портов с адаптерами
+setPortAdapter(findUserPort, async () => ({ id: "1", name: "John Doe" }));
+setPortAdapter(saveOrderPort, async (order) => { /* логика сохранения */ });
+setPortAdapter(sendEmailPort, async (email) => { /* логика отправки */ });
+
+// Использование модуля в Use Case
+const createOrderUseCase = async (userId: string) => {
+  // Вместо нескольких вызовов usePort()
+  // const findUser = usePort(findUserPort);
+  // const saveOrder = usePort(saveOrderPort);
+  // const sendEmail = usePort(sendEmailPort);
+  
+  // Можно использовать один вызов useModule()
+  const { findUser, saveOrder, sendEmail } = useModule(orderModule);
+  
+  const user = await findUser();
+  await saveOrder({ id: "order-123", userId });
+  await sendEmail({ to: user.name, subject: "Order Confirmation" });
+};
+```
+
+Модули позволяют:
+- Сократить шаблонный код при работе с несколькими зависимостями
+- Логически группировать связанные порты
+- Сохранить явность зависимостей без "магии"
+
 ## 6. Процесс разработки в Sota
 
 Sota предлагает строгий "inside-out" подход к разработке.

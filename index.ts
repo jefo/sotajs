@@ -12,6 +12,10 @@ export {
 } from "./lib/di.v2";
 export { deepFreeze } from "./lib/utils";
 
+// Module exports
+export { createModule, useModule } from "./lib/module";
+export type { Module } from "./lib/module";
+
 // Types exports
 export type { AggregateConfig } from "./lib/aggregate";
 export type { EntityConfig } from "./lib/entity";
