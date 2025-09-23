@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { produce } from 'immer';
-import { deepFreeze } from './utils';
+import { z } from "zod";
+import { produce } from "immer";
+import { deepFreeze } from "./utils";
 
 // WeakMap to store internal state
 const valueObjectProps = new WeakMap<any, any>();
@@ -88,10 +88,10 @@ export function createValueObject<
 		}
 	};
 
-	type ValueObjectInstance = InstanceType<typeof ValueObject>;
+	type ValueObjectInstance = ReturnType<typeof ValueObject.create>;
 
 	return ValueObject as {
 		new (props: Props): ValueObjectInstance;
-		create(data: unknown): ValueObjectInstance;
+		create(data: Props): ValueObjectInstance;
 	};
 }
