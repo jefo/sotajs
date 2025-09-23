@@ -1,6 +1,6 @@
 // ============================================================================
 // COMPOSITION ROOT EXAMPLE
-// 
+//
 // This shows how to bind presentation adapters to semantic output ports.
 //
 // Key principles:
@@ -12,18 +12,24 @@
 import { setPortAdapter, resetDI } from "./di.v2";
 
 // Import the semantic output ports from the use case (with *OutPort suffix)
-import { 
-  UserUpdatedOutPort, 
-  UserUpdateFailedOutPort,
-  findUserByIdPort,
-  saveUserPort
+import {
+	UserUpdatedOutPort,
+	UserUpdateFailedOutPort,
+	findUserByIdPort,
+	saveUserPort,
 } from "./semantic-ports.test";
 
 // Import presentation adapters
-import { consoleUserUpdated, consoleUserUpdateFailed } from "./presentation-adapters.example";
+import {
+	consoleUserUpdated,
+	consoleUserUpdateFailed,
+} from "./presentation-adapters.example";
 
 // Import data adapters
-import { inMemoryFindUserById, inMemorySaveUser } from "./data-adapters.example";
+import {
+	inMemoryFindUserById,
+	inMemorySaveUser,
+} from "./data-adapters.example";
 
 // ============================================================================
 // APPLICATION BOOTSTRAP FUNCTIONS
@@ -31,27 +37,27 @@ import { inMemoryFindUserById, inMemorySaveUser } from "./data-adapters.example"
 
 // Bootstrap with console presentation
 export const bootstrapApplication = () => {
-  resetDI();
-  
-  // Bind data ports to infrastructure adapters
-  setPortAdapter(findUserByIdPort, inMemoryFindUserById);
-  setPortAdapter(saveUserPort, inMemorySaveUser);
-  
-  // Bind semantic output ports to presentation adapters
-  // This is where we choose which UI channel to use
-  setPortAdapter(UserUpdatedOutPort, consoleUserUpdated);
-  setPortAdapter(UserUpdateFailedOutPort, consoleUserUpdateFailed);
+	resetDI();
+
+	// Bind data ports to infrastructure adapters
+	setPortAdapter(findUserByIdPort, inMemoryFindUserById);
+	setPortAdapter(saveUserPort, inMemorySaveUser);
+
+	// Bind semantic output ports to presentation adapters
+	// This is where we choose which UI channel to use
+	setPortAdapter(UserUpdatedOutPort, consoleUserUpdated);
+	setPortAdapter(UserUpdateFailedOutPort, consoleUserUpdateFailed);
 };
 
 // Example of switching to web presentation
 export const bootstrapWebApplication = () => {
-  resetDI();
-  
-  // Same data adapters
-  setPortAdapter(findUserByIdPort, inMemoryFindUserById);
-  setPortAdapter(saveUserPort, inMemorySaveUser);
-  
-  // Import web adapters (would be at the top in real code)
-  // setPortAdapter(UserUpdatedOutPort, webUserUpdated);
-  // setPortAdapter(UserUpdateFailedOutPort, webUserUpdateFailed);
+	resetDI();
+
+	// Same data adapters
+	setPortAdapter(findUserByIdPort, inMemoryFindUserById);
+	setPortAdapter(saveUserPort, inMemorySaveUser);
+
+	// Import web adapters (would be at the top in real code)
+	// setPortAdapter(UserUpdatedOutPort, webUserUpdated);
+	// setPortAdapter(UserUpdateFailedOutPort, webUserUpdateFailed);
 };

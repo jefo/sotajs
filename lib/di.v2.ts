@@ -58,23 +58,6 @@ export function setPortAdapter<T extends (...args: any[]) => any>(
 }
 
 /**
- * Binds a specific implementation (adapter) to a port with dependencies.
- * @param port - The port descriptor created via createPort().
- * @param factory - A function that creates the adapter implementation, potentially using other ports.
- * @throws {Error} If the port is invalid or unregistered.
- */
-export function setPortAdapterWithDependencies<
-	T extends (...args: any[]) => any,
->(port: Port<T>, factory: () => T): void {
-	const portId = port[PORT_ID_SYMBOL];
-	if (!portId || !portRegistry.has(portId)) {
-		throw new Error("An invalid or unregistered port was provided.");
-	}
-
-	container.factory(portId, factory);
-}
-
-/**
  * Retrieves a port's implementation from the DI container.
  * @param port - The port descriptor for which to retrieve the implementation.
  * @returns T - The implementation function (adapter).
@@ -96,7 +79,10 @@ export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
 	return implementation as T;
 }
 
-export type PortAdapterPair<T extends (...args: any[]) => any = any> = [Port<T>, T];
+export type PortAdapterPair<T extends (...args: any[]) => any = any> = [
+	Port<T>,
+	T,
+];
 
 /**
  * Binds multiple implementations (adapters) to their corresponding ports in a single call.
@@ -104,17 +90,19 @@ export type PortAdapterPair<T extends (...args: any[]) => any = any> = [Port<T>,
  * @throws {Error} If any port is invalid or unregistered.
  */
 export function setPortAdapters(pairs: ReadonlyArray<PortAdapterPair>): void {
-  for (const [port, adapter] of pairs) {
-    const portId = port[PORT_ID_SYMBOL];
-    if (!portId || !portRegistry.has(portId)) {
-      throw new Error("An invalid or unregistered port was provided in the array.");
-    }
-    container.factory(portId, () => adapter);
-  }
+	for (const [port, adapter] of pairs) {
+		const portId = port[PORT_ID_SYMBOL];
+		if (!portId || !portRegistry.has(portId)) {
+			throw new Error(
+				"An invalid or unregistered port was provided in the array.",
+			);
+		}
+		container.factory(portId, () => adapter);
+	}
 }
 
 export type PortsToAdapters<T extends readonly Port<any>[]> = {
-  -readonly [P in keyof T]: T[P] extends Port<infer U> ? U : never;
+	-readonly [P in keyof T]: T[P] extends Port<infer U> ? U : never;
 };
 
 /**
@@ -123,9 +111,11 @@ export type PortsToAdapters<T extends readonly Port<any>[]> = {
  * @returns T - An array of implementation functions (adapters), in the same order as the input ports.
  * @throws {Error} If any port is invalid, unregistered, or has no implementation.
  */
-export function usePorts<T extends readonly Port<any>[]>(...ports: T): PortsToAdapters<T> {
-  const implementations = ports.map(port => usePort(port));
-  return implementations as PortsToAdapters<T>;
+export function usePorts<T extends readonly Port<any>[]>(
+	...ports: T
+): PortsToAdapters<T> {
+	const implementations = ports.map((port) => usePort(port));
+	return implementations as PortsToAdapters<T>;
 }
 
 /**
