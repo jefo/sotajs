@@ -7,15 +7,17 @@ const AddressSchema = z.object({
   street: z.string().min(1),
   city: z.string().min(1),
   zip: z.string().length(5),
-  coords: z.object({
-    lat: z.number(),
-    lon: z.number(),
-  }).optional(),
+  coords: z
+    .object({
+      lat: z.number(),
+      lon: z.number(),
+    })
+    .optional(),
 });
 type AddressProps = z.infer<typeof AddressSchema>;
 
 // Create the Value Object class
-const Address = createValueObject(AddressSchema);
+const Address = createValueObject({ schema: AddressSchema });
 
 describe('createValueObject', () => {
   const validAddressData: AddressProps = {
@@ -39,7 +41,7 @@ describe('createValueObject', () => {
 
   it('should ensure immutability of the Value Object', () => {
     const address = Address.create(validAddressData);
-    
+
     // Attempt to modify a top-level property
     expect(() => {
       (address.props as any).street = 'New Street';
@@ -80,5 +82,76 @@ describe('createValueObject', () => {
 
     expect(addressA.equals(addressB)).toBe(true);
     expect(addressA.equals(addressC)).toBe(false);
+  });
+});
+
+describe('ValueObject with actions', () => {
+  const PointSchema = z.object({
+    x: z.number(),
+    y: z.number(),
+  });
+
+  type PointProps = z.infer<typeof PointSchema>;
+
+  const Point = createValueObject({
+    schema: PointSchema,
+    actions: {
+      move(state: PointProps, dx: number, dy: number) {
+        state.x += dx;
+        state.y += dy;
+      },
+      reset(state: PointProps) {
+        state.x = 0;
+        state.y = 0;
+      },
+    },
+  });
+
+  it('should return a new Value Object instance after an action', () => {
+    const point1 = Point.create({ x: 10, y: 20 });
+    const point2 = point1.actions.move(5, -5);
+
+    expect(point2).toBeInstanceOf(Point);
+    expect(point2).not.toBe(point1); // Should be a new instance
+  });
+
+  it('should have the updated state in the new instance', () => {
+    const point1 = Point.create({ x: 10, y: 20 });
+    const point2 = point1.actions.move(5, -5);
+
+    expect(point2.props).toEqual({ x: 15, y: 15 });
+  });
+
+  it('should not mutate the original Value Object', () => {
+    const point1 = Point.create({ x: 10, y: 20 });
+    point1.actions.move(5, -5);
+
+    expect(point1.props).toEqual({ x: 10, y: 20 }); // Original should be unchanged
+  });
+
+  it('should handle multiple actions', () => {
+    const point = Point.create({ x: 10, y: 20 });
+    const movedPoint = point.actions.move(5, 5);
+    const resetPoint = movedPoint.actions.reset();
+
+    expect(resetPoint.props).toEqual({ x: 0, y: 0 });
+  });
+
+  it('should throw an error if an action results in an invalid state', () => {
+    const GuardedPoint = createValueObject({
+      schema: z.object({
+        x: z.number().max(100),
+      }),
+      actions: {
+        add(state: { x: number }, amount: number) {
+          state.x += amount;
+        },
+      },
+    });
+
+    const point = GuardedPoint.create({ x: 90 });
+
+    // This should throw because 90 + 20 = 110, which violates the schema (max 100)
+    expect(() => point.actions.add(20)).toThrow();
   });
 });

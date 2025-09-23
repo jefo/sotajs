@@ -1,17 +1,29 @@
-import { z } from "zod";
-import { deepFreeze } from "./utils";
+import { z } from 'zod';
+import { produce } from 'immer';
+import { deepFreeze } from './utils';
+
+export interface ValueObjectConfig<
+	TProps,
+	TActions extends Record<string, (state: TProps, ...args: any[]) => void>,
+> {
+	schema: z.ZodType<TProps>;
+	actions?: TActions;
+}
 
 /**
  * A factory function that creates a Value Object class.
  * Value Objects are defined by their attributes and are immutable.
  *
- * @param schema - The Zod schema defining the shape and validation of the VO.
+ * @param config - The configuration for the value object, including its schema and actions.
  * @returns A class for the Value Object.
  */
-export function createValueObject<T extends z.ZodTypeAny>(schema: T) {
-	type Props = z.infer<T>;
+export function createValueObject<
+	TProps,
+	TActions extends Record<string, (state: TProps, ...args: any[]) => void> = {},
+>(config: ValueObjectConfig<TProps, TActions>) {
+	type Props = z.infer<typeof config.schema>;
 
-	return class ValueObject {
+	const ValueObject = class ValueObject {
 		public readonly props: Readonly<Props>;
 
 		private constructor(props: Props) {
@@ -25,7 +37,7 @@ export function createValueObject<T extends z.ZodTypeAny>(schema: T) {
 		 * @param data - The raw data for creating the VO.
 		 */
 		public static create(data: unknown): ValueObject {
-			const parsedData = schema.parse(data);
+			const parsedData = config.schema.parse(data);
 			return new ValueObject(parsedData);
 		}
 
@@ -40,5 +52,38 @@ export function createValueObject<T extends z.ZodTypeAny>(schema: T) {
 			// A simple but effective way to check for deep equality.
 			return JSON.stringify(this.props) === JSON.stringify(other.props);
 		}
+
+		public get actions(): {
+			[K in keyof TActions]: (
+				...args: TActions[K] extends (state: Props, ...args: infer P) => any
+					? P
+					: never
+			) => ValueObject;
+		} {
+			const actionMethods: any = {};
+
+			if (!config.actions) {
+				return actionMethods;
+			}
+
+			for (const [actionName, actionFn] of Object.entries(config.actions)) {
+				actionMethods[actionName] = (...args: any[]) => {
+					const currentState = this.props;
+					const nextState = produce(currentState, (draft: Props) => {
+						(actionFn as any)(draft, ...args);
+					});
+					return (this.constructor as typeof ValueObject).create(nextState);
+				};
+			}
+
+			return actionMethods;
+		}
+	};
+
+	type ValueObjectInstance = InstanceType<typeof ValueObject>;
+
+	return ValueObject as {
+		new (props: Props): ValueObjectInstance;
+		create(data: unknown): ValueObjectInstance;
 	};
 }

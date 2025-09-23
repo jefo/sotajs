@@ -1,4 +1,4 @@
-import { createPort } from '../di';
+import { createPort } from '../di.v2';
 
 /**
  * Defines the standard interface for a logger within the Sota framework.
