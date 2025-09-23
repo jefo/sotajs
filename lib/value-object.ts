@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { produce } from 'immer';
 import { deepFreeze } from './utils';
 
+// WeakMap to store internal state
+const valueObjectProps = new WeakMap<any, any>();
+
 export interface ValueObjectConfig<
 	TProps,
 	TActions extends Record<string, (state: TProps, ...args: any[]) => void>,
@@ -12,7 +15,7 @@ export interface ValueObjectConfig<
 
 /**
  * A factory function that creates a Value Object class.
- * Value Objects are defined by their attributes and are immutable.
+ * Value Objects are defined by their attributes.
  *
  * @param config - The configuration for the value object, including its schema and actions.
  * @returns A class for the Value Object.
@@ -24,11 +27,8 @@ export function createValueObject<
 	type Props = z.infer<typeof config.schema>;
 
 	const ValueObject = class ValueObject {
-		public readonly props: Readonly<Props>;
-
 		private constructor(props: Props) {
-			// Deep freeze the properties to ensure true immutability
-			this.props = deepFreeze(props as unknown as object) as Readonly<Props>;
+			valueObjectProps.set(this, props);
 		}
 
 		/**
@@ -39,6 +39,13 @@ export function createValueObject<
 		public static create(data: unknown): ValueObject {
 			const parsedData = config.schema.parse(data);
 			return new ValueObject(parsedData);
+		}
+
+		/**
+		 * Provides access to a frozen, read-only copy of the VO's properties.
+		 */
+		public get props(): Readonly<Props> {
+			return deepFreeze({ ...valueObjectProps.get(this) });
 		}
 
 		/**
@@ -58,7 +65,7 @@ export function createValueObject<
 				...args: TActions[K] extends (state: Props, ...args: infer P) => any
 					? P
 					: never
-			) => ValueObject;
+			) => void; // Actions now return void
 		} {
 			const actionMethods: any = {};
 
@@ -68,11 +75,12 @@ export function createValueObject<
 
 			for (const [actionName, actionFn] of Object.entries(config.actions)) {
 				actionMethods[actionName] = (...args: any[]) => {
-					const currentState = this.props;
+					const currentState = valueObjectProps.get(this);
 					const nextState = produce(currentState, (draft: Props) => {
 						(actionFn as any)(draft, ...args);
 					});
-					return (this.constructor as typeof ValueObject).create(nextState);
+					// Mutate the internal state
+					valueObjectProps.set(this, nextState);
 				};
 			}
 

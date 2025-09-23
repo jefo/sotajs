@@ -99,12 +99,14 @@ export function createAggregate<
 
 			if (config.entities) {
 				for (const key in config.entities) {
-					if (
-						Object.prototype.hasOwnProperty.call(hydratedState, key) &&
-						hydratedState[key] &&
-						typeof hydratedState[key].state !== 'undefined'
-					) {
-						dehydratedState[key] = hydratedState[key].state;
+					if (Object.prototype.hasOwnProperty.call(hydratedState, key) && hydratedState[key]) {
+						if (typeof hydratedState[key].state !== 'undefined') {
+							// Dehydrate Entity
+							dehydratedState[key] = hydratedState[key].state;
+						} else if (typeof hydratedState[key].props !== 'undefined') {
+							// Dehydrate Value Object
+							dehydratedState[key] = hydratedState[key].props;
+						}
 					}
 				}
 			}

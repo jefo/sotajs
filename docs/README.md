@@ -29,21 +29,41 @@ Sota (Сота) — это TypeScript-фреймворк для разработ
 
 ### 3.1. Объекты-значения (Value Objects)
 
-Объект-значение — неизменяемый объект без ID, определяемый своими атрибутами. Используйте `createValueObject` для таких понятий, как деньги, адрес или диапазон дат.
+Объект-значение — неизменяемый объект без ID, определяемый своими атрибутами. Для создания VO используется функция `createValueObject`, которая принимает конфигурационный объект со схемой `zod` и опциональным списком `actions`.
 
 > **Критерий выбора:** Задайте вопрос: "Описывает ли этот объект некую характеристику, не имеет собственной идентичности и полностью определяется своими атрибутами (как цвет или сумма)?"
+
+Действия (`actions`) в Value Object **изменяют его внутреннее состояние** напрямую, аналогично поведению `Entity`. Это позволяет использовать более удобный синтаксис, без необходимости переприсваивания.
 
 ```typescript
 import { z } from 'zod';
 import { createValueObject } from '@maxdev1/sotajs';
 
-const AddressSchema = z.object({
-  street: z.string(),
-  city: z.string(),
+// 1. Определяем схему и тип
+const MoneySchema = z.object({
+  amount: z.number(),
+  currency: z.string().length(3),
 });
+type MoneyProps = z.infer<typeof MoneySchema>;
 
-export const Address = createValueObject(AddressSchema, 'Address');
-export type Address = ReturnType<typeof Address.create>;
+// 2. Создаем класс Value Object с действиями
+export const Money = createValueObject({
+  schema: MoneySchema,
+  actions: {
+    add(state: MoneyProps, amountToAdd: number) {
+      state.amount += amountToAdd;
+    },
+    changeCurrency(state: MoneyProps, newCurrency: string) {
+      state.currency = newCurrency.toUpperCase();
+    },
+  },
+});
+export type Money = ReturnType<typeof Money.create>;
+
+// --- Использование ---
+// const price = Money.create({ amount: 100, currency: 'USD' });
+// price.actions.add(50);
+// price.props.amount === 150 (объект изменился)
 ```
 
 ### 3.2. Сущности (Entities)
