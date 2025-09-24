@@ -153,3 +153,50 @@ describe('ValueObject with actions', () => {
     expect(() => GuardedPoint.create(point.props)).toThrow();
   });
 });
+
+describe('ValueObject with computed properties', () => {
+  const RectSchema = z.object({
+    width: z.number(),
+    height: z.number(),
+  });
+
+  type RectProps = z.infer<typeof RectSchema>;
+
+  const Rectangle = createValueObject({
+    schema: RectSchema,
+    actions: {
+      setWidth(state: RectProps, width: number) {
+        state.width = width;
+      },
+    },
+    computed: {
+      area: (state) => state.width * state.height,
+      isSquare: (state) => state.width === state.height,
+    },
+  });
+
+  it('should return the correct value for computed properties', () => {
+    const rect = Rectangle.create({ width: 10, height: 20 });
+    expect(rect.area).toBe(200);
+  });
+
+  it('should update computed properties when state changes', () => {
+    const rect = Rectangle.create({ width: 10, height: 20 });
+    expect(rect.area).toBe(200);
+
+    rect.actions.setWidth(15);
+    expect(rect.props.width).toBe(15);
+    expect(rect.area).toBe(300); // 15 * 20
+  });
+
+  it('should correctly compute boolean values', () => {
+    const square = Rectangle.create({ width: 10, height: 10 });
+    expect(square.isSquare).toBe(true);
+
+    const rect = Rectangle.create({ width: 10, height: 20 });
+    expect(rect.isSquare).toBe(false);
+
+    rect.actions.setWidth(20);
+    expect(rect.isSquare).toBe(true);
+  });
+});

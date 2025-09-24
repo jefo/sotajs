@@ -5,12 +5,23 @@ import { deepFreeze } from "./utils";
 // WeakMap to store internal state
 const valueObjectProps = new WeakMap<any, any>();
 
+// Type for computed properties
+type ComputedGetters<TComputed> = TComputed extends Record<string, any>
+	? {
+			[K in keyof TComputed]: TComputed[K] extends (state: any) => infer R
+				? R
+				: never;
+		}
+	: {};
+
 export interface ValueObjectConfig<
 	TProps,
 	TActions extends Record<string, (state: TProps, ...args: any[]) => void>,
+	TComputed extends Record<string, (state: TProps) => any> = {},
 > {
 	schema: z.ZodType<TProps>;
 	actions?: TActions;
+	computed?: TComputed;
 }
 
 /**
@@ -23,10 +34,11 @@ export interface ValueObjectConfig<
 export function createValueObject<
 	TProps,
 	TActions extends Record<string, (state: TProps, ...args: any[]) => void> = {},
->(config: ValueObjectConfig<TProps, TActions>) {
+	TComputed extends Record<string, (state: TProps) => any> = {},
+>(config: ValueObjectConfig<TProps, TActions, TComputed>) {
 	type Props = z.infer<typeof config.schema>;
 
-	const ValueObject = class ValueObject {
+	class ValueObject {
 		private constructor(props: Props) {
 			valueObjectProps.set(this, props);
 		}
@@ -86,9 +98,25 @@ export function createValueObject<
 
 			return actionMethods;
 		}
-	};
+	}
 
-	type ValueObjectInstance = ReturnType<typeof ValueObject.create>;
+	// Add computed properties as getters on the prototype
+	if (config.computed) {
+		for (const key in config.computed) {
+			if (Object.prototype.hasOwnProperty.call(config.computed, key)) {
+				Object.defineProperty(ValueObject.prototype, key, {
+					get: function () {
+						const state = valueObjectProps.get(this);
+						return (config.computed as TComputed)[key](state);
+					},
+					enumerable: true,
+				});
+			}
+		}
+	}
+
+	// Return type with computed properties
+	type ValueObjectInstance = ValueObject & ComputedGetters<TComputed>;
 
 	return ValueObject as {
 		new (props: Props): ValueObjectInstance;
