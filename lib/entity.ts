@@ -7,13 +7,13 @@ const entityProps = new WeakMap<any, any>();
 
 // Type for computed properties
 type ComputedGetters<TComputed> = TComputed extends Record<string, any>
-  ? { [K in keyof TComputed]: TComputed[K] extends (state: any) => infer R ? R : never }
+  ? { [K in keyof TComputed]: TComputed[K] extends (props: any) => infer R ? R : never }
   : {};
 
 export interface EntityConfig<
   TProps extends { id: string },
   TActions extends Record<string, any>,
-  TComputed extends Record<string, (state: TProps) => any> = {}
+  TComputed extends Record<string, (props: TProps) => any> = {}
 > {
   schema: z.ZodType<TProps>;
   actions: TActions;
@@ -30,8 +30,8 @@ export interface EntityConfig<
  */
 export function createEntity<
   TProps extends { id: string },
-  TActions extends Record<string, (state: TProps, ...args: any[]) => void>,
-  TComputed extends Record<string, (state: TProps) => any> = {}
+  TActions extends Record<string, (props: TProps, ...args: any[]) => void>,
+  TComputed extends Record<string, (props: TProps) => any> = {}
 >(config: EntityConfig<TProps, TActions, TComputed>) {
   class Entity {
     private constructor(props: TProps) {
@@ -56,10 +56,17 @@ export function createEntity<
     }
 
     /**
-     * Provides access to a frozen copy of the entity's state.
+     * Provides access to a frozen copy of the entity's properties.
+     */
+    public get props(): Readonly<TProps> {
+      return deepFreeze({ ...entityProps.get(this) });
+    }
+
+    /**
+     * @deprecated Use .props instead. Will be removed in a future version.
      */
     public get state(): Readonly<TProps> {
-      return deepFreeze({ ...entityProps.get(this) });
+      return this.props;
     }
 
     /**
@@ -78,7 +85,7 @@ export function createEntity<
      */
     public get actions(): {
       [K in keyof TActions]: (
-        ...args: TActions[K] extends (state: TProps, ...args: infer P) => any
+        ...args: TActions[K] extends (props: TProps, ...args: infer P) => any
           ? P
           : never
       ) => void;
@@ -87,8 +94,8 @@ export function createEntity<
 
       for (const [actionName, actionFn] of Object.entries(config.actions)) {
         actionMethods[actionName] = (...args: any[]) => {
-          const currentState = entityProps.get(this);
-          const nextState = produce(currentState, (draft: TProps) => {
+          const currentProps = entityProps.get(this);
+          const nextState = produce(currentProps, (draft: TProps) => {
             actionFn(draft, ...args);
           });
           entityProps.set(this, nextState);
@@ -105,8 +112,8 @@ export function createEntity<
       if (Object.prototype.hasOwnProperty.call(config.computed, key)) {
         Object.defineProperty(Entity.prototype, key, {
           get: function () {
-            const state = entityProps.get(this);
-            return (config.computed as TComputed)[key](state);
+            const props = entityProps.get(this);
+            return (config.computed as TComputed)[key](props);
           },
           enumerable: true,
         });

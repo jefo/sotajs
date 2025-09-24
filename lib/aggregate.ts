@@ -18,7 +18,7 @@ type EntitiesMap<TProps> = {
 	[K in keyof TProps]?: EntityClass;
 };
 
-type HydratedState<TProps, TEntities> = {
+type HydratedProps<TProps, TEntities> = {
 	[K in keyof TProps]: K extends keyof TEntities
 		? TEntities[K] extends EntityClass
 			? ReturnType<TEntities[K]["create"]>
@@ -32,24 +32,24 @@ export interface AggregateConfig<
 	TEntities extends EntitiesMap<TProps>,
 	TActions extends Record<
 		string,
-		(state: HydratedState<TProps, TEntities>, ...args: any[]) => any
+		(props: HydratedProps<TProps, TEntities>, ...args: any[]) => any
 	>,
 	TComputed extends Record<
 		string,
-		(state: HydratedState<TProps, TEntities>) => any
+		(props: HydratedProps<TProps, TEntities>) => any
 	>,
 > {
 	name: string;
 	schema: z.ZodType<TProps>;
 	entities?: TEntities;
-	invariants: Array<(state: HydratedState<TProps, TEntities>) => void>;
+	invariants: Array<(props: HydratedProps<TProps, TEntities>) => void>;
 	actions: TActions;
 	computed?: TComputed;
 }
 
 type ComputedGetters<TComputed> = TComputed extends Record<string, any>
 	? {
-			[K in keyof TComputed]: TComputed[K] extends (state: any) => infer R
+			[K in keyof TComputed]: TComputed[K] extends (props: any) => infer R
 				? R
 				: never;
 		}
@@ -65,15 +65,15 @@ export function createAggregate<
 	TEntities extends EntitiesMap<TProps>,
 	TActions extends Record<
 		string,
-		(state: HydratedState<TProps, TEntities>, ...args: any[]) => any
+		(props: HydratedProps<TProps, TEntities>, ...args: any[]) => any
 	>,
 	TComputed extends Record<
 		string,
-		(state: HydratedState<TProps, TEntities>) => any
+		(props: HydratedProps<TProps, TEntities>) => any
 	>,
 >(config: AggregateConfig<TProps, TEntities, TActions, TComputed>) {
 	const Aggregate = class {
-		private constructor(props: HydratedState<TProps, TEntities>) {
+		private constructor(props: HydratedProps<TProps, TEntities>) {
 			aggregateProps.set(this, props);
 			aggregateEvents.set(this, []);
 		}
@@ -81,7 +81,7 @@ export function createAggregate<
 		public static create(data: unknown) {
 			const props = config.schema.parse(data) as TProps;
 
-			const hydratedProps = { ...props } as HydratedState<TProps, TEntities>;
+			const hydratedProps = { ...props } as HydratedProps<TProps, TEntities>;
 			if (config.entities) {
 				const entityKeys = Object.keys(config.entities) as (keyof TEntities)[];
 				for (const key of entityKeys) {
@@ -107,28 +107,35 @@ export function createAggregate<
 			return aggregateProps.get(this).id;
 		}
 
-		public get state(): Readonly<TProps> {
-			const hydratedState = aggregateProps.get(this);
-			const dehydratedState: any = { ...hydratedState };
+		public get props(): Readonly<TProps> {
+			const hydratedProps = aggregateProps.get(this);
+			const dehydratedProps: any = { ...hydratedProps };
 
 			if (config.entities) {
 				for (const key in config.entities) {
 					if (
-						Object.prototype.hasOwnProperty.call(hydratedState, key) &&
-						hydratedState[key]
+						Object.prototype.hasOwnProperty.call(hydratedProps, key) &&
+						hydratedProps[key]
 					) {
-						if (typeof hydratedState[key].state !== "undefined") {
+						if (typeof hydratedProps[key].props !== "undefined") {
+							// Dehydrate Entity or Value Object
+							dehydratedProps[key] = hydratedProps[key].props;
+						} else if (typeof hydratedProps[key].state !== "undefined") {
 							// Dehydrate Entity
-							dehydratedState[key] = hydratedState[key].state;
-						} else if (typeof hydratedState[key].props !== "undefined") {
-							// Dehydrate Value Object
-							dehydratedState[key] = hydratedState[key].props;
+							dehydratedProps[key] = hydratedProps[key].state;
 						}
 					}
 				}
 			}
 
-			return Object.freeze(dehydratedState);
+			return Object.freeze(dehydratedProps);
+		}
+
+		/**
+		 * @deprecated Use .props instead. Will be removed in a future version.
+		 */
+		public get state(): Readonly<TProps> {
+			return this.props;
 		}
 
 		public getPendingEvents(): IDomainEvent[] {
@@ -144,7 +151,7 @@ export function createAggregate<
 		public get actions(): {
 			[K in keyof TActions]: (
 				...args: TActions[K] extends (
-					state: HydratedState<TProps, TEntities>,
+					props: HydratedProps<TProps, TEntities>,
 					...args: infer P
 				) => any
 					? P
@@ -155,14 +162,14 @@ export function createAggregate<
 
 			for (const [actionName, actionFn] of Object.entries(config.actions)) {
 				actionMethods[actionName] = (...args: any[]) => {
-					const currentState = aggregateProps.get(this) as HydratedState<
+					const currentProps = aggregateProps.get(this) as HydratedProps<
 						TProps,
 						TEntities
 					>;
 
-					const nextState = produce(
-						currentState,
-						(draft: HydratedState<TProps, TEntities>) => {
+					const nextProps = produce(
+						currentProps,
+						(draft: HydratedProps<TProps, TEntities>) => {
 							const result = (actionFn as any)(draft, ...args);
 
 							if (result && result.event) {
@@ -174,10 +181,10 @@ export function createAggregate<
 					);
 
 					for (const invariant of config.invariants) {
-						invariant(nextState);
+						invariant(nextProps);
 					}
 
-					aggregateProps.set(this, nextState);
+					aggregateProps.set(this, nextProps);
 				};
 			}
 
@@ -190,8 +197,8 @@ export function createAggregate<
 			if (Object.prototype.hasOwnProperty.call(config.computed, key)) {
 				Object.defineProperty(Aggregate.prototype, key, {
 					get: function () {
-						const state = aggregateProps.get(this);
-						return (config.computed as TComputed)[key](state);
+						const props = aggregateProps.get(this);
+						return (config.computed as TComputed)[key](props);
 					},
 					enumerable: true,
 				});

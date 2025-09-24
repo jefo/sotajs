@@ -27,8 +27,8 @@ const User = createEntity({
 		},
 	},
 	computed: {
-		displayName: (state: UserProps) => `${state.name} (${state.email})`,
-		isActiveText: (state: UserProps) => state.isActive ? "Active" : "Inactive",
+		displayName: (props: UserProps) => `${props.name} (${props.email})`,
+		isActiveText: (props: UserProps) => props.isActive ? "Active" : "Inactive",
 	},
 });
 
@@ -44,7 +44,7 @@ describe("createEntity with Immer", () => {
 		const user = User.create(validUserData);
 		expect(user).toBeInstanceOf(User);
 		expect(user.id).toBe(validUserData.id);
-		expect(user.state.name).toBe("John Doe");
+		expect(user.props.name).toBe("John Doe");
 	});
 
 	it("should throw an error if initial data violates the schema", () => {
@@ -54,17 +54,17 @@ describe("createEntity with Immer", () => {
 
 	it("should allow state modification through actions and maintain immutability", () => {
 		const user = User.create(validUserData);
-		const originalState = user.state;
+		const originalState = user.props;
 
 		user.actions.updateName("Jane Doe");
-		const afterNameUpdateState = user.state;
+		const afterNameUpdateState = user.props;
 
 		expect(afterNameUpdateState.name).toBe("Jane Doe");
 		expect(afterNameUpdateState).not.toBe(originalState);
 		expect(originalState.name).toBe("John Doe");
 
 		user.actions.deactivate();
-		const afterDeactivateState = user.state;
+		const afterDeactivateState = user.props;
 
 		expect(afterDeactivateState.isActive).toBe(false);
 		expect(afterDeactivateState).not.toBe(afterNameUpdateState);
@@ -73,13 +73,13 @@ describe("createEntity with Immer", () => {
 
 	it("should ensure immutability of the returned state object", () => {
 		const user = User.create(validUserData);
-		const state = user.state;
+		const props = user.props;
 
 		expect(() => {
-			(state as any).name = "Attempted Change";
+			(props as any).name = "Attempted Change";
 		}).toThrow(); // In strict mode, this will be a TypeError
 
-		expect(user.state.name).toBe("John Doe"); // Original state should be unchanged
+		expect(user.props.name).toBe("John Doe"); // Original state should be unchanged
 	});
 
 	it("should correctly check for identity equality", () => {

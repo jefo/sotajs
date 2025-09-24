@@ -46,8 +46,8 @@ const Order = createAggregate({
 		form: Form, // Map the 'form' property to the Form entity class
 	},
 	invariants: [
-		(state) => {
-			if (state.amount <= 0) {
+		(props) => {
+			if (props.amount <= 0) {
 				throw new Error("Order amount must be positive.");
 			}
 		},
@@ -77,7 +77,7 @@ const Order = createAggregate({
 		},
 	},
 	computed: {
-		isPaid: (state) => state.status === "paid",
+		isPaid: (props) => props.status === "paid",
 	},
 });
 
@@ -97,7 +97,7 @@ describe("createAggregate with Immer", () => {
 	it("should create an aggregate instance with valid data", () => {
 		const order = Order.create(validOrderData);
 		expect(order).toBeInstanceOf(Order);
-		expect(order.state.status).toBe("pending");
+		expect(order.props.status).toBe("pending");
 	});
 
 	it("should throw an error if initial data violates the schema", () => {
@@ -107,15 +107,15 @@ describe("createAggregate with Immer", () => {
 
 	it("should successfully execute an action and change state", () => {
 		const order = Order.create(validOrderData);
-		const originalState = order.state;
+		const originalProps = order.props;
 
 		order.actions.pay("credit-card");
 
-		const newState = order.state;
-		expect(newState.status).toBe("paid");
+		const newProps = order.props;
+		expect(newProps.status).toBe("paid");
 		// Verify immutability
-		expect(newState).not.toBe(originalState);
-		expect(originalState.status).toBe("pending");
+		expect(newProps).not.toBe(originalProps);
+		expect(originalProps.status).toBe("pending");
 	});
 
 	it("should collect domain events when an action is executed", () => {
@@ -172,25 +172,25 @@ describe("createAggregate with Immer", () => {
 			// The internal `form` property should be an instance of Form, not a plain object.
 			// We can't access it directly, but we can verify its behavior through actions.
 			// The public `state` should still be a plain object.
-			expect(order.state.form.title).toBe("Initial Title");
-			expect(order.state.form).not.toBeInstanceOf(Form);
+			expect(order.props.form.title).toBe("Initial Title");
+			expect(order.props.form).not.toBeInstanceOf(Form);
 		});
 
 		it("should allow actions to call methods on nested entities", () => {
 			const order = Order.create(validOrderData);
 			order.actions.changeFormTitle("New Form Title");
 
-			const newState = order.state;
-			expect(newState.form.title).toBe("New Form Title");
+			const newProps = order.props;
+			expect(newProps.form.title).toBe("New Form Title");
 		});
 
 		it("should dehydrate entities when accessing public state", () => {
 			const order = Order.create(validOrderData);
-			const state = order.state;
+			const props = order.props;
 
 			// The returned state should be a plain object, not containing entity instances.
-			expect(state.form).not.toBeInstanceOf(Form);
-			expect(state.form.title).toBe("Initial Title");
+			expect(props.form).not.toBeInstanceOf(Form);
+			expect(props.form.title).toBe("Initial Title");
 		});
 	});
 });
