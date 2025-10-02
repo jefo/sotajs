@@ -9,7 +9,7 @@ Sota (Сота) — это TypeScript-фреймворк для разработ
 - **Явные зависимости:** Вместо "магии" и скрытых механизмов, Sota использует прозрачный хук `usePort()` для объявления зависимостей, что делает код легко отслеживаемым и тестируемым.
 - **Функциональный подход:** Логика приложения описывается в виде простых асинхронных функций (Use Cases), что уменьшает количество шаблонного кода по сравнению с традиционными сервисными классами.
 - **Тестируемость как основа:** Архитектура спроектирована для легкого тестирования. Комбинация чистой доменной логики и явных зависимостей позволяет тестировать бизнес-процессы в полной изоляции.
-- **Разделение логики и представления:** Use Cases не возвращают данные напрямую. Вместо этого они сообщают о результатах своей работы через **выходные порты (Output Ports)**, делая бизнес-логику полностью независимой от способа представления данных (API, консоль, UI).
+- **CQRS подход:** Use Cases четко разделяются на команды (изменяющие состояние) и запросы (получающие данные), что упрощает понимание и тестирование бизнес-логики.
 
 ## 2. Ключевая терминология
 
@@ -17,11 +17,12 @@ Sota (Сота) — это TypeScript-фреймворк для разработ
 - **Агрегат (Aggregate):** Кластер доменных объектов (Сущностей и Объектов-значений), который рассматривается как единое целое для обеспечения транзакционной целостности. Агрегат — это основная единица сохранения и загрузки из репозитория.
 - **Сущность (Entity):** Объект с уникальным идентификатором и жизненным циклом. Его идентичность сохраняется, даже если его атрибуты меняются.
 - **Объект-значение (Value Object):** Неизменяемый объект, который определяется своими атрибутами, а не уникальным идентификатором (например, `Money` или `Address`).
-- **Use Case:** Атомарная операция на уровне приложения, которая оркеструет взаимодействие между доменными моделями и внешними сервисами. **Use Case ничего не возвращает**, а о результатах сообщает через выходные порты.
+- **Use Case:** Атомарная операция на уровне приложения, которая оркеструет взаимодействие между доменными моделями и внешними сервисами. 
+- **Команда (Command):** Use Case, который изменяет состояние системы и возвращает результат операции.
+- **Запрос (Query):** Use Case, который получает данные из системы без их изменения.
 - **Порт (Port):** Абстрактный контракт (тип) для взаимодействия с внешней инфраструктурой (например, с базой данных).
-- **Выходной порт (Output Port):** Особый вид порта, который Use Case вызывает для уведомления внешнего мира о результате операции (например, `userCreatedOutPort`). Всегда именуется с суффиксом `OutPort`.
-- **Адаптер (Adapter):** Конкретная реализация порта. Адаптеры для портов данных содержат технологическую логику (SQL, HTTP), а для выходных портов — логику представления (отправка JSON, рендеринг HTML).
-- **DTO (Data Transfer Object):** Простой объект для передачи данных между слоями.
+- **Адаптер (Adapter):** Конкретная реализация порта. Адаптеры содержат технологическую логику (SQL, HTTP, файловая система).
+- **DTO (Data Transfer Object):** Простой объект для передачи данных между слоями приложения.
 
 ## 3. Основные строительные блоки: Доменные объекты
 
@@ -98,362 +99,376 @@ export type UserProfile = ReturnType<typeof UserProfile.create>;
 
 ```typescript
 import { z } from 'zod';
-import { createAggregate, createEntity } from '@maxdev1/sotajs';
+import { createAggregate } from '@maxdev1/sotajs';
 
-// 1. Определяем дочернюю сущность для информации о клиенте
+// Вложенная сущность для информации о клиенте
 const CustomerInfoSchema = z.object({
-  id: z.string().uuid(),
   name: z.string(),
-  address: z.string(),
+  email: z.string().email(),
 });
 type CustomerInfoState = z.infer<typeof CustomerInfoSchema>;
 
-const CustomerInfo = createEntity({
-  schema: CustomerInfoSchema,
-  actions: {
-    updateAddress: (state: CustomerInfoState, newAddress: string) => {
-      if (newAddress.length < 10) {
-        throw new Error('Address is too short');
-      }
-      state.address = newAddress;
-    },
-  },
+// Схема для позиции заказа
+const OrderItemSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: z.number().positive(),
+  price: z.number().positive(),
 });
 
-// 2. Определяем схему для самого агрегата Order
+// Основная схема агрегата Order
 const OrderSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(['pending', 'paid', 'shipped']),
-  items: z.array(z.object({ productId: z.string(), price: z.number() })),
-  // Включаем схему CustomerInfo как часть схемы Order
-  customer: CustomerInfoSchema,
+  customerInfo: CustomerInfoSchema,
+  items: z.array(OrderItemSchema),
+  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered']),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
-
 type OrderState = z.infer<typeof OrderSchema>;
 
-// 3. Создаем агрегат с расширенной конфигурацией
 export const Order = createAggregate({
-  name: 'Order',
   schema: OrderSchema,
-
-  // 3a. Указываем, какие свойства состояния являются сущностями
-  entities: {
-    customer: CustomerInfo,
-  },
-
-  // 3b. Добавляем вычисляемые свойства
-  computed: {
-    isPaid: (state) => state.status === 'paid',
-    totalPrice: (state) => state.items.reduce((sum, item) => sum + item.price, 0),
-  },
-
-  invariants: [
-    (state) => {
-      if (state.status === 'shipped' && state.items.length === 0) {
-        throw new Error('Cannot ship an empty order.');
-      }
-    },
-  ],
-
-  // 3c. Actions теперь работают с "гидрированным" состоянием
   actions: {
-    pay: (state) => {
+    addItem(state: OrderState, item: z.infer<typeof OrderItemSchema>) {
+      state.items.push(item);
+      state.updatedAt = new Date();
+    },
+    
+    confirmOrder(state: OrderState) {
       if (state.status !== 'pending') {
-        throw new Error('Only pending orders can be paid.');
+        throw new Error('Only pending orders can be confirmed');
       }
-      state.status = 'paid';
+      state.status = 'confirmed';
+      state.updatedAt = new Date();
     },
-    // Action, который вызывает метод дочерней сущности
-    updateCustomerAddress: (state, newAddress: string) => {
-      // state.customer - это полноценный экземпляр CustomerInfo
-      // с доступом к его методам.
-      state.customer.actions.updateAddress(newAddress);
-    },
-  },
+    
+    calculateTotal(state: OrderState): number {
+      return state.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+  }
 });
-
-// Тип экземпляра агрегата будет включать вычисляемые свойства
 export type Order = ReturnType<typeof Order.create>;
 
 // --- Использование ---
-// const order = Order.create({ id: '...', status: 'pending', ..., customer: { ... } });
-//
-// // Доступ к вычисляемому свойству
-// console.log(order.totalPrice);
-//
-// // Вызов action, который делегирует работу сущности
-// order.actions.updateCustomerAddress('Новый адрес клиента');
-//
-// // Получение чистого состояния для сохранения
-// const cleanState = order.state;
-// console.log(cleanState.customer.address); // 'Новый адрес клиента'
+// const order = Order.create({
+//   id: '123e4567-e89b-12d3-a456-426614174000',
+//   customerInfo: { name: 'John Doe', email: 'john@example.com' },
+//   items: [],
+//   status: 'pending',
+//   createdAt: new Date(),
+//   updatedAt: new Date()
+// });
+// 
+// order.actions.addItem({ productId: '...', quantity: 2, price: 25.99 });
+// const total = order.actions.calculateTotal();
 ```
 
-## 4. Оркестрация: Use Cases и Порты
+## 4. Оркестрация: Use Cases и CQRS подход
 
-Use Case — это `async` функция, которая является точкой входа для выполнения бизнес-операции. Она валидирует входные данные, использует хук `usePort` для получения зависимостей и **ничего не возвращает**.
+В SotaJS используется подход CQRS (Command Query Responsibility Segregation), который четко разделяет операции на команды (изменяющие состояние) и запросы (получающие данные).
 
-**Пример: `createOrderUseCase`**
+### 4.1. Команды (Commands)
+
+Команды — это Use Cases, которые изменяют состояние системы. Они принимают входные данные, выполняют бизнес-логику и возвращают результат операции.
+
+**Пример: `createOrderCommand`**
 ```typescript
-import { z } from 'zod';
-import { usePort, createPort } from '@maxdev1/sotajs/lib/di.v2';
-import { findUserByIdPort, saveOrderPort } from '@domain/ports';
+import { usePort } from '@maxdev1/sotajs';
+import { findUserByIdPort, saveOrderPort } from '@domain/ports'; // Предполагается, что порты определены в другом месте
 import { Order } from '@domain/order.aggregate';
 
-// DTO для выходных портов
-type OrderCreatedOutput = { orderId: string; total: number; };
-type OrderFailedOutput = { userId: string; reason: string; };
+// DTO для входных данных
+export type CreateOrderInput = {
+  userId: string;
+  items: { productId: string; quantity: number }[];
+};
 
-// Выходные порты для информирования о результате
-const orderCreatedOutPort = createPort<(dto: OrderCreatedOutput) => Promise<void>>();
-const orderCreationFailedOutPort = createPort<(dto: OrderFailedOutput) => Promise<void>>();
-
-const CreateOrderInputSchema = z.object({
-  userId: z.string().uuid(),
-  items: z.array(z.object({ productId: z.string().uuid(), quantity: z.number().positive() })),
-});
-
-type CreateOrderInput = z.infer<typeof CreateOrderInputSchema>;
-
-export const createOrderUseCase = async (input: CreateOrderInput): Promise<void> => {
-  const command = CreateOrderInputSchema.parse(input);
-
-  // Получение зависимостей, включая выходные порты
+export const createOrderCommand = async (input: CreateOrderInput) => {
+  // 1. Получаем зависимости через usePort
   const findUserById = usePort(findUserByIdPort);
   const saveOrder = usePort(saveOrderPort);
-  const orderCreated = usePort(orderCreatedOutPort);
-  const orderFailed = usePort(orderCreationFailedOutPort);
 
-  const user = await findUserById({ id: command.userId });
+  // 2. Выполняем логику
+  const user = await findUserById(input.userId);
   if (!user) {
-    await orderFailed({ userId: command.userId, reason: 'User not found' });
-    return;
+    throw new Error('User not found');
   }
 
-  try {
-    const order = Order.create(command);
-    await saveOrder(order);
-    
-    await orderCreated({ orderId: order.id, total: order.state.items.reduce((sum, i) => sum + i.price, 0) });
-  } catch (error: any) {
-    await orderFailed({ userId: command.userId, reason: error.message });
-  }
+  const order = Order.create({
+    userId: user.id,
+    items: input.items,
+    // ... другие поля
+  });
+
+  await saveOrder(order);
+
+  // 3. Возвращаем результат
+  return { orderId: order.id };
 };
 ```
 
-## 5. Внедрение зависимостей: связующее звено
+### 4.2. Запросы (Queries)
 
-Механизм DI в Sota построен на нескольких ключевых функциях:
-- `createPort`: Создает типизированный контракт для зависимости.
-- `setPortAdapter`: Связывает порт с его конкретной реализацией (адаптером).
-- `usePort`: Получает реализацию порта внутри Use Case.
-- `setPortAdapters`: Позволяет связать несколько пар порт-адаптер за один вызов.
-- `usePorts`: Позволяет получить несколько реализаций портов за один вызов.
+Запросы — это Use Cases, которые получают данные из системы без их изменения. Они возвращают данные в формате DTO.
 
-**Пример полного цикла DI**
+**Пример: `getUserOrdersQuery`**
 ```typescript
-import { createPort, setPortAdapter, usePort, resetDI } from '@maxdev1/sotajs';
+import { z } from 'zod';
+import { usePort } from '@maxdev1/sotajs/lib/di.v2';
+import { findOrdersByUserIdPort } from '@domain/ports';
 
-// 1. Определение порта данных и DTO
-interface FindUserByIdDto { id: string; }
-const findUserByIdPort = createPort<(dto: FindUserByIdDto) => Promise<{ id: string; name: string } | null>>();
-
-// 2. Определение выходного порта и его DTO
-type UserFoundOutput = { id: string; name: string; };
-const userFoundOutPort = createPort<(dto: UserFoundOutput) => Promise<void>>();
-
-// 3. Адаптер для базы данных (из @infra)
-const userDbAdapter = async (dto: FindUserByIdDto) => {
-  // ...логика для получения пользователя из БД
-  return { id: dto.id, name: 'Real User' };
-};
-
-// 4. Презентационный адаптер для вывода в консоль (из @infra)
-const consolePresenterAdapter = async (dto: UserFoundOutput) => {
-  console.log(`User Found: ${dto.name} (ID: ${dto.id})`);
-};
-
-// 5. Мок-адаптеры для тестов
-const mockUserAdapter = async (dto: FindUserByIdDto) => ({ id: dto.id, name: 'Mock User' });
-const mockPresenter = async (dto: UserFoundOutput) => { /* do nothing in test */ };
-
-// 6. Use Case (из @app)
-const getUserUseCase = async (id: string): Promise<void> => {
-  const findUserById = usePort(findUserByIdPort);
-  const userFound = usePort(userFoundOutPort);
-  const user = await findUserById({ id });
-  if (user) {
-    await userFound(user);
-  }
-};
-
-// 7. Связывание в точке композиции (composition root)
-setPortAdapter(findUserByIdPort, userDbAdapter);
-setPortAdapter(userFoundOutPort, consolePresenterAdapter);
-
-// 8. Связывание в тесте
-resetDI(); // Очистка контейнера перед тестом
-setPortAdapter(findUserByIdPort, mockUserAdapter);
-setPortAdapter(userFoundOutPort, mockPresenter);
-```
-
-### Массовое связывание и использование портов
-
-Для удобства можно регистрировать и получать несколько адаптеров за один раз.
-
-```typescript
-import { createPort, setPortAdapters, usePorts } from '@maxdev1/sotajs';
-
-// Определение портов
-const portA = createPort<() => string>();
-const portB = createPort<(n: number) => number>();
-
-// Массовое связывание
-setPortAdapters([
-  [portA, () => 'Результат A'],
-  [portB, (n: number) => n * 10],
-]);
-
-// Массовое получение зависимостей внутри Use Case
-const myUseCase = async () => {
-  const [adapterA, adapterB] = usePorts(portA, portB);
-
-  console.log(adapterA()); // 'Результат A'
-  console.log(adapterB(5)); // 50
-};
-```
-
-### Группировка портов в Модули
-
-Для еще большего удобства можно группировать связанные порты в модули:
-
-```typescript
-import { createPort, setPortAdapter } from '@maxdev1/sotajs';
-import { createModule, useModule } from '@maxdev1/sotajs/lib/module';
-
-// Определение портов
-const findUserPort = createPort<() => Promise<{ id: string; name: string }>>();
-const saveOrderPort = createPort<(order: { id: string; userId: string }) => Promise<void>>();
-const sendEmailPort = createPort<(email: { to: string; subject: string }) => Promise<void>>();
-
-// Создание модуля, объединяющего связанные порты
-const orderModule = createModule({
-  findUser: findUserPort,
-  saveOrder: saveOrderPort,
-  sendEmail: sendEmailPort
+const GetUserOrdersInputSchema = z.object({
+  userId: z.string().uuid(),
 });
 
-// Связывание портов с адаптерами
-setPortAdapter(findUserPort, async () => ({ id: "1", name: "John Doe" }));
-setPortAdapter(saveOrderPort, async (order) => { /* логика сохранения */ });
-setPortAdapter(sendEmailPort, async (email) => { /* логика отправки */ });
+type GetUserOrdersInput = z.infer<typeof GetUserOrdersInputSchema>;
 
-// Использование модуля в Use Case
-const createOrderUseCase = async (userId: string) => {
-  // Вместо нескольких вызовов usePort()
-  // const findUser = usePort(findUserPort);
-  // const saveOrder = usePort(saveOrderPort);
-  // const sendEmail = usePort(sendEmailPort);
+// DTO для результата запроса
+type OrderDto = {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+};
+
+type GetUserOrdersResult = {
+  orders: OrderDto[];
+  totalCount: number;
+};
+
+export const getUserOrdersQuery = async (input: GetUserOrdersInput): Promise<GetUserOrdersResult> => {
+  const query = GetUserOrdersInputSchema.parse(input);
+
+  // Получение зависимости
+  const findOrdersByUserId = usePort(findOrdersByUserIdPort);
+
+  const orders = await findOrdersByUserId({ userId: query.userId });
   
-  // Можно использовать один вызов useModule()
-  const { findUser, saveOrder, sendEmail } = useModule(orderModule);
-  
-  const user = await findUser();
-  await saveOrder({ id: "order-123", userId });
-  await sendEmail({ to: user.name, subject: "Order Confirmation" });
+  return {
+    orders: orders.map(order => ({
+      id: order.id,
+      status: order.status,
+      total: order.total,
+      createdAt: order.createdAt.toISOString()
+    })),
+    totalCount: orders.length
+  };
 };
 ```
 
-Модули позволяют:
-- Сократить шаблонный код при работе с несколькими зависимостями
-- Логически группировать связанные порты
-- Сохранить явность зависимостей без "магии"
+## 5. Внедрение зависимостей: Фичи и Ядро
 
-### Composition Roots для Модулей
+SotaJS использует надежный механизм внедрения зависимостей, основанный на "фичах" и "ядре". Это позволяет гарантировать, что все зависимости для каждого модуля предоставлены в точке композиции.
 
-Для еще большей гибкости можно создавать composition roots для модулей, которые позволяют использовать разные реализации адаптеров в зависимости от среды выполнения (тестирование, разработка, production):
+### Шаг 1: Определение Портов (`createPort`)
+
+Порт — это контракт зависимости. При его создании больше не нужно указывать `Promise` в возвращаемом типе — фреймворк делает это автоматически.
 
 ```typescript
 import { createPort } from '@maxdev1/sotajs';
-import { createModule, useModule } from '@maxdev1/sotajs/lib/module';
-import { 
-  createModuleComposition,
-  createEnvironmentModuleComposition,
-  applyModuleComposition
-} from '@maxdev1/sotajs/lib/module-composition';
+import type { User, Order } from './domain';
 
-// Определение портов
-const findUserPort = createPort<() => Promise<{ id: string; name: string }>>();
-const saveOrderPort = createPort<(order: { id: string; userId: string }) => Promise<void>>();
-const sendEmailPort = createPort<(email: { to: string; subject: string }) => Promise<void>>();
-
-// Создание модуля
-const orderModule = createModule({
-  findUser: findUserPort,
-  saveOrder: saveOrderPort,
-  sendEmail: sendEmailPort
-});
-
-// Определение compositions для разных сред
-const testComposition = createModuleComposition({
-  findUser: async () => ({ id: "test-1", name: "Test User" }),
-  saveOrder: async (order) => { /* in-memory implementation */ },
-  sendEmail: async (email) => { /* mock implementation */ }
-});
-
-const productionComposition = createModuleComposition({
-  findUser: async () => { /* database implementation */ },
-  saveOrder: async (order) => { /* database implementation */ },
-  sendEmail: async (email) => { /* email service implementation */ }
-});
-
-// Создание environment compositions
-const compositions = {
-  test: testComposition,
-  development: testComposition,
-  production: productionComposition
-};
-
-// Применение соответствующей composition в зависимости от среды
-const environment = process.env.NODE_ENV || 'test';
-const environmentComposition = createEnvironmentModuleComposition(environment, compositions);
-applyModuleComposition(orderModule, environmentComposition);
-
-// Теперь модуль использует правильные адаптеры для текущей среды
-const { findUser, saveOrder, sendEmail } = useModule(orderModule);
+// Сигнатура описывает обычную функцию
+const findUserByIdPort = createPort<(id: string) => User | null>();
+const saveOrderPort = createPort<(order: Order) => void>();
 ```
 
-Этот подход позволяет:
-- Легко переключаться между разными средами выполнения
-- Иметь чистую конфигурацию для тестирования с in-memory адаптерами
-- Использовать production адаптеры в реальной среде
-- Сохранять четкое разделение между бизнес-логикой и инфраструктурой
-- Создавать любое количество пользовательских compositions для разных нужд
+### Шаг 2: Группировка Портов в Фичу (`defineFeature`)
 
-## 6. Процесс разработки в Sota
+Фича объединяет связанные порты в один логический модуль.
 
-Sota предлагает строгий "inside-out" подход к разработке.
+```typescript
+import { defineFeature } from '@maxdev1/sotajs';
 
-- **Шаг 1: Определение контракта.** Создайте файл Use Case в `@app`. Определите его входные данные с помощью `zod` и объявите необходимые порты: как для получения данных, так и **выходные порты (Output Ports)** для всех возможных исходов операции.
-- **Шаг 2: Реализация доменной логики.** Смоделируйте домен (`@domain`), создавая Сущности и Объекты-значения. Затем, при необходимости, сгруппируйте их в Агрегаты для обеспечения транзакционной целостности.
-- **Шаг 3: Изолированное тестирование.** Напишите тесты для Use Case. Подмените реализации всех портов моками с помощью `setPortAdapter`. Тест должен проверять, что в зависимости от входных данных вызывается правильный выходной порт с корректным DTO.
-- **Шаг 4: Реализация адаптеров.** В `@infra` напишите код, который будет взаимодействовать с базой данных (адаптеры данных) и который будет обрабатывать результаты для пользователя (презентационные адаптеры).
-- **Шаг 5: Связывание в точке композиции.** В главном файле вашего приложения (например, `index.ts`) свяжите все порты с их реальными адаптерами.
+const OrderFeature = defineFeature({
+  findUserById: findUserByIdPort,
+  saveOrder: saveOrderPort,
+});
+```
 
-## 7. Архитектурные принципы и лучшие практики
+### Шаг 3: Реализация Фичи с помощью Адаптера
 
-### 7.1. Моделирование отношений между Агрегатами
-- **Правило №1: Ссылайтесь на другие агрегаты только по ID.** Агрегат `Order` должен хранить `customerId`, а не весь объект `Customer`. Это предотвращает создание больших, связанных графов объектов и обеспечивает слабую связанность.
-- **Правило №2: Одна транзакция — один изменяемый агрегат.** Каждый Use Case должен загружать, изменять и сохранять только один экземпляр агрегата. Если бизнес-процесс требует изменения нескольких агрегатов, используйте доменные события или многошаговые Use Cases.
+Адаптер — это класс, который реализует все порты, определенные в фиче. Для проверки полноты реализации используется хелпер `FeaturePorts`.
 
-### 7.2. Проектирование Портов (Принцип CQRS)
-- **Порты для записи (команды):** Должны всегда принимать на вход полный экземпляр Агрегата или Сущности. Это гарантирует, что все бизнес-правила (инварианты) будут проверены перед сохранением состояния.
-- **Порты для чтения (запросы):** Могут возвращать любые удобные структуры данных (DTO), оптимизированные для конкретного отображения. Это обеспечивает гибкость и производительность.
+```typescript
+import { FeaturePorts } from '@maxdev1/sotajs';
+import type { Order, User } from './domain';
 
-### 7.3. Разделение логики и представления через Output Ports
-- **Use Cases ничего не возвращают.** Вместо `return data` они вызывают семантически именованный выходной порт, например, `userFoundOutPort(userDto)`.
-- **Один порт для каждого бизнес-исхода.** Вместо обработки ошибок по цепочке, используйте отдельные порты для успеха и для каждого типа значимой ошибки (`userNotFoundOutPort`, `invalidInputOutPort` и т.д.).
-- **Презентационные адаптеры.** Адаптеры, реализующие выходные порты, отвечают за преобразование чистого DTO в конкретный формат (JSON, HTML, gRPC ответ). Это позволяет менять способ представления данных, не затрагивая бизнес-логику.
+// Класс-адаптер реализует контракт фичи
+class PrismaOrderAdapter implements FeaturePorts<typeof OrderFeature> {
+  async findUserById(id: string): Promise<User | null> {
+    // ... логика для поиска пользователя в БД через Prisma
+    return null;
+  }
 
-### 7.4. Как избежать распространенных ошибок
-- **Избегайте "Божественных Агрегатов" (God Aggregates).** Не создавайте агрегаты, которые отвечают за слишком много бизнес-концепций. Агрегаты должны быть маленькими и сфокусированными на одной четкой задаче. Если агрегат становится слишком большим, это верный признак того, что его пора разделить.
+  async saveOrder(order: Order): Promise<void> {
+    // ... логика для сохранения заказа в БД
+    console.log('Order saved!');
+  }
+}
+```
+TypeScript выдаст ошибку, если класс `PrismaOrderAdapter` не реализует хотя бы один из портов, объявленных в `OrderFeature`.
+
+### Шаг 4: Определение Ядра и Связывание (`defineCore` и `bindFeatures`)
+
+В точке композиции приложения (например, в `main.ts`) мы определяем ядро и связываем фичи с их конкретными реализациями.
+
+```typescript
+// main.ts
+import { defineCore } from '@maxdev1/sotajs';
+import { OrderFeature } from './features/orders';
+import { PrismaOrderAdapter } from './adapters/prisma-order-adapter';
+
+// 1. Определяем ядро, перечисляя все фичи
+const core = defineCore({
+  orders: OrderFeature,
+  // auth: AuthFeature,
+});
+
+// 2. Связываем фичи с их адаптерами
+core.bindFeatures(({ orders }) => {
+  orders.bind(PrismaOrderAdapter);
+});
+
+// Готово! Теперь при вызове usePort(findUserByIdPort) внутри
+// use case будет использоваться реализация из PrismaOrderAdapter.
+```
+
+Этот подход гарантирует, что вы не забудете предоставить реализацию для какого-либо порта, делая систему надежной и предсказуемой.
+
+## 6. Интеграция с внешними системами
+
+При интеграции SotaJS приложения с внешними системами (веб-API, телеграм-боты и т.д.), рекомендуется следующий подход:
+
+1. **Use Case возвращает DTO:** Каждый Use Case возвращает данные в формате DTO, который не зависит от конкретной платформы.
+
+2. **Преобразование DTO в представление:** Внешний слой (контроллеры, хендлеры) преобразует DTO в нужный формат представления (JSON для веб-API, разметка для телеграм-бота и т.д.).
+
+**Пример интеграции с веб-API:**
+```typescript
+// app/controllers/order.controller.ts
+import { createOrderCommand, getUserOrdersQuery } from '@app/use-cases';
+
+export class OrderController {
+  async createOrder(req: Request, res: Response) {
+    try {
+      // Вызов команды
+      const result = await createOrderCommand(req.body);
+      
+      // Преобразование DTO в JSON ответ
+      if (result.success) {
+        res.status(201).json({
+          orderId: result.orderId,
+          total: result.total
+        });
+      } else {
+        res.status(400).json({
+          error: result.error
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+  
+  async getUserOrders(req: Request, res: Response) {
+    try {
+      // Вызов запроса
+      const result = await getUserOrdersQuery({ userId: req.params.userId });
+      
+      // Преобразование DTO в JSON ответ
+      res.json({
+        orders: result.orders,
+        totalCount: result.totalCount
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+}
+```
+
+**Пример интеграции с телеграм-ботом:**
+```typescript
+// app/bot/handlers/order.handlers.ts
+import { createOrderCommand, getUserOrdersQuery } from '@app/use-cases';
+
+export class OrderBotHandlers {
+  async handleCreateOrder(ctx: any) {
+    try {
+      const result = await createOrderCommand({
+        userId: ctx.from.id.toString(),
+        items: parseItemsFromMessage(ctx.message.text)
+      });
+      
+      if (result.success) {
+        await ctx.reply(`✅ Заказ создан! ID: ${result.orderId}\nСумма: ${result.total} руб.`);
+      } else {
+        await ctx.reply(`❌ Ошибка: ${result.error}`);
+      }
+    } catch (error) {
+      await ctx.reply('❌ Произошла ошибка при создании заказа');
+    }
+  }
+}
+```
+
+## 7. Гибкий процесс разработки: от прототипа до Production
+
+SotaJS предлагает гибкий двухфазный подход, позволяющий быстро создавать и проверять идеи (прототипирование), а затем развивать их в надежную и масштабируемую систему. Это позволяет избежать избыточной сложности на ранних этапах проекта.
+
+### Фаза 1: Быстрое прототипирование
+
+На этом этапе основное внимание уделяется быстрой реализации функциональности и пользовательских сценариев. Архитектура сознательно упрощается, чтобы ускорить итерации.
+
+*   **Слой приложения (Application Layer):** Как и в полной архитектуре, состоит из **Use Cases** (Команд и Запросов). Они являются точками входа для операций, вызываемых внешним слоем (контроллерами), и остаются главным "движущим портом" приложения.
+
+*   **Слой моделей (Models Layer):** Вместо полноценного доменного слоя с богатыми Агрегатами используется слой "анемичных" моделей.
+    *   Это простые структуры данных, описанные с помощью **Zod-схем**.
+    *   Их задача — описывать форму данных, они не содержат бизнес-логики или методов.
+
+*   **Хранилище (Storage):** Для работы с моделями используется **generic in-memory репозиторий**. Он предоставляет базовые CRUD-операции и не требует написания отдельной реализации для каждой модели, что значительно ускоряет разработку.
+
+**Процесс на Фазе 1:**
+1.  **Опишите Модели:** Создайте Zod-схемы для ваших данных (например, `UserSchema`, `OrderSchema`).
+2.  **Спроектируйте Use Cases:** Определите Команды и Запросы для основных операций.
+3.  **Определите Порты:** Use Cases по-прежнему зависят от абстрактных портов для доступа к данным.
+4.  **Реализуйте Адаптеры:** В качестве адаптеров для портов выступают простые функции, работающие с generic in-memory репозиторием.
+5.  **Интегрируйте:** Подключите Use Cases к контроллерам (веб, бот и т.д.).
+
+### Фаза 2: Эволюция в Production-систему
+
+Когда прототип утвержден и требуется долгосрочное развитие, архитектура эволюционирует в классический подход SotaJS.
+
+**Процесс эволюции:**
+
+1.  **От Моделей к Сущностям и Объектам-значениям:** Когда появляется бизнес-логика, связанная с данными, простые Zod-схемы из "Слоя моделей" превращаются в **Сущности (Entities)** и **Объекты-значения (Value Objects)**. Эти доменные объекты инкапсулируют в себе методы для изменения своего состояния и проверки инвариантов (бизнес-правил).
+
+2.  **От Сущностей к Агрегатам:** По мере усложнения системы вы можете обнаружить, что для сохранения целостности данных несколько сущностей должны изменяться в рамках одной транзакции. Это сигнал к тому, что их следует объединить в **Агрегат**.
+    > **Важный принцип:** Одна команда (Use Case) должна выполнять только одну транзакцию, то есть сохранять только один агрегат. Если ваша команда пытается сохранить несколько сущностей по отдельности, это явный признак того, что границы агрегата определены неверно, и эти сущности должны быть частью одного агрегата.
+
+3.  **От In-Memory к реальным Адаптерам:** In-memory репозиторий заменяется на производственные адаптеры, которые работают с реальными базами данных (например, PostgreSQL). При этом контракты **Портов** и код **Use Cases** остаются практически без изменений.
+
+4.  **Тестирование и развертывание:** Приложение комплексно тестируется и развертывается с использованием производственной инфраструктуры.
+
+Этот двухфазный подход позволяет вам двигаться быстро, когда это необходимо, и строить надежную архитектуру, когда проект готов к росту.
+
+## 8. Архитектурные принципы и лучшие практики
+
+### 8.1. Моделирование отношений между Агрегатами
+
+- Используйте ссылки по ID вместо прямых ссылок на агрегаты
+- Избегайте транзакций, затрагивающих несколько агрегатов
+- Используйте eventual consistency для сложных бизнес-процессов
+
+### 8.2. Проектирование Use Cases (Принцип CQRS)
+
+- Четко разделяйте команды и запросы
+- Команды должны возвращать минимальную информацию о результате
+- Запросы должны быть оптимизированы для чтения
+
+### 8.3. Как избежать распространенных ошибок
+
+- Не смешивайте логику представления с бизнес-логикой
+- Используйте DTO для передачи данных между слоями
+- Тестируйте Use Cases в изоляции от инфраструктуры

@@ -1,3 +1,5 @@
+export * from './feature';
+export * from './core';
 export * from './adapters/console-logger.adapter';
 export * from './ports/logger.port';
 export * from './aggregate';

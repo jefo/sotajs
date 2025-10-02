@@ -13,12 +13,12 @@ beforeEach(() => {
 	resetDI();
 });
 
-test("should register and resolve a simple service", () => {
-	// 2. Define a Port with a specific function signature
+test("should register and resolve a simple service with async adapter", async () => {
+	// 2. Define a Port with a simple function signature (no Promise)
 	const greeterPort = createPort<(name: string) => string>();
 
-	// 3. Define an Adapter (implementation)
-	const greeterAdapter = (name: string) => `Hello, ${name}!`;
+	// 3. Define an async Adapter (implementation)
+	const greeterAdapter = async (name: string) => `Hello, ${name}!`;
 
 	// 4. Bind the adapter to the port
 	setPortAdapter(greeterPort, greeterAdapter);
@@ -26,23 +26,23 @@ test("should register and resolve a simple service", () => {
 	// 5. Use the port to get the adapter implementation
 	const greeterService = usePort(greeterPort);
 
-	// DEMONSTRATION: At this point, `greeterService` is correctly typed
-	// as `(name: string) => string`. No `unknown` or `any`.
+	// DEMONSTRATION: `greeterService` is now correctly typed as `(name: string) => Promise<string>`
 
 	// 6. Call the service and assert the result
-	const result = greeterService("World");
+	const result = await greeterService("World");
 	expect(result).toBe("Hello, World!");
 });
 
 test("should handle services with complex types (objects and promises)", async () => {
 	type User = { id: number; name: string };
-	type GetUserFn = (id: number) => Promise<User | null>;
+	// The signature is now simpler, without the outer Promise
+	type GetUserFn = (id: number) => User | null;
 
 	// Define port
 	const getUserPort = createPort<GetUserFn>();
 
-	// Define adapter
-	const getUserAdapter: GetUserFn = async (id) => {
+	// Define adapter - it must be async or return a promise
+	const getUserAdapter = async (id: number): Promise<User | null> => {
 		if (id === 1) {
 			return { id: 1, name: "John Doe" };
 		}
@@ -70,46 +70,18 @@ test("usePort should throw if no adapter is set", () => {
 
 	expect(() => {
 		usePort(myPort);
-	}).toThrow(
-		"No implementation found for the port. Did you forget to call setPortAdapter() or setPortAdapterWithDependencies()?",
-	);
+	}).toThrow(/Adapter for port.*not set/);
 });
 
-test("setPortAdapter should throw if port is invalid or unregistered", () => {
-	// Create a fake port that's not registered
-	const fakePort = {
-		__TYPE__: undefined as any,
-		[Symbol("portId")]: "fake-id",
-	};
-
-	const adapter = () => {};
-
-	expect(() => {
-		setPortAdapter(fakePort, adapter);
-	}).toThrow("An invalid or unregistered port was provided.");
-});
-
-test("usePort should throw if port is invalid or unregistered", () => {
-	// Create a fake port that's not registered
-	const fakePort = {
-		__TYPE__: undefined as any,
-		[Symbol("portId")]: "fake-id",
-	};
-
-	expect(() => {
-		usePort(fakePort);
-	}).toThrow("Attempted to use an invalid or unregistered port.");
-});
-
-test("should handle multiple ports with different implementations", () => {
+test("should handle multiple ports with different implementations", async () => {
 	// Define first port and adapter
 	const greeterPort = createPort<(name: string) => string>();
-	const greeterAdapter = (name: string) => `Hello, ${name}!`;
+	const greeterAdapter = async (name: string) => `Hello, ${name}!`;
 	setPortAdapter(greeterPort, greeterAdapter);
 
 	// Define second port and adapter
 	const farewellPort = createPort<(name: string) => string>();
-	const farewellAdapter = (name: string) => `Goodbye, ${name}!`;
+	const farewellAdapter = async (name: string) => `Goodbye, ${name}!`;
 	setPortAdapter(farewellPort, farewellAdapter);
 
 	// Use both ports
@@ -117,46 +89,49 @@ test("should handle multiple ports with different implementations", () => {
 	const farewellService = usePort(farewellPort);
 
 	// Verify they work independently
-	expect(greeterService("World")).toBe("Hello, World!");
-	expect(farewellService("World")).toBe("Goodbye, World!");
+	expect(await greeterService("World")).toBe("Hello, World!");
+	expect(await farewellService("World")).toBe("Goodbye, World!");
 });
 
-test("should handle dependencies between services", () => {
+test("should handle dependencies between services", async () => {
 	// Define a logger port
 	const loggerPort = createPort<(message: string) => void>();
-	const loggerAdapter = (message: string) => console.log(`LOG: ${message}`);
+    const logMessages: string[] = [];
+	const loggerAdapter = async (message: string) => { logMessages.push(message) };
 	setPortAdapter(loggerPort, loggerAdapter);
 
-	// Define a service port as a function, not an object with methods
+	// Define a service port
 	const getUserPort =
 		createPort<(id: number) => { id: number; name: string }>();
 
-	// Create a factory that uses the logger service
+	// Create a factory that returns an async adapter
 	const getUserFactory = () => {
 		const logger = usePort(loggerPort);
-		return (id: number) => {
-			logger(`Fetching user ${id}`);
+		return async (id: number) => {
+			await logger(`Fetching user ${id}`);
 			return { id, name: `User ${id}` };
 		};
 	};
 
-	// Bind the factory to the port
+	// Bind the factory's result (the adapter) to the port
 	setPortAdapter(getUserPort, getUserFactory());
 
 	// Use the service
 	const getUser = usePort(getUserPort);
-	const user = getUser(1);
+	const user = await getUser(1);
 
 	expect(user).toEqual({ id: 1, name: "User 1" });
+    expect(logMessages).toContain("Fetching user 1");
 });
 
+
 describe("setPortAdapters", () => {
-	test("should bind multiple adapters at once", () => {
+	test("should bind multiple adapters at once", async () => {
 		const portA = createPort<() => string>();
 		const portB = createPort<(n: number) => number>();
 
-		const adapterA = () => "A";
-		const adapterB = (n: number) => n * 2;
+		const adapterA = async () => "A";
+		const adapterB = async (n: number) => n * 2;
 
 		setPortAdapters([
 			[portA, adapterA],
@@ -166,62 +141,38 @@ describe("setPortAdapters", () => {
 		const serviceA = usePort(portA);
 		const serviceB = usePort(portB);
 
-		expect(serviceA()).toBe("A");
-		expect(serviceB(10)).toBe(20);
-	});
-
-	test("should throw if any port is invalid", () => {
-		const portA = createPort<() => string>();
-		const adapterA = () => "A";
-		const fakePort = { __TYPE__: undefined as any };
-
-		expect(() => {
-			setPortAdapters([
-				[portA, adapterA],
-				[fakePort as any, () => {}],
-			]);
-		}).toThrow("An invalid or unregistered port was provided in the array.");
+		expect(await serviceA()).toBe("A");
+		expect(await serviceB(10)).toBe(20);
 	});
 });
 
 describe("usePorts", () => {
-	test("should resolve multiple ports in the correct order", () => {
+	test("should resolve multiple ports in the correct order", async () => {
 		const portA = createPort<() => string>();
 		const portB = createPort<(n: number) => number>();
 		const portC = createPort<() => boolean>();
 
 		setPortAdapters([
-			[portA, () => "A"],
-			[portB, (n: number) => n * 2],
-			[portC, () => true],
+			[portA, async () => "A"],
+			[portB, async (n: number) => n * 2],
+			[portC, async () => true],
 		]);
 
 		const [serviceA, serviceB, serviceC] = usePorts(portA, portB, portC);
 
-		expect(serviceA()).toBe("A");
-		expect(serviceB(10)).toBe(20);
-		expect(serviceC()).toBe(true);
+		expect(await serviceA()).toBe("A");
+		expect(await serviceB(10)).toBe(20);
+		expect(await serviceC()).toBe(true);
 	});
 
 	test("should throw if any port is not bound", () => {
 		const portA = createPort<() => string>();
 		const portB = createPort<() => string>(); // This one won't be bound
 
-		setPortAdapter(portA, () => "A");
+		setPortAdapter(portA, async () => "A");
 
 		expect(() => {
 			usePorts(portA, portB);
-		}).toThrow("No implementation found for the port");
-	});
-
-	test("should throw if any port is invalid", () => {
-		const portA = createPort<() => string>();
-		const fakePort = { __TYPE__: undefined as any };
-
-		setPortAdapter(portA, () => "A");
-
-		expect(() => {
-			usePorts(portA, fakePort as any);
-		}).toThrow("Attempted to use an invalid or unregistered port.");
+		}).toThrow(/Adapter for port.*not set/);
 	});
 });

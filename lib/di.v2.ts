@@ -1,127 +1,55 @@
 import Bottle from "bottlejs";
 
 let container = new Bottle();
-const PORT_ID_SYMBOL = Symbol("portId");
+// The function signature as the user writes it (without Promise in return)
+type PortFn = (...args: any[]) => any;
 
-// A registry to store all defined ports.
-// Key - portId, Value - the port object itself for debugging.
-const portRegistry = new Map<string, Port<any>>();
+// The actual signature of the port and its adapter (with Promise)
+type AdapterFn<T extends PortFn> = (...args: Parameters<T>) => Promise<ReturnType<T>>;
 
-/**
- * A unique descriptor object for a port.
- * This is a simple object used as a "tag" or a "key".
- */
-export interface Port<T extends (...args: any[]) => any> {
-	// This property is just for holding the type T, it's not meant to be used at runtime.
-	__TYPE__: T;
-	[PORT_ID_SYMBOL]?: string;
+// The Port type. It holds the original function type in `T` for inference.
+export type Port<T extends PortFn> = {
+  symbol: symbol;
+  T: T; // Keep original type for inference
+} & AdapterFn<T>;
+
+
+const store = new Map<symbol, any>();
+
+// createPort
+export function createPort<T extends PortFn>(): Port<T> {
+  const symbol = Symbol();
+  const fn: any = () => {
+    throw new Error(`Port with symbol ${symbol.toString()} was not provided`);
+  };
+  fn.symbol = symbol;
+  return fn as Port<T>;
 }
 
-/**
- * Defines a new port in the system.
- * This function only creates and registers a "contract" (interface),
- * but does not provide any implementation.
- * @returns Port<T> - A unique port descriptor.
- */
-export function createPort<T extends (...args: any[]) => any>(): Port<T> {
-	const portId = crypto.randomUUID();
-
-	// Create a simple object that will serve as the port descriptor.
-	const port: Port<T> = {
-		// This is a trick to make the type T available to TypeScript's inference
-		// It will be compiled away and doesn't exist at runtime.
-		__TYPE__: undefined as any,
-		[PORT_ID_SYMBOL]: portId,
-	};
-
-	portRegistry.set(portId, port);
-
-	return port;
+// usePort
+export function usePort<T extends PortFn>(port: Port<T>): AdapterFn<T> {
+  const adapter = store.get(port.symbol);
+  if (!adapter) {
+    throw new Error(`Adapter for port ${port.symbol.toString()} not set`);
+  }
+  return adapter;
 }
 
-/**
- * Binds a specific implementation (adapter) to a port.
- * @param port - The port descriptor created via createPort().
- * @param adapter - The implementation function matching the port's signature.
- * @throws {Error} If the port is invalid or unregistered.
- */
-export function setPortAdapter<T extends (...args: any[]) => any>(
-	port: Port<T>,
-	adapter: T,
-): void {
-	const portId = port[PORT_ID_SYMBOL];
-	if (!portId || !portRegistry.has(portId)) {
-		throw new Error("An invalid or unregistered port was provided.");
-	}
-
-	container.factory(portId, () => adapter);
+// setPortAdapter
+export function setPortAdapter<T extends PortFn>(port: Port<T>, adapter: AdapterFn<T>): void {
+  store.set(port.symbol, adapter);
 }
 
-/**
- * Retrieves a port's implementation from the DI container.
- * @param port - The port descriptor for which to retrieve the implementation.
- * @returns T - The implementation function (adapter).
- * @throws {Error} If the port is invalid, unregistered, or has no implementation.
- */
-export function usePort<T extends (...args: any[]) => any>(port: Port<T>): T {
-	const portId = port[PORT_ID_SYMBOL];
-	if (!portId || !portRegistry.has(portId)) {
-		throw new Error("Attempted to use an invalid or unregistered port.");
-	}
-
-	const implementation = container.container[portId];
-	if (!implementation) {
-		throw new Error(
-			`No implementation found for the port. Did you forget to call setPortAdapter() or setPortAdapterWithDependencies()?`,
-		);
-	}
-
-	return implementation as T;
+export function setPortAdapters(adapters: [Port<any>, any][]): void {
+  for (const [port, adapter] of adapters) {
+    setPortAdapter(port, adapter);
+  }
 }
 
-export type PortAdapterPair<T extends (...args: any[]) => any = any> = [
-	Port<T>,
-	T,
-];
-
-/**
- * Binds multiple implementations (adapters) to their corresponding ports in a single call.
- * @param pairs - An array of [port, adapter] tuples.
- * @throws {Error} If any port is invalid or unregistered.
- */
-export function setPortAdapters(pairs: ReadonlyArray<PortAdapterPair>): void {
-	for (const [port, adapter] of pairs) {
-		const portId = port[PORT_ID_SYMBOL];
-		if (!portId || !portRegistry.has(portId)) {
-			throw new Error(
-				"An invalid or unregistered port was provided in the array.",
-			);
-		}
-		container.factory(portId, () => adapter);
-	}
+export function usePorts<T extends Port<any>[]>(...ports: T): { [K in keyof T]: T[K] extends Port<infer U> ? AdapterFn<U> : never } {
+  return ports.map(usePort) as any;
 }
 
-export type PortsToAdapters<T extends readonly Port<any>[]> = {
-	-readonly [P in keyof T]: T[P] extends Port<infer U> ? U : never;
-};
-
-/**
- * Retrieves multiple port implementations from the DI container at once.
- * @param ports - An array of port descriptors for which to retrieve the implementations.
- * @returns T - An array of implementation functions (adapters), in the same order as the input ports.
- * @throws {Error} If any port is invalid, unregistered, or has no implementation.
- */
-export function usePorts<T extends readonly Port<any>[]>(
-	...ports: T
-): PortsToAdapters<T> {
-	const implementations = ports.map((port) => usePort(port));
-	return implementations as PortsToAdapters<T>;
-}
-
-/**
- * Resets the state of the DI container and port registry.
- * Necessary for test isolation.
- */
-export function resetDI() {
-	container = new Bottle();
+export function resetDI(): void {
+  store.clear();
 }
