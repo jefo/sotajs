@@ -47,6 +47,8 @@ export interface AggregateConfig<
 	computed?: TComputed;
 }
 
+export type Actions<TState> = Record<string, (state: TState, ...args: any[]) => any>;
+
 type OmitStateParameter<F> = F extends (state: any, ...args: infer A) => infer R
   ? (...args: A) => R
   : F;

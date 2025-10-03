@@ -28,7 +28,7 @@ CQRS (Command Query Responsibility Segregation) — это архитектур�
 ```typescript
 // app/commands/create-order.command.ts
 import { z } from 'zod';
-import { usePort } from '@maxdev1/sotajs/lib/di.v2';
+import { usePort } from '@sotajs/core';
 import { findUserByIdPort, saveOrderPort } from '@domain/ports';
 import { Order } from '@domain/order.aggregate';
 
@@ -93,7 +93,7 @@ export const createOrderCommand = async (input: CreateOrderInput): Promise<Creat
 ```typescript
 // app/queries/get-user-orders.query.ts
 import { z } from 'zod';
-import { usePort } from '@maxdev1/sotajs/lib/di.v2';
+import { usePort } from '@sotajs/core';
 import { findOrdersByUserIdPort } from '@domain/ports';
 
 const GetUserOrdersInputSchema = z.object({
@@ -285,7 +285,7 @@ src/
 ### Композиция зависимостей
 ```typescript
 // composition-root.ts
-import { setPortAdapters } from '@maxdev1/sotajs';
+import { setPortAdapters } from '@sotajs/core';
 import { 
   userDbAdapter, 
   orderDbAdapter, 

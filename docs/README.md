@@ -38,7 +38,7 @@ Sota (Сота) — это TypeScript-фреймворк для разработ
 
 ```typescript
 import { z } from 'zod';
-import { createValueObject } from '@maxdev1/sotajs';
+import { createValueObject } from '@sotajs/core';
 
 // 1. Определяем схему и тип
 const MoneySchema = z.object({
@@ -75,15 +75,29 @@ export type Money = ReturnType<typeof Money.create>;
 
 ```typescript
 import { z } from 'zod';
-import { createEntity } from '@maxdev1/sotajs';
+import { createEntity } from '@sotajs/core';
 
 const UserProfileSchema = z.object({
   id: z.string().uuid(),
   username: z.string(),
   bio: z.string().optional(),
 });
+type UserProfileProps = z.infer<typeof UserProfileSchema>;
 
-export const UserProfile = createEntity(UserProfileSchema, 'UserProfile');
+export const UserProfile = createEntity({
+  schema: UserProfileSchema,
+  actions: {
+    updateUsername: (state: UserProfileProps, newUsername: string) => {
+      state.username = newUsername;
+    },
+    updateBio: (state: UserProfileProps, bio: string) => {
+      state.bio = bio;
+    },
+  },
+  computed: {
+    displayName: (props: UserProfileProps) => props.username,
+  },
+});
 export type UserProfile = ReturnType<typeof UserProfile.create>;
 ```
 
@@ -99,7 +113,7 @@ export type UserProfile = ReturnType<typeof UserProfile.create>;
 
 ```typescript
 import { z } from 'zod';
-import { createAggregate } from '@maxdev1/sotajs';
+import { createAggregate, createEntity } from '@sotajs/core';
 
 // Вложенная сущность для информации о клиенте
 const CustomerInfoSchema = z.object({
@@ -118,23 +132,44 @@ const OrderItemSchema = z.object({
 // Основная схема агрегата Order
 const OrderSchema = z.object({
   id: z.string().uuid(),
+  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered']),
   customerInfo: CustomerInfoSchema,
   items: z.array(OrderItemSchema),
-  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered']),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 type OrderState = z.infer<typeof OrderSchema>;
 
-export const Order = createAggregate({
-  schema: OrderSchema,
+// Вложенная сущность
+const CustomerInfo = createEntity({
+  schema: CustomerInfoSchema,
   actions: {
-    addItem(state: OrderState, item: z.infer<typeof OrderItemSchema>) {
+    updateName: (state: CustomerInfoState, name: string) => {
+      state.name = name;
+    },
+  },
+});
+
+export const Order = createAggregate({
+  name: 'Order',
+  schema: OrderSchema,
+  entities: {
+    customerInfo: CustomerInfo, // Map the 'customerInfo' property to the CustomerInfo entity class
+  },
+  invariants: [
+    (props) => {
+      if (props.items.length === 0) {
+        throw new Error('Order must have at least one item');
+      }
+    },
+  ],
+  actions: {
+    addItem: (state: OrderState, item: z.infer<typeof OrderItemSchema>) => {
       state.items.push(item);
       state.updatedAt = new Date();
     },
     
-    confirmOrder(state: OrderState) {
+    confirmOrder: (state: OrderState) => {
       if (state.status !== 'pending') {
         throw new Error('Only pending orders can be confirmed');
       }
@@ -142,9 +177,18 @@ export const Order = createAggregate({
       state.updatedAt = new Date();
     },
     
-    calculateTotal(state: OrderState): number {
+    calculateTotal: (state: OrderState): number => {
       return state.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }
+    },
+    
+    // Action to demonstrate entity interaction
+    updateCustomerName: (state: OrderState, name: string) => {
+      // `state.customerInfo` is an instance of CustomerInfo, so we can call its actions
+      state.customerInfo.actions.updateName(name);
+    },
+  },
+  computed: {
+    isConfirmed: (props: OrderState) => props.status === 'confirmed',
   }
 });
 export type Order = ReturnType<typeof Order.create>;
@@ -152,15 +196,72 @@ export type Order = ReturnType<typeof Order.create>;
 // --- Использование ---
 // const order = Order.create({
 //   id: '123e4567-e89b-12d3-a456-426614174000',
+//   status: 'pending',
 //   customerInfo: { name: 'John Doe', email: 'john@example.com' },
 //   items: [],
-//   status: 'pending',
 //   createdAt: new Date(),
 //   updatedAt: new Date()
 // });
 // 
 // order.actions.addItem({ productId: '...', quantity: 2, price: 25.99 });
 // const total = order.actions.calculateTotal();
+// order.actions.updateCustomerName('Jane Doe');
+```
+
+### 3.4. Доменные события (Domain Events)
+
+Агрегаты могут генерировать доменные события при выполнении действий. Это позволяет уведомлять другие части системы о важных бизнес-событиях.
+
+Для создания события, действие должно вернуть объект с событием:
+
+```typescript
+// Определяем событие
+class OrderPaidEvent {
+  constructor(
+    public readonly aggregateId: string,
+    public readonly timestamp = new Date(),
+  ) {}
+}
+
+// Добавляем действие, которое генерирует событие
+const Order = createAggregate({
+  name: 'Order',
+  schema: OrderSchema,
+  actions: {
+    payOrder: (state: OrderState, paymentMethod: string) => {
+      if (state.status !== 'pending') {
+        throw new Error('Only pending orders can be paid');
+      }
+      state.status = 'paid';
+      state.updatedAt = new Date();
+      
+      // Возвращаем событие
+      return {
+        event: new OrderPaidEvent(state.id),
+      };
+    },
+  },
+});
+
+// --- Использование ---
+const order = Order.create({
+  id: '123e4567-e89b-12d3-a456-426614174000',
+  status: 'pending',
+  customerInfo: { name: 'John Doe', email: 'john@example.com' },
+  items: [],
+  createdAt: new Date(),
+  updatedAt: new Date()
+});
+
+// Выполняем действие, которое генерирует событие
+order.actions.payOrder('credit-card');
+
+// Получаем ожидающие события
+const events = order.getPendingEvents();
+console.log(events); // [OrderPaidEvent(...)]
+
+// После обработки событий можно очистить очередь
+order.clearEvents();
 ```
 
 ## 4. Оркестрация: Use Cases и CQRS подход
@@ -173,7 +274,7 @@ export type Order = ReturnType<typeof Order.create>;
 
 **Пример: `createOrderCommand`**
 ```typescript
-import { usePort } from '@maxdev1/sotajs';
+import { usePort } from '@sotajs/core';
 import { findUserByIdPort, saveOrderPort } from '@domain/ports'; // Предполагается, что порты определены в другом месте
 import { Order } from '@domain/order.aggregate';
 
@@ -214,7 +315,7 @@ export const createOrderCommand = async (input: CreateOrderInput) => {
 **Пример: `getUserOrdersQuery`**
 ```typescript
 import { z } from 'zod';
-import { usePort } from '@maxdev1/sotajs/lib/di.v2';
+import { usePort } from '@sotajs/core';
 import { findOrdersByUserIdPort } from '@domain/ports';
 
 const GetUserOrdersInputSchema = z.object({
@@ -256,6 +357,75 @@ export const getUserOrdersQuery = async (input: GetUserOrdersInput): Promise<Get
 };
 ```
 
+Кроме того, вы можете использовать `usePorts` для получения сразу нескольких зависимостей:
+
+**Пример: использование `usePorts`**
+```typescript
+import { usePorts } from '@sotajs/core';
+import { findUserByIdPort, saveOrderPort, findOrdersByUserIdPort } from '@domain/ports';
+
+export const createOrderWithUserValidationCommand = async (input: CreateOrderInput) => {
+  // Получаем несколько зависимостей за один вызов
+  const [findUserById, saveOrder, findOrdersByUserId] = usePorts(
+    findUserByIdPort, 
+    saveOrderPort, 
+    findOrdersByUserIdPort
+  );
+
+  // Выполняем логику
+  const user = await findUserById(input.userId);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Проверяем историю заказов пользователя
+  const userOrders = await findOrdersByUserId({ userId: input.userId });
+  if (userOrders.length > 100) {
+    throw new Error('User has too many orders');
+  }
+
+  const order = Order.create({
+    userId: user.id,
+    items: input.items,
+    // ... другие поля
+  });
+
+  await saveOrder(order);
+
+  return { orderId: order.id };
+};
+```
+
+### 4.3. Лучшие практики
+
+При работе с внедрением зависимостей в SotaJS рекомендуется следовать следующим принципам:
+
+1. **Предпочтение `usePorts` перед несколькими `usePort`**:
+   При необходимости получения нескольких зависимностей в одном Use Case, используйте `usePorts` вместо нескольких вызовов `usePort`. Это более эффективно и делает код чище:
+
+   ```typescript
+   // Правильно: использование usePorts для нескольких зависимостей
+   const [findUserById, saveOrder, findOrdersByUserId] = usePorts(
+     findUserByIdPort, 
+     saveOrderPort, 
+     findOrdersByUserIdPort
+   );
+
+   // Избегайте: несколько вызовов usePort
+   const findUserById = usePort(findUserByIdPort);
+   const saveOrder = usePort(saveOrderPort);
+   const findOrdersByUserId = usePort(findOrdersByUserIdPort);
+   ```
+
+2. **Явные зависимости**:
+   Всегда объявляйте зависимости через `usePort` или `usePorts`, чтобы сделать зависимости Use Case прозрачными и облегчить тестирование.
+
+3. **Группировка связанных портов в фичи**:
+   Объединяйте связанные порты в фичи с помощью `defineFeature`, чтобы улучшить структуру и поддерживаемость кода.
+
+4. **Валидация на уровне портов**:
+   Используйте Zod схемы для валидации данных на границах системы (в адаптерах), чтобы обеспечить целостность данных.
+
 ## 5. Внедрение зависимостей: Фичи и Ядро
 
 SotaJS использует надежный механизм внедрения зависимостей, основанный на "фичах" и "ядре". Это позволяет гарантировать, что все зависимости для каждого модуля предоставлены в точке композиции.
@@ -265,7 +435,7 @@ SotaJS использует надежный механизм внедрения
 Порт — это контракт зависимости. При его создании больше не нужно указывать `Promise` в возвращаемом типе — фреймворк делает это автоматически.
 
 ```typescript
-import { createPort } from '@maxdev1/sotajs';
+import { createPort } from '@sotajs/core';
 import type { User, Order } from './domain';
 
 // Сигнатура описывает обычную функцию
@@ -273,12 +443,27 @@ const findUserByIdPort = createPort<(id: string) => User | null>();
 const saveOrderPort = createPort<(order: Order) => void>();
 ```
 
+> **Лучшая практика: Совместное размещение портов**
+> 
+> Чтобы поддерживать высокую связность (cohesion) кода, рекомендуется определять порты, отвечающие за работу с определенной сущностью или агрегатом, в том же файле, где определен сам доменный объект.
+> 
+> ```typescript
+> // domain/user.entity.ts
+> 
+> // Определение сущности
+> export const User = createEntity(...);
+> 
+> // Определение портов, связанных с User
+> export const findUserByIdPort = createPort<(id: string) => User | null>();
+> export const saveUserPort = createPort<(user: User) => void>();
+> ```
+
 ### Шаг 2: Группировка Портов в Фичу (`defineFeature`)
 
 Фича объединяет связанные порты в один логический модуль.
 
 ```typescript
-import { defineFeature } from '@maxdev1/sotajs';
+import { defineFeature } from '@sotajs/core';
 
 const OrderFeature = defineFeature({
   findUserById: findUserByIdPort,
@@ -291,7 +476,7 @@ const OrderFeature = defineFeature({
 Адаптер — это класс, который реализует все порты, определенные в фиче. Для проверки полноты реализации используется хелпер `FeaturePorts`.
 
 ```typescript
-import { FeaturePorts } from '@maxdev1/sotajs';
+import { FeaturePorts } from '@sotajs/core';
 import type { Order, User } from './domain';
 
 // Класс-адаптер реализует контракт фичи
@@ -309,29 +494,50 @@ class PrismaOrderAdapter implements FeaturePorts<typeof OrderFeature> {
 ```
 TypeScript выдаст ошибку, если класс `PrismaOrderAdapter` не реализует хотя бы один из портов, объявленных в `OrderFeature`.
 
-### Шаг 4: Определение Ядра и Связывание (`defineCore` и `bindFeatures`)
+### Шаг 4: Определение и Композиция Ядра
 
-В точке композиции приложения (например, в `main.ts`) мы определяем ядро и связываем фичи с их конкретными реализациями.
+Последний шаг — это определение ядра приложения и его композиция. Этот процесс четко разделен на два этапа, которые происходят в разных местах.
+
+#### 4.1. Определение Ядра (Слой Приложения)
+
+Внутри вашего слоя приложения (например, в `application/index.ts`) вы определяете ядро, объединяя все созданные фичи. Это ядро представляет собой публичный API вашего бизнес-слоя.
 
 ```typescript
-// main.ts
-import { defineCore } from '@maxdev1/sotajs';
+// src/application/index.ts
+import { defineCore } from '@sotajs/core';
 import { OrderFeature } from './features/orders';
-import { PrismaOrderAdapter } from './adapters/prisma-order-adapter';
+import { AuthFeature } from './features/auth';
 
 // 1. Определяем ядро, перечисляя все фичи
 const core = defineCore({
   orders: OrderFeature,
-  // auth: AuthFeature,
+  auth: AuthFeature,
 });
 
-// 2. Связываем фичи с их адаптерами
-core.bindFeatures(({ orders }) => {
+// 2. Экспортируем ядро. Это позволит другим слоям (например, слою представления)
+// вызывать use cases, но не даст им доступа к внутренним механизмам DI.
+export default core;
+```
+
+#### 4.2. Композиция Ядра (Точка Композиции)
+
+В самой внешней точке вашего приложения (например, `src/main.ts` или `src/index.ts`) вы импортируете ядро и связываете его фичи с конкретными реализациями (адаптерами). Это **единственное** место, где происходит DI.
+
+```typescript
+// src/main.ts (Composition Root)
+import core from './application'; // Импортируем ядро
+import { PrismaOrderAdapter } from './infrastructure/adapters/prisma-order-adapter';
+import { JwtAuthAdapter } from './infrastructure/adapters/jwt-auth-adapter';
+
+// 3. В точке композиции связываем фичи с их адаптерами
+core.bindFeatures(({ orders, auth }) => {
   orders.bind(PrismaOrderAdapter);
+  auth.bind(JwtAuthAdapter);
 });
 
-// Готово! Теперь при вызове usePort(findUserByIdPort) внутри
-// use case будет использоваться реализация из PrismaOrderAdapter.
+// Готово! Теперь при вызове usePort() внутри любого use case
+// будет использоваться соответствующая реализация из адаптера.
+// Например, use case из OrderFeature получит доступ к PrismaOrderAdapter.
 ```
 
 Этот подход гарантирует, что вы не забудете предоставить реализацию для какого-либо порта, делая систему надежной и предсказуемой.
