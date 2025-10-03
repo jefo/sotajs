@@ -1,6 +1,6 @@
 {
   "name": "@sotajs/core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A TypeScript framework for building applications using Hexagonal Architecture and Domain-Driven Design principles",
   "keywords": [
     "ddd",
