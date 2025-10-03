@@ -12,7 +12,7 @@ const UserSchema = z.object({
 });
 type UserProps = z.infer<typeof UserSchema>;
 
-// Create the Entity class with auto-setters enabled
+// Create the Entity class (auto-setters are always enabled)
 const User = createEntity({
   schema: UserSchema,
   actions: {
@@ -23,7 +23,6 @@ const User = createEntity({
   computed: {
     displayName: (props: UserProps) => `${props.name} (${props.email})`,
   },
-  enableAutoSetters: true, // Enable auto-generated setters
 });
 
 describe("createEntity with auto-setters", () => {
@@ -131,36 +130,3 @@ describe("createEntity with auto-setters", () => {
   });
 });
 
-// Test without auto-setters to ensure they are optional
-const UserWithoutAutoSetters = createEntity({
-  schema: UserSchema,
-  actions: {
-    updateName: (state: UserProps, newName: string) => {
-      state.name = newName;
-    },
-  },
-  enableAutoSetters: false, // Explicitly disable auto-setters
-});
-
-describe("createEntity without auto-setters", () => {
-  const validUserData = {
-    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    age: 30,
-    isActive: true,
-  };
-
-  it("should not have auto-generated setter actions when disabled", () => {
-    const user = UserWithoutAutoSetters.create(validUserData);
-    
-    // Check that auto-setters do not exist
-    expect(typeof user.actions.setName).toBe("undefined");
-    expect(typeof user.actions.setEmail).toBe("undefined");
-    expect(typeof user.actions.setAge).toBe("undefined");
-    expect(typeof user.actions.setIsActive).toBe("undefined");
-    
-    // But custom action should exist
-    expect(typeof user.actions.updateName).toBe("function");
-  });
-});

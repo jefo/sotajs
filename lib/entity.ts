@@ -23,7 +23,6 @@ export interface EntityConfig<
   schema: z.ZodType<TProps>;
   actions: TActions;
   computed?: TComputed;
-  enableAutoSetters?: boolean; // Option to enable auto-generated setters
 }
 
 /**
@@ -64,11 +63,10 @@ function generateSetters<TProps extends { id: string }>(schema: z.ZodType<TProps
 export function createEntity<
   TProps extends { id: string },
   TActions extends Record<string, (props: TProps, ...args: any[]) => void>,
-  TComputed extends Record<string, (props: TProps) => any> = {},
-  TEnableAutoSetters extends boolean = false
->(config: EntityConfig<TProps, TActions, TComputed> & { enableAutoSetters?: TEnableAutoSetters }) {
-  // Generate automatic setters if enabled
-  const autoSetters = config.enableAutoSetters ? generateSetters(config.schema) : {};
+  TComputed extends Record<string, (props: TProps) => any> = {}
+>(config: EntityConfig<TProps, TActions, TComputed>) {
+  // Generate automatic setters for all entities
+  const autoSetters = generateSetters(config.schema);
   
   // Merge custom actions with auto-generated setters
   const allActions = { ...config.actions, ...autoSetters } as Record<string, any>;
