@@ -234,27 +234,21 @@ export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeat
    */
   private async executeFunctionCode(code: string, payload?: Record<string, any>): Promise<any> {
     try {
-      // Create a sandbox context
-      const context = {
-        payload,
-        console,
-      };
+      // Create function that has module in scope and returns exports
+      // This allows user code to use `module.exports.handler = ...` pattern
+      const evalCode = `{ const module = { exports: {} }; ${code}; return module.exports; }`;
+      const evalFn = new Function(evalCode);
+      const exports = evalFn();
 
-      // Create function from code
-      // Note: In production, use proper sandboxing (vm2, isolated-vm, or Yandex Cloud)
-      const handlerCode = `
-        (async function(context) {
-          ${code}
-          if (typeof handler === 'function') {
-            return await handler(context.payload || {});
-          }
-          throw new Error('No handler function exported');
-        })
-      `;
+      // Get the handler from exports
+      const handler = exports?.handler;
+      
+      if (typeof handler !== "function") {
+        throw new Error("No handler function exported");
+      }
 
-      const handler = new Function("context", handlerCode);
-      const result = await handler(context);
-
+      // Call the handler with payload
+      const result = await handler(payload || {});
       return result;
     } catch (error) {
       throw new Error(

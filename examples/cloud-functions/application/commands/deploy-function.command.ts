@@ -17,7 +17,6 @@ const DeployFunctionInputSchema = z.object({
   memory: z.number().refine((m) => m >= 128 && m <= 4096, "Memory must be 128-4096 MB"),
   executionTimeout: z.number().refine((t) => t >= 1 && t <= 600, "Timeout must be 1-600 seconds"),
   code: z.string().min(1, "Code cannot be empty"),
-  environment: z.record(z.string()).optional().default({}),
 });
 
 type DeployFunctionInput = z.infer<typeof DeployFunctionInputSchema>;
@@ -52,7 +51,6 @@ export const deployFunctionCommand = async (
     memory: command.memory,
     executionTimeout: command.executionTimeout,
     code: command.code,
-    environment: command.environment,
   });
 
   if (result.success) {

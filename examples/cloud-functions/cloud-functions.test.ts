@@ -11,6 +11,9 @@ import { YandexCloudAdapter } from "./infrastructure/adapters/yandex-cloud.adapt
 import { CloudFunctionFeature } from "./infrastructure/ports/cloud-feature";
 import { defineCore, resetDI } from "../../lib";
 
+// Helper to generate unique function names
+const uniqueName = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 /**
  * Tests for Cloud Functions PoC
  *
@@ -185,22 +188,22 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should reject duplicate function name", async () => {
     await deployFunctionCommand({
-      name: "duplicate-function",
+      name: "dup-function-test",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 200 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 200 });`,
       environment: {},
     });
 
     const result = await deployFunctionCommand({
-      name: "duplicate-function",
+      name: "dup-function-test",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 201 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 201 });`,
       environment: {},
     });
 
@@ -212,7 +215,7 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should invoke deployed function", async () => {
     const deployResult = await deployFunctionCommand({
-      name: "invokable-function",
+      name: "test-function-invoke",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
@@ -254,13 +257,12 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should get function by ID", async () => {
     const deployResult = await deployFunctionCommand({
-      name: "gettable-function",
+      name: "test-function-get",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 200 });`,
-      environment: {},
+      code: `module.exports.handler = async () => ({ statusCode: 200 });`,
     });
 
     if (!deployResult.success) throw new Error("Deploy failed");
@@ -271,7 +273,7 @@ describe("Cloud Functions Commands & Queries", () => {
 
     expect(getResult.success).toBe(true);
     if (getResult.success) {
-      expect(getResult.function.name).toBe("gettable-function");
+      expect(getResult.function.name).toBe("test-function-get");
       expect(getResult.function.runtime).toBe("nodejs18");
     }
   });
@@ -289,22 +291,22 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should list all functions", async () => {
     await deployFunctionCommand({
-      name: "function-one",
+      name: "test-function-list-one",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 200 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 200 });`,
       environment: {},
     });
 
     await deployFunctionCommand({
-      name: "function-two",
+      name: "test-function-list-two",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 256,
       executionTimeout: 60,
-      code: `export const handler = async () => ({ statusCode: 201 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 201 });`,
       environment: {},
     });
 
@@ -316,12 +318,12 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should list functions filtered by status", async () => {
     await deployFunctionCommand({
-      name: "active-function",
+      name: "test-function-filter",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 200 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 200 });`,
       environment: {},
     });
 
@@ -332,12 +334,12 @@ describe("Cloud Functions Commands & Queries", () => {
 
   it("should delete function", async () => {
     const deployResult = await deployFunctionCommand({
-      name: "deletable-function",
+      name: "test-function-delete",
       runtime: "nodejs18",
       entrypoint: "index.handler",
       memory: 128,
       executionTimeout: 30,
-      code: `export const handler = async () => ({ statusCode: 200 });`,
+      code: `module.exports.handler = async () => ({ statusCode: 200 });`,
       environment: {},
     });
 
