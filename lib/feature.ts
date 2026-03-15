@@ -1,4 +1,4 @@
-import type { Port } from './di.v2';
+import type { Port } from "./di.v2";
 
 // The definition of a feature, which is a record of ports.
 export type FeatureDef = Record<string, Port<any>>;
@@ -10,17 +10,19 @@ export type FeatureDef = Record<string, Port<any>>;
  * @returns The feature definition.
  */
 export const defineFeature = <TDef extends FeatureDef>(ports: TDef): TDef => {
-  return ports;
+	return ports;
 };
 
 type PortFn = (...args: any[]) => any;
 
-type AdapterFn<T extends PortFn> = (...args: Parameters<T>) => Promise<ReturnType<T>>;
+type AdapterFn<T extends PortFn> = (
+	...args: Parameters<T>
+) => Promise<ReturnType<T>>;
 
 /**
  * A type helper to extract the port signatures from a feature definition,
  * creating a type that an adapter class must implement.
  */
 export type FeaturePorts<T extends FeatureDef> = {
-  [K in keyof T]: T[K] extends Port<infer U> ? AdapterFn<U> : never;
+	[K in keyof T]: T[K] extends Port<infer U> ? AdapterFn<U> : never;
 };

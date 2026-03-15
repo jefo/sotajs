@@ -4,7 +4,7 @@
 // TODO: БЫЛО
 const telegramPresenter = usePort(telegramOutPort);
 const telegramPresenterError = usePort(telegramErrorOutPort);
-
+/
 await telegramPresenter(renderedView);
 await telegramPresenterError({ message: error.message });
 

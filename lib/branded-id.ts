@@ -13,8 +13,8 @@ export const createBrandedId = <Brand extends string>(brand: Brand) => {
 
 	// 2. Create a Zod schema that validates UUID and transforms to branded type
 	const BrandedIdSchema = z.uuid().brand();
-  type BrandedIdType = z.Infer<typeof BrandedIdSchema>;
-	
+	type BrandedIdType = z.Infer<typeof BrandedIdSchema>;
+
 	// 3. Return a class that encapsulates the branded ID.
 	class BrandedId {
 		public readonly value: BrandedIdType;

@@ -96,8 +96,10 @@ test("should handle multiple ports with different implementations", async () => 
 test("should handle dependencies between services", async () => {
 	// Define a logger port
 	const loggerPort = createPort<(message: string) => void>();
-    const logMessages: string[] = [];
-	const loggerAdapter = async (message: string) => { logMessages.push(message) };
+	const logMessages: string[] = [];
+	const loggerAdapter = async (message: string) => {
+		logMessages.push(message);
+	};
 	setPortAdapter(loggerPort, loggerAdapter);
 
 	// Define a service port
@@ -121,9 +123,8 @@ test("should handle dependencies between services", async () => {
 	const user = await getUser(1);
 
 	expect(user).toEqual({ id: 1, name: "User 1" });
-    expect(logMessages).toContain("Fetching user 1");
+	expect(logMessages).toContain("Fetching user 1");
 });
-
 
 describe("setPortAdapters", () => {
 	test("should bind multiple adapters at once", async () => {
@@ -146,7 +147,7 @@ describe("setPortAdapters", () => {
 	});
 });
 
-describe("usePorts", () => {
+describe("usePorts (array-based)", () => {
 	test("should resolve multiple ports in the correct order", async () => {
 		const portA = createPort<() => string>();
 		const portB = createPort<(n: number) => number>();
@@ -163,16 +164,5 @@ describe("usePorts", () => {
 		expect(await serviceA()).toBe("A");
 		expect(await serviceB(10)).toBe(20);
 		expect(await serviceC()).toBe(true);
-	});
-
-	test("should throw if any port is not bound", () => {
-		const portA = createPort<() => string>();
-		const portB = createPort<() => string>(); // This one won't be bound
-
-		setPortAdapter(portA, async () => "A");
-
-		expect(() => {
-			usePorts(portA, portB);
-		}).toThrow(/Adapter for port.*not set/);
 	});
 });

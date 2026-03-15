@@ -47,22 +47,25 @@ export interface AggregateConfig<
 	computed?: TComputed;
 }
 
-export type Actions<TState> = Record<string, (state: TState, ...args: any[]) => any>;
+export type Actions<TState> = Record<
+	string,
+	(state: TState, ...args: any[]) => any
+>;
 
 type OmitStateParameter<F> = F extends (state: any, ...args: infer A) => infer R
-  ? (...args: A) => R
-  : F;
+	? (...args: A) => R
+	: F;
 
 export type PublicActions<T extends Actions<any>> = {
-  [K in keyof T]: OmitStateParameter<T[K]>;
+	[K in keyof T]: OmitStateParameter<T[K]>;
 };
 
 export type Aggregate<TState, TActions extends Actions<TState>> = {
-  id: string;
-  readonly state: TState;
-  readonly actions: PublicActions<TActions>;
-  getPendingEvents: () => any[];
-}
+	id: string;
+	readonly state: TState;
+	readonly actions: PublicActions<TActions>;
+	getPendingEvents: () => any[];
+};
 
 type ComputedGetters<TComputed> = TComputed extends Record<string, any>
 	? {

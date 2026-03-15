@@ -18,7 +18,7 @@ const saveUserPort = createPort<(user: User) => void>();
 // 2. Define a Feature
 const UserFeature = defineFeature({
 	findUser: findUserPort,
-		saveUser: saveUserPort,
+	saveUser: saveUserPort,
 });
 
 // 3. Define an Adapter class that implements the feature's ports
@@ -76,43 +76,49 @@ describe("Core Feature System", () => {
 
 		expect(() => {
 			core.bindFeatures(({ users }) => {
-        // @ts-ignore - we are intentionally passing an incomplete adapter for testing
+				// @ts-ignore - we are intentionally passing an incomplete adapter for testing
 				users.bind(IncompleteUserAdapter);
 			});
-		}).toThrow("Adapter class for feature 'users' is missing method 'saveUser'.");
+		}).toThrow(
+			"Adapter class for feature 'users' is missing method 'saveUser'.",
+		);
 	});
 
-    test("should handle multiple features", async () => {
-        // Another feature for authentication
-        const getAuthStatusPort = createPort<() => { loggedIn: boolean }>();
-        const AuthFeature = defineFeature({
-            getAuthStatus: getAuthStatusPort
-        });
+	test("should handle multiple features", async () => {
+		// Another feature for authentication
+		const getAuthStatusPort = createPort<() => { loggedIn: boolean }>();
+		const AuthFeature = defineFeature({
+			getAuthStatus: getAuthStatusPort,
+		});
 
-        class MockAuthAdapter implements FeaturePorts<typeof AuthFeature> {
-            async getAuthStatus(): Promise<{ loggedIn: boolean }> {
-                return { loggedIn: true };
-            }
-        }
+		class MockAuthAdapter implements FeaturePorts<typeof AuthFeature> {
+			async getAuthStatus(): Promise<{ loggedIn: boolean }> {
+				return { loggedIn: true };
+			}
+		}
 
-        const core = defineCore({
-            users: UserFeature,
-            auth: AuthFeature,
-        });
+		const core = defineCore({
+			users: UserFeature,
+			auth: AuthFeature,
+		});
 
-        core.bindFeatures(({ users, auth }) => {
-            users.bind(InMemoryUserAdapter);
-            auth.bind(MockAuthAdapter);
-        });
+		core.bindFeatures(({ users, auth }) => {
+			users.bind(InMemoryUserAdapter);
+			auth.bind(MockAuthAdapter);
+		});
 
-        const [findUser, saveUser, getAuthStatus] = usePorts(findUserPort, saveUserPort, getAuthStatusPort);
+		const [findUser, saveUser, getAuthStatus] = usePorts(
+			findUserPort,
+			saveUserPort,
+			getAuthStatusPort,
+		);
 
-        await saveUser({ id: '1', name: 'Jane' });
+		await saveUser({ id: "1", name: "Jane" });
 
-        const user = await findUser('1');
-        const authStatus = await getAuthStatus();
+		const user = await findUser("1");
+		const authStatus = await getAuthStatus();
 
-        expect(user).toEqual({ id: '1', name: 'Jane' });
-        expect(authStatus).toEqual({ loggedIn: true });
-    });
+		expect(user).toEqual({ id: "1", name: "Jane" });
+		expect(authStatus).toEqual({ loggedIn: true });
+	});
 });

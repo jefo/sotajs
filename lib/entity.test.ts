@@ -28,7 +28,8 @@ const User = createEntity({
 	},
 	computed: {
 		displayName: (props: UserProps) => `${props.name} (${props.email})`,
-		isActiveText: (props: UserProps) => props.isActive ? "Active" : "Inactive",
+		isActiveText: (props: UserProps) =>
+			props.isActive ? "Active" : "Inactive",
 	},
 });
 
@@ -85,7 +86,10 @@ describe("createEntity with Immer", () => {
 	it("should correctly check for identity equality", () => {
 		const user1 = User.create(validUserData);
 		const user2 = User.create(validUserData); // Same ID, different instance
-		const user3 = User.create({ ...validUserData, id: 'a1b2c3d4-e5f6-4890-8234-567890abcdef' }); // Different ID
+		const user3 = User.create({
+			...validUserData,
+			id: "a1b2c3d4-e5f6-4890-8234-567890abcdef",
+		}); // Different ID
 
 		expect(user1.equals(user2)).toBe(true);
 		expect(user1.equals(user3)).toBe(false);
