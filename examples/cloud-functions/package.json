@@ -1,0 +1,21 @@
+{
+  "name": "@sotajs/example-cloud-functions",
+  "version": "0.1.0",
+  "description": "Cloud Functions PoC example using SotaJS with Yandex Cloud integration",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sotajs/core": "workspace:*",
+    "@yandex-cloud/sdk": "^2.0.0",
+    "zod": "^4.1.9"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}
