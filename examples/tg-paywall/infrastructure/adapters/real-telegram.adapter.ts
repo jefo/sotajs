@@ -23,8 +23,7 @@ export class RealTelegramAdapter
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
 						chat_id: input.resourceId,
-						member_limit: 1,
-						creates_join_request: false,
+						creates_join_request: true, // Включаем режим заявок
 					}),
 				},
 			);

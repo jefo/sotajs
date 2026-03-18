@@ -1,3 +1,4 @@
+import Database from "bun:sqlite";
 import { defineCore } from "../../lib";
 import {
 	PlanManagementFeature,
@@ -5,10 +6,12 @@ import {
 	PaymentFeature,
 	TelegramFeature,
 	LoggingFeature,
+	MessagingFeature,
 } from "./application";
 import {
 	SqlitePlanAdapter,
 	SqliteSubscriptionAdapter,
+	SqliteTemplateAdapter,
 	MockPaymentAdapter,
 	RealTelegramAdapter,
 	ConsoleLoggerAdapter,
@@ -20,25 +23,23 @@ export const core = defineCore({
 	payment: PaymentFeature,
 	telegram: TelegramFeature,
 	logging: LoggingFeature,
+	messaging: MessagingFeature,
 });
 
-// Для демо используем in-memory базу, для production можно указать путь к файлу
-const sqliteDbPath = process.env.SQLITE_PATH || ":memory:";
+// Единая база данных для всего приложения
+const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
+console.log(`[STORAGE] Using database at: ${sqliteDbPath}`);
+const sharedDb = new Database(sqliteDbPath);
 
-// Создаем фабрики для адаптеров, которые принимают параметры
-const createPlanAdapter = () => new SqlitePlanAdapter(sqliteDbPath);
-const createSubscriptionAdapter = () =>
-	new SqliteSubscriptionAdapter(sqliteDbPath);
-const createPaymentAdapter = () => new MockPaymentAdapter();
-const createTelegramAdapter = () =>
-	new RealTelegramAdapter(process.env.BOT_TOKEN || "demo_token");
-const createLoggerAdapter = () => new ConsoleLoggerAdapter();
+/**
+ * Обертки адаптеров гарантируют использование единого экземпляра БД 
+ * и корректное связывание портов фичи с методами реализации.
+ */
 
-// Обертка для адаптеров, чтобы они выглядели как классы для bind
 class PlanAdapterWrapper {
 	private adapter: SqlitePlanAdapter;
 	constructor() {
-		this.adapter = createPlanAdapter();
+		this.adapter = new SqlitePlanAdapter(sharedDb);
 	}
 
 	async savePlan(input: { plan: any }): Promise<void> {
@@ -49,6 +50,10 @@ class PlanAdapterWrapper {
 		return this.adapter.findPlanById(input);
 	}
 
+	async findPlanByName(input: { name: string }): Promise<any> {
+		return this.adapter.findPlanByName(input);
+	}
+
 	async listPlans(): Promise<any[]> {
 		return this.adapter.listPlans();
 	}
@@ -57,7 +62,7 @@ class PlanAdapterWrapper {
 class SubscriptionAdapterWrapper {
 	private adapter: SqliteSubscriptionAdapter;
 	constructor() {
-		this.adapter = createSubscriptionAdapter();
+		this.adapter = new SqliteSubscriptionAdapter(sharedDb);
 	}
 
 	async saveSubscription(input: { subscription: any }): Promise<void> {
@@ -97,12 +102,21 @@ class SubscriptionAdapterWrapper {
 	}): Promise<any> {
 		return this.adapter.findAccessGrantBySubscriptionId(input);
 	}
+
+	async findAccessGrantsByUserId(input: {
+		userId: string;
+	}): Promise<any[]> {
+		return this.adapter.findAccessGrantsByUserId(input);
+	}
 }
 
+/**
+ * Платежный адаптер остается фикстурой (Mock) для удобства тестирования и демо.
+ */
 class PaymentAdapterWrapper {
 	private adapter: MockPaymentAdapter;
 	constructor() {
-		this.adapter = createPaymentAdapter();
+		this.adapter = new MockPaymentAdapter();
 	}
 
 	async paymentProvider(input: {
@@ -114,10 +128,13 @@ class PaymentAdapterWrapper {
 	}
 }
 
+/**
+ * Реальный адаптер Telegram для управления доступом.
+ */
 class TelegramAdapterWrapper {
 	private adapter: RealTelegramAdapter;
 	constructor() {
-		this.adapter = createTelegramAdapter();
+		this.adapter = new RealTelegramAdapter(process.env.BOT_TOKEN || "demo_token");
 	}
 
 	async grantTelegramAccess(input: {
@@ -138,7 +155,7 @@ class TelegramAdapterWrapper {
 class LoggerAdapterWrapper {
 	private adapter: ConsoleLoggerAdapter;
 	constructor() {
-		this.adapter = createLoggerAdapter();
+		this.adapter = new ConsoleLoggerAdapter();
 	}
 
 	async logger(input: {
@@ -150,10 +167,30 @@ class LoggerAdapterWrapper {
 	}
 }
 
-core.bindFeatures(({ plans, subscriptions, payment, telegram, logging }) => {
+class TemplateAdapterWrapper {
+	private adapter: SqliteTemplateAdapter;
+	constructor() {
+		this.adapter = new SqliteTemplateAdapter(sharedDb);
+	}
+
+	async getTemplate(input: { key: string }): Promise<any> {
+		return this.adapter.getTemplate(input);
+	}
+
+	async saveTemplate(input: { key: string; content: string }): Promise<void> {
+		return this.adapter.saveTemplate(input);
+	}
+
+	async deleteTemplate(input: { key: string }): Promise<void> {
+		return this.adapter.deleteTemplate(input);
+	}
+}
+
+core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging }) => {
 	plans.bind(PlanAdapterWrapper);
 	subscriptions.bind(SubscriptionAdapterWrapper);
 	payment.bind(PaymentAdapterWrapper);
 	telegram.bind(TelegramAdapterWrapper);
 	logging.bind(LoggerAdapterWrapper);
+	messaging.bind(TemplateAdapterWrapper);
 });

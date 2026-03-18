@@ -37,6 +37,11 @@ class TestPlanAdapter {
 		return plans.get(input.id) || null;
 	}
 
+	async findPlanByName(input: { name: string }): Promise<any> {
+		const plans = (globalThis as any).__testPlans || new Map();
+		return Array.from(plans.values()).find((p: any) => p.name === input.name) || null;
+	}
+
 	async listPlans(): Promise<any[]> {
 		const plans = (globalThis as any).__testPlans || new Map();
 		return Array.from(plans.values());
@@ -103,6 +108,13 @@ class TestSubscriptionAdapter {
 			Array.from(accessGrants.values()).find(
 				(ag: any) => ag.subscriptionId === input.subscriptionId,
 			) || null
+		);
+	}
+
+	async findAccessGrantsByUserId(input: { userId: string }): Promise<any[]> {
+		const accessGrants = (globalThis as any).__testAccessGrants || new Map();
+		return Array.from(accessGrants.values()).filter(
+			(ag: any) => ag.userId === input.userId,
 		);
 	}
 }
@@ -218,6 +230,28 @@ describe("TG Paywall System", () => {
 		expect(userSub).not.toBeNull();
 		expect(userSub?.subscription?.id).toBe(subscriptionId);
 		expect(userSub?.accessGrant?.resourceId).toBe("channel-1");
+	});
+
+	it("should not allow creating plans with duplicate names", async () => {
+		// 1. Create first plan
+		await createPlanCommand({
+			name: "Unique Plan",
+			price: 100,
+			currency: "USD",
+			durationDays: 30,
+			channelId: "channel-1",
+		});
+
+		// 2. Try to create second plan with same name
+		await expect(
+			createPlanCommand({
+				name: "Unique Plan",
+				price: 200,
+				currency: "USD",
+				durationDays: 60,
+				channelId: "channel-2",
+			}),
+		).rejects.toThrow('Plan with name "Unique Plan" already exists');
 	});
 
 	it("should revoke expired subscriptions", async () => {

@@ -8,8 +8,12 @@ export class SqlitePlanAdapter
 {
 	private db: Database;
 
-	constructor(dbPath: string = ":memory:") {
-		this.db = new Database(dbPath);
+	constructor(dbOrPath: Database | string = ":memory:") {
+		if (dbOrPath instanceof Database) {
+			this.db = dbOrPath;
+		} else {
+			this.db = new Database(dbOrPath);
+		}
 		this.initSchema();
 	}
 
@@ -54,6 +58,27 @@ export class SqlitePlanAdapter
 		`);
 
 		const row = stmt.get(input.id) as any;
+
+		if (!row) return null;
+
+		return {
+			id: row.id,
+			name: row.name,
+			price: row.price,
+			currency: row.currency,
+			durationDays: row.duration_days,
+			channelId: row.channel_id,
+			createdAt: new Date(row.created_at),
+			updatedAt: new Date(row.updated_at),
+		};
+	}
+
+	async findPlanByName(input: { name: string }): Promise<PlanDto | null> {
+		const stmt = this.db.prepare(`
+			SELECT * FROM plans WHERE name = ?
+		`);
+
+		const row = stmt.get(input.name) as any;
 
 		if (!row) return null;
 

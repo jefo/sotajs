@@ -44,6 +44,7 @@ export type AccessGrantDto = {
 
 export const savePlanPort = createPort<(input: { plan: PlanDto }) => void>();
 export const findPlanByIdPort = createPort<(input: { id: string }) => PlanDto | null>();
+export const findPlanByNamePort = createPort<(input: { name: string }) => PlanDto | null>();
 export const listPlansPort = createPort<() => PlanDto[]>();
 
 export const saveSubscriptionPort = createPort<(input: { subscription: SubscriptionDto }) => void>();
@@ -56,6 +57,7 @@ export const findExpiredSubscriptionsPort = createPort<(input: { now: Date }) =>
 export const saveAccessGrantPort = createPort<(input: { accessGrant: AccessGrantDto }) => void>();
 export const updateAccessGrantPort = createPort<(input: { accessGrant: AccessGrantDto }) => void>();
 export const findAccessGrantBySubscriptionIdPort = createPort<(input: { subscriptionId: string }) => AccessGrantDto | null>();
+export const findAccessGrantsByUserIdPort = createPort<(input: { userId: string }) => AccessGrantDto[]>(); // NEW
 
 /**
  * Ports: External Services
@@ -82,3 +84,15 @@ export const loggerPort = createPort<(input: {
   message: string;
   context?: Record<string, any>;
 }) => void>();
+
+/**
+ * Ports: Message Templates
+ */
+export type MessageTemplateDto = {
+  key: string;
+  content: string;
+};
+
+export const getTemplatePort = createPort<(input: { key: string }) => MessageTemplateDto | null>();
+export const saveTemplatePort = createPort<(input: { key: string; content: string }) => void>();
+export const deleteTemplatePort = createPort<(input: { key: string }) => void>(); // Для сброса к дефолту

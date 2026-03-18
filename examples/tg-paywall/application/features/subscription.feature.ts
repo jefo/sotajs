@@ -9,6 +9,7 @@ import {
 	saveAccessGrantPort,
 	updateAccessGrantPort,
 	findAccessGrantBySubscriptionIdPort,
+	findAccessGrantsByUserIdPort,
 } from "../ports/paywall.ports";
 
 export const SubscriptionFeature = defineFeature({
@@ -21,4 +22,5 @@ export const SubscriptionFeature = defineFeature({
 	saveAccessGrant: saveAccessGrantPort,
 	updateAccessGrant: updateAccessGrantPort,
 	findAccessGrantBySubscriptionId: findAccessGrantBySubscriptionIdPort,
+	findAccessGrantsByUserId: findAccessGrantsByUserIdPort,
 });

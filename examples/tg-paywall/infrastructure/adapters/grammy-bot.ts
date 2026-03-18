@@ -1,282 +1,393 @@
 import { Bot, Context, InlineKeyboard, session, SessionFlavor } from "grammy";
 import {
-  createPlanCommand,
-  subscribeUserCommand,
-  confirmPaymentCommand,
-  revokeAccessCommand,
-  listPlansQuery,
-  findSubscriptionByUserIdQuery,
-  listActiveSubscriptionsQuery,
+	createPlanCommand,
+	subscribeUserCommand,
+	confirmPaymentCommand,
+	revokeAccessCommand,
+	listPlansQuery,
+	findSubscriptionByUserIdQuery,
+	listActiveSubscriptionsQuery,
+	checkAccessQuery,
+	getFormattedMessageQuery,
+	updateTemplateCommand,
+	resetTemplateCommand,
 } from "../../application";
 import { findPlanByIdPort } from "../../application/ports/paywall.ports";
 import { usePorts } from "../../../../lib";
 
 /**
- * Типизация сессии (для сложных сценариев, например, создания тарифа)
+ * Типизация сессии
  */
 interface SessionData {
-  step: "idle" | "awaiting_plan_name" | "awaiting_plan_price" | "awaiting_plan_duration" | "awaiting_plan_channel";
-  newPlan: Partial<{
-    name: string;
-    price: number;
-    duration: number;
-    channelId: string;
-  }>;
+	step:
+		| "idle"
+		| "awaiting_plan_name"
+		| "awaiting_plan_price"
+		| "awaiting_plan_duration"
+		| "awaiting_plan_channel"
+		| "awaiting_template_content";
+	newPlan: Partial<{
+		name: string;
+		price: number;
+		duration: number;
+		channelId: string;
+	}>;
+	editingTemplateKey?: string;
 }
 
 type MyContext = Context & SessionFlavor<SessionData>;
 
 export function createGrammyBot(token: string, adminId: number) {
-  const bot = new Bot<MyContext>(token);
+	const bot = new Bot<MyContext>(token);
 
-  // Инициализация сессии
-  bot.use(session({ initial: (): SessionData => ({ step: "idle", newPlan: {} }) }));
+	// Инициализация сессии
+	bot.use(
+		session({ initial: (): SessionData => ({ step: "idle", newPlan: {} }) }),
+	);
 
-  // --- Middleware для логирования ---
-  bot.use(async (ctx, next) => {
-    if (ctx.from) {
-      console.log(`[GrammY] Update from ${ctx.from.username || ctx.from.id}: ${ctx.message?.text || ctx.callbackQuery?.data}`);
-    }
-    await next();
-  });
+	// --- Middleware для логирования ---
+	bot.use(async (ctx, next) => {
+		if (ctx.from) {
+			console.log(
+				`[GrammY] Update from ${ctx.from.username || ctx.from.id}: ${ctx.message?.text || ctx.callbackQuery?.data}`,
+			);
+		}
+		await next();
+	});
 
-  // --- Команда /start с поддержкой Deep Linking ---
-  bot.command("start", async (ctx) => {
-    const planId = ctx.match; // ID тарифа из ссылки ?start=ID
+	// --- Команда /start ---
+	bot.command("start", async (ctx) => {
+		const planId = ctx.match;
 
-    if (planId) {
-      const { findPlanById } = usePorts({ findPlanById: findPlanByIdPort });
-      const plan = await findPlanById({ id: planId });
-      
-      if (plan) {
-        const keyboard = new InlineKeyboard().text(`💳 Оплатить ${plan.price} ${plan.currency}`, `pay_${plan.id}`);
-        return ctx.reply(
-          `🥇 **Вы выбрали тариф: ${plan.name}**\n\n` +
-          `⏳ Длительность: ${plan.durationDays} дней\n` +
-          `💰 Стоимость: ${plan.price} ${plan.currency}\n\n` +
-          `Нажмите кнопку ниже для оплаты и получения доступа:`,
-          { reply_markup: keyboard, parse_mode: "Markdown" }
-        );
-      }
-    }
+		if (planId) {
+			const { findPlanById } = usePorts({ findPlanById: findPlanByIdPort });
+			const plan = await findPlanById({ id: planId });
 
-    const keyboard = new InlineKeyboard()
-      .text("📦 Тарифы", "list_tariffs")
-      .text("📅 Моя подписка", "my_sub")
-      .row()
-      .text("❓ Помощь", "help");
+			if (plan) {
+				const keyboard = new InlineKeyboard().text(
+					`💳 Оплатить ${plan.price} ${plan.currency}`,
+					`pay_${plan.id}`,
+				);
+				return ctx.reply(
+					`🥇 <b>Вы выбрали формат: ${plan.name}</b>\n\n` +
+						`⏳ Период развития: ${plan.durationDays} дней\n` +
+						`💰 Инвестиция: ${plan.price} ${plan.currency}\n\n` +
+						`Нажмите кнопку ниже, чтобы начать онбординг в Акселератор:`,
+					{ reply_markup: keyboard, parse_mode: "HTML" },
+				);
+			}
+		}
 
-    await ctx.reply(
-      `👋 Привет, ${ctx.from?.first_name}! Я бот доступа к закрытым каналам.\n\n` +
-      `Выберите действие в меню ниже:`,
-      { reply_markup: keyboard }
-    );
-  });
+		const keyboard = new InlineKeyboard()
+			.text("🚀 Участие", "list_tariffs")
+			.text("📅 Мой статус", "my_sub")
+			.row()
+			.text("❓ Помощь", "help");
 
-  // --- Просмотр тарифов (для пользователей) ---
-  bot.callbackQuery("list_tariffs", async (ctx) => {
-    const plans = await listPlansQuery();
-    
-    if (plans.length === 0) {
-      return ctx.editMessageText("😔 Доступных тарифов пока нет.");
-    }
+		await ctx.reply(
+			`👋 <b>Приветствую в Product Accelerator!</b>\n\n` +
+				`Я ваш персональный проводник в закрытое сообщество Product-менеджеров из BigTech. Здесь мы делимся кейсами, которые не попадают в Medium, и вакансиями, которых нет на рынке.\n\n` +
+				`<b>Готовы ускорить свой карьерный трек?</b>`,
+			{ reply_markup: keyboard, parse_mode: "HTML" },
+		);
+	});
 
-    await ctx.editMessageText("📦 **Выберите подходящий тариф:**", { parse_mode: "Markdown" });
+	// --- Просмотр форматов участия ---
+	bot.callbackQuery("list_tariffs", async (ctx) => {
+		const plans = await listPlansQuery();
+		if (plans.length === 0)
+			return ctx.editMessageText("😔 Программы обучения временно недоступны.");
 
-    for (const plan of plans) {
-      const keyboard = new InlineKeyboard().text(`💳 Оплатить ${plan.price} ${plan.currency}`, `pay_${plan.id}`);
-      await ctx.reply(
-        `🥇 **${plan.name}**\n` +
-        `⏳ Длительность: ${plan.durationDays} дней\n` +
-        `📢 Канал: ${plan.channelId}`,
-        { reply_markup: keyboard, parse_mode: "Markdown" }
-      );
-    }
-    await ctx.answerCallbackQuery();
-  });
+		await ctx.editMessageText("📦 <b>Выберите подходящий формат участия:</b>", {
+			parse_mode: "HTML",
+		});
 
-  // --- Обработка оплаты ---
-  bot.on("callback_query:data", async (ctx, next) => {
-    const data = ctx.callbackQuery.data;
-    if (!data.startsWith("pay_")) return next();
+		for (const plan of plans) {
+			const keyboard = new InlineKeyboard().text(
+				`💳 Оплатить ${plan.price} ${plan.currency}`,
+				`pay_${plan.id}`,
+			);
+			await ctx.reply(
+				`🥇 <b>${plan.name}</b>\n` +
+					`⏳ Интенсивность: ${plan.durationDays} дней развития\n` +
+					`📢 Сообщество: BigTech Эксперты`,
+				{ reply_markup: keyboard, parse_mode: "HTML" },
+			);
+		}
+		await ctx.answerCallbackQuery();
+	});
 
-    const planId = data.replace("pay_", "");
-    const userId = String(ctx.from.id);
+	// --- Обработка оплаты ---
+	bot.on("callback_query:data", async (ctx, next) => {
+		const data = ctx.callbackQuery.data;
+		if (!data.startsWith("pay_")) return next();
 
-    try {
-      const { subscriptionId, paymentUrl } = await subscribeUserCommand({ userId, planId });
-      
-      const keyboard = new InlineKeyboard().url("🔗 Перейти к оплате", paymentUrl);
-      
-      await ctx.reply(
-        `✅ Подписка сформирована!\n\n` +
-        `Для активации доступа оплатите счет по ссылке ниже.\n` +
-        `После оплаты бот автоматически пришлет вам ссылку на канал.`,
-        { reply_markup: keyboard }
-      );
-      
-      // ДЕМО-ХАК: Имитируем подтверждение оплаты через 5 секунд
-      setTimeout(async () => {
-        const result = await confirmPaymentCommand({ 
-          subscriptionId, 
-          externalPaymentId: `mock_grammy_${Math.random().toString(36).substr(2, 9)}` 
-        });
-        
-        await bot.api.sendMessage(userId, 
-          `🎉 **Оплата подтверждена!**\n\n` +
-          `Ваша ссылка для входа: ${result.inviteLink}\n` +
-          `Действует до: ${result.expiresAt?.toLocaleDateString()}`,
-          { parse_mode: "Markdown" }
-        );
-      }, 5000);
+		const planId = data.replace("pay_", "");
+		const userId = String(ctx.from.id);
 
-      await ctx.answerCallbackQuery();
-    } catch (e: any) {
-      await ctx.reply(`❌ Ошибка: ${e.message}`);
-    }
-  });
+		try {
+			const { subscriptionId, paymentUrl } = await subscribeUserCommand({
+				userId,
+				planId,
+			});
+			const keyboard = new InlineKeyboard().url(
+				"🔗 Перейти к подтверждению",
+				paymentUrl,
+			);
 
-  // --- Моя подписка ---
-  bot.callbackQuery("my_sub", async (ctx) => {
-    const userId = String(ctx.from.id);
-    const status = await findSubscriptionByUserIdQuery({ userId });
+			await ctx.reply(
+				`✅ <b>Заявка на участие сформирована!</b>\n\n` +
+					`Для подтверждения вашего места в Акселераторе перейдите к оплате.\n` +
+					`После успешной транзакции система автоматически запустит ваш онбординг.`,
+				{ reply_markup: keyboard, parse_mode: "HTML" },
+			);
 
-    if (!status || !status.subscription || status.subscription.status !== "active") {
-      const keyboard = new InlineKeyboard().text("📦 Посмотреть тарифы", "list_tariffs");
-      return ctx.editMessageText(
-        "📅 **Ваша подписка**\n\nСтатус: ❌ Не активна",
-        { reply_markup: keyboard, parse_mode: "Markdown" }
-      );
-    }
+			await ctx.answerCallbackQuery();
+		} catch (e: any) {
+			await ctx.reply(`❌ Ошибка: ${e.message}`);
+		}
+	});
 
-    const sub = status.subscription;
-    await ctx.editMessageText(
-      `📅 **Ваша подписка**\n\n` +
-      `Статус: ✅ Активна\n` +
-      `🔑 Канал: ${status.accessGrant?.resourceId}\n` +
-      `⏳ Действует до: ${sub.expiresAt?.toLocaleDateString()}`,
-      { parse_mode: "Markdown" }
-    );
-    await ctx.answerCallbackQuery();
-  });
+	// --- Join Requests ---
+	bot.on("chat_join_request", async (ctx) => {
+		const userId = String(ctx.from.id);
+		const resourceId = String(ctx.chat.id);
 
-  // --- АДМИНКА ---
-  bot.command("admin", async (ctx) => {
-    if (ctx.from?.id !== adminId) return ctx.reply("❌ Доступ запрещен.");
-    
-    const keyboard = new InlineKeyboard()
-      .text("➕ Создать тариф", "admin_create_plan")
-      .text("👥 Подписчики", "admin_list_subscribers")
-      .row()
-      .text("📋 Список планов", "admin_list_plans");
+		try {
+			if (await checkAccessQuery({ userId, resourceId })) {
+				await ctx.approveChatJoinRequest();
+				const message = await getFormattedMessageQuery("join_success", {
+					durationDays: 30,
+				});
+				await bot.api.sendMessage(userId, message, { parse_mode: "HTML" });
+			} else {
+				await ctx.declineChatJoinRequest();
+				const message = await getFormattedMessageQuery("join_declined");
+				await bot.api.sendMessage(userId, message, { parse_mode: "HTML" });
+			}
+		} catch (e: any) {
+			console.error(`[GrammY] Error in chat_join_request: ${e.message}`);
+		}
+	});
 
-    await ctx.reply("⚙️ **Панель администратора**", { reply_markup: keyboard, parse_mode: "Markdown" });
-  });
+	// --- Мой статус ---
+	bot.callbackQuery("my_sub", async (ctx) => {
+		const userId = String(ctx.from.id);
+		const status = await findSubscriptionByUserIdQuery({ userId });
 
-  bot.callbackQuery("admin_create_plan", async (ctx) => {
-    if (ctx.from?.id !== adminId) return;
-    ctx.session.step = "awaiting_plan_name";
-    await ctx.reply("Шаг 1/4: Введите название тарифа (например, VIP):");
-    await ctx.answerCallbackQuery();
-  });
+		if (
+			!status ||
+			!status.subscription ||
+			status.subscription.status !== "active"
+		) {
+			return ctx.editMessageText(
+				"📅 <b>Ваш статус участия</b>\n\nСтатус: ❌ Доступ не активен",
+				{
+					reply_markup: new InlineKeyboard().text(
+						"🚀 Выбрать формат участия",
+						"list_tariffs",
+					),
+					parse_mode: "HTML",
+				},
+			);
+		}
 
-  bot.callbackQuery("admin_list_plans", async (ctx) => {
-    if (ctx.from?.id !== adminId) return;
-    const plans = await listPlansQuery();
-    
-    if (plans.length === 0) {
-      return ctx.reply("Тарифов пока нет.");
-    }
+		const sub = status.subscription;
+		await ctx.editMessageText(
+			`📅 <b>Ваш статус участия</b>\n\n` +
+				`Статус: ✅ Активен\n` +
+				`🔑 Сообщество: BigTech Accelerator\n` +
+				`⏳ Доступен до: ${sub.expiresAt?.toLocaleDateString()}`,
+			{ parse_mode: "HTML" },
+		);
+		await ctx.answerCallbackQuery();
+	});
 
-    let message = "📋 **Список планов:**\n\n";
-    plans.forEach(p => {
-      message += `• ${p.name}: ${p.price} RUB | ${p.durationDays} дн. | ID: \`${p.id}\` (для ссылок)\n`;
-    });
+	// --- АДМИНКА ---
+	bot.command("admin", async (ctx) => {
+		if (ctx.from?.id !== adminId) return ctx.reply("❌ Доступ запрещен.");
+		const keyboard = new InlineKeyboard()
+			.text("➕ Создать продукт", "admin_create_plan")
+			.text("👥 Резиденты", "admin_list_subscribers")
+			.row()
+			.text("📋 Линейка продуктов", "admin_list_plans")
+			.text("📝 Тексты онбординга", "admin_tpl_menu");
 
-    await ctx.reply(message, { parse_mode: "Markdown" });
-    await ctx.answerCallbackQuery();
-  });
+		await ctx.reply("⚙ <b>Управление Акселератором</b>", {
+			reply_markup: keyboard,
+			parse_mode: "HTML",
+		});
+	});
 
-  // Flow 4: Список подписчиков и ручной отзыв
-  bot.callbackQuery("admin_list_subscribers", async (ctx) => {
-    if (ctx.from?.id !== adminId) return;
-    const subs = await listActiveSubscriptionsQuery();
-    
-    if (subs.length === 0) {
-      return ctx.reply("Активных подписчиков пока нет.");
-    }
+	bot.callbackQuery("admin_tpl_menu", async (ctx) => {
+		if (ctx.from?.id !== adminId) return;
+		const keyboard = new InlineKeyboard()
+			.text("💳 Оплата подтверждена", "edit_tpl_payment_confirmed")
+			.row()
+			.text("🚀 Успешный онбординг", "edit_tpl_join_success")
+			.row()
+			.text("❌ Отказ в доступе", "edit_tpl_join_declined")
+			.row()
+			.text("⬅ Назад", "admin");
 
-    await ctx.reply(`👥 **Активные подписчики (${subs.length}):**`, { parse_mode: "Markdown" });
+		await ctx.editMessageText(
+			"📝 <b>Настройка текстов онбординга</b>\n\nВыберите этап для изменения:",
+			{ reply_markup: keyboard, parse_mode: "HTML" },
+		);
+		await ctx.answerCallbackQuery();
+	});
 
-    for (const sub of subs) {
-      const keyboard = new InlineKeyboard().text("❌ Отозвать доступ", `admin_revoke_${sub.userId}_${sub.id}`);
-      await ctx.reply(
-        `👤 User ID: ${sub.userId}\n` +
-        `💳 Тариф ID: ${sub.planId}\n` +
-        `⏳ Истекает: ${sub.expiresAt?.toLocaleDateString()}`,
-        { reply_markup: keyboard, parse_mode: "Markdown" }
-      );
-    }
-    await ctx.answerCallbackQuery();
-  });
+	bot.on("callback_query:data", async (ctx, next) => {
+		const data = ctx.callbackQuery.data;
+		if (!data.startsWith("edit_tpl_")) return next();
+		if (ctx.from?.id !== adminId) return;
 
-  bot.on("callback_query:data", async (ctx, next) => {
-    const data = ctx.callbackQuery.data;
-    if (!data.startsWith("admin_revoke_")) return next();
-    if (ctx.from?.id !== adminId) return;
+		const key = data.replace("edit_tpl_", "");
+		ctx.session.editingTemplateKey = key;
+		ctx.session.step = "awaiting_template_content";
 
-    const [,, userId, subscriptionId] = data.split("_");
-    
-    try {
-      await revokeAccessCommand({ userId, subscriptionId });
-      await ctx.reply(`✅ Доступ для пользователя ${userId} отозван.`);
-      await ctx.answerCallbackQuery();
-    } catch (e: any) {
-      await ctx.reply(`❌ Ошибка при отзыве: ${e.message}`);
-    }
-  });
+		const currentText = await getFormattedMessageQuery(key as any);
+		const keyboard = new InlineKeyboard()
+			.text("🔄 Сбросить", `reset_tpl_${key}`)
+			.text("❌ Отмена", "admin_tpl_menu");
 
-  // Простой FSM для создания тарифа
-  bot.on("message:text", async (ctx, next) => {
-    if (ctx.from?.id !== adminId || ctx.session.step === "idle") return next();
+		await ctx.editMessageText(
+			`📝 <b>Редактирование этапа:</b> <code>${key}</code>\n\n` +
+				`<b>Текущий текст:</b>\n---\n${currentText}\n---\n\n` +
+				`📥 <b>Инструкция:</b>\n1. Скопируйте текст.\n2. Отредактируйте (сохраняя {{переменные}}).\n3. Пришлите ответ.\n\n` +
+				`<i>HTML: &lt;b&gt;, &lt;i&gt;, &lt;code&gt;.</i>`,
+			{ reply_markup: keyboard, parse_mode: "HTML" },
+		);
+		await ctx.answerCallbackQuery();
+	});
 
-    switch (ctx.session.step) {
-      case "awaiting_plan_name":
-        ctx.session.newPlan.name = ctx.message.text;
-        ctx.session.step = "awaiting_plan_price";
-        await ctx.reply("Шаг 2/4: Введите цену в RUB (только число, например 990):");
-        break;
-      case "awaiting_plan_price":
-        const price = parseInt(ctx.message.text);
-        if (isNaN(price)) return ctx.reply("Пожалуйста, введите число.");
-        ctx.session.newPlan.price = price;
-        ctx.session.step = "awaiting_plan_duration";
-        await ctx.reply("Шаг 3/4: Введите длительность в днях (например 30):");
-        break;
-      case "awaiting_plan_duration":
-        const duration = parseInt(ctx.message.text);
-        if (isNaN(duration)) return ctx.reply("Пожалуйста, введите число.");
-        ctx.session.newPlan.duration = duration;
-        ctx.session.step = "awaiting_plan_channel";
-        await ctx.reply("Шаг 4/4: Введите ID канала (например, -100123456789):");
-        break;
-      case "awaiting_plan_channel":
-        ctx.session.newPlan.channelId = ctx.message.text;
-        
-        // Вызываем Use Case
-        await createPlanCommand({
-          name: ctx.session.newPlan.name!,
-          price: ctx.session.newPlan.price!,
-          currency: "RUB",
-          durationDays: ctx.session.newPlan.duration!,
-          channelId: ctx.session.newPlan.channelId!,
-        });
+	bot.on("callback_query:data", async (ctx, next) => {
+		const data = ctx.callbackQuery.data;
+		if (!data.startsWith("reset_tpl_")) return next();
+		if (ctx.from?.id !== adminId) return;
 
-        ctx.session.step = "idle";
-        await ctx.reply(`✅ Тариф "${ctx.session.newPlan.name}" успешно создан и привязан к ${ctx.session.newPlan.channelId}!`);
-        break;
-    }
-  });
+		const key = data.replace("reset_tpl_", "");
+		await resetTemplateCommand({ key });
+		ctx.session.step = "idle";
+		await ctx.reply(`✅ Этап <code>${key}</code> сброшен до стандарта.`, {
+			parse_mode: "HTML",
+		});
+		await ctx.answerCallbackQuery();
+	});
 
-  return bot;
+	bot.callbackQuery("admin_list_plans", async (ctx) => {
+		if (ctx.from?.id !== adminId) return;
+		const plans = await listPlansQuery();
+		if (plans.length === 0) return ctx.reply("Продукты еще не созданы.");
+
+		const botInfo = await bot.api.getMe();
+		let message = "📋 <b>Линейка образовательных продуктов:</b>\n\n";
+		plans.forEach((p) => {
+			const deepLink = `https://t.me/${botInfo.username}?start=${p.id}`;
+			message += `• <b>${p.name}</b>\n💰 Инвестиция: ${p.price} RUB | ⏳ ${p.durationDays} дн.\n🔗 <code>${deepLink}</code> \n\n`;
+		});
+		await ctx.reply(message, { parse_mode: "HTML" });
+		await ctx.answerCallbackQuery();
+	});
+
+	bot.callbackQuery("admin_list_subscribers", async (ctx) => {
+		if (ctx.from?.id !== adminId) return;
+		const subs = await listActiveSubscriptionsQuery();
+		if (subs.length === 0) return ctx.reply("Активных резидентов пока нет.");
+
+		await ctx.reply(`👥 <b>Резиденты акселератора (${subs.length}):</b>`, {
+			parse_mode: "HTML",
+		});
+		for (const sub of subs) {
+			const keyboard = new InlineKeyboard().text(
+				"❌ Исключить из клуба",
+				`admin_revoke_${sub.userId}_${sub.id}`,
+			);
+			await ctx.reply(
+				`👤 Resident ID: ${sub.userId}\n💳 Продукт ID: ${sub.planId}\n⏳ Доступ до: ${sub.expiresAt?.toLocaleDateString()}`,
+				{ reply_markup: keyboard, parse_mode: "HTML" },
+			);
+		}
+		await ctx.answerCallbackQuery();
+	});
+
+	bot.on("callback_query:data", async (ctx, next) => {
+		const data = ctx.callbackQuery.data;
+		if (!data.startsWith("admin_revoke_")) return next();
+		if (ctx.from?.id !== adminId) return;
+		const [, , userId, subscriptionId] = data.split("_");
+		try {
+			await revokeAccessCommand({ userId, subscriptionId });
+			await ctx.reply(`✅ Резидент ${userId} успешно исключен из клуба.`);
+			await ctx.answerCallbackQuery();
+		} catch (e: any) {
+			await ctx.reply(`❌ Ошибка при исключении: ${e.message}`);
+		}
+	});
+
+	bot.on("message:text", async (ctx, next) => {
+		if (ctx.from?.id !== adminId || ctx.session.step === "idle") return next();
+
+		if (ctx.session.step === "awaiting_template_content") {
+			const key = ctx.session.editingTemplateKey!;
+			await updateTemplateCommand({ key, content: ctx.message.text });
+			ctx.session.step = "idle";
+			ctx.session.editingTemplateKey = undefined;
+			await ctx.reply(`✅ <b>Текст онбординга обновлен!</b>`, {
+				parse_mode: "HTML",
+			});
+			return;
+		}
+
+		switch (ctx.session.step) {
+			case "awaiting_plan_name":
+				ctx.session.newPlan.name = ctx.message.text;
+				ctx.session.step = "awaiting_plan_price";
+				await ctx.reply("Шаг 2/4: Укажите размер инвестиции в RUB:");
+				break;
+			case "awaiting_plan_price":
+				const price = parseInt(ctx.message.text);
+				if (isNaN(price)) return ctx.reply("Пожалуйста, введите число.");
+				ctx.session.newPlan.price = price;
+				ctx.session.step = "awaiting_plan_duration";
+				await ctx.reply("Шаг 3/4: Укажите период участия (в днях):");
+				break;
+			case "awaiting_plan_duration":
+				const duration = parseInt(ctx.message.text);
+				if (isNaN(duration)) return ctx.reply("Пожалуйста, введите число.");
+				ctx.session.newPlan.duration = duration;
+				ctx.session.step = "awaiting_plan_channel";
+				await ctx.reply("Шаг 4/4: Введите ID закрытого сообщества:");
+				break;
+			case "awaiting_plan_channel":
+				ctx.session.newPlan.channelId = ctx.message.text;
+				const result = await createPlanCommand({
+					name: ctx.session.newPlan.name!,
+					price: ctx.session.newPlan.price!,
+					currency: "RUB",
+					durationDays: ctx.session.newPlan.duration!,
+					channelId: ctx.session.newPlan.channelId!,
+				});
+				const botInfo = await bot.api.getMe();
+				const deepLink = `https://t.me/${botInfo.username}?start=${result.planId}`;
+				ctx.session.step = "idle";
+				await ctx.reply(
+					`✅ <b>Продукт "${ctx.session.newPlan.name}" успешно запущен!</b>\n🔗 Прямая ссылка: <code>${deepLink}</code>`,
+					{ parse_mode: "HTML" },
+				);
+				await ctx.reply(
+					`🚀 <b>Готовый пост для привлечения:</b>\n\n<b>Открыт набор в Product Accelerator!</b>\n\nПрограмма "${ctx.session.newPlan.name}" даст вам доступ к сообществу на ${ctx.session.newPlan.duration} дней.\n💰 Инвестиция: ${ctx.session.newPlan.price} RUB`,
+					{
+						reply_markup: new InlineKeyboard().url(
+							"💳 Оформить участие",
+							deepLink,
+						),
+						parse_mode: "HTML",
+					},
+				);
+				break;
+		}
+	});
+
+	return bot;
 }

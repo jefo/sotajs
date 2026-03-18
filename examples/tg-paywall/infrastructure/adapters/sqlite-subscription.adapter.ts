@@ -11,8 +11,12 @@ export class SqliteSubscriptionAdapter
 {
 	private db: Database;
 
-	constructor(dbPath: string = ":memory:") {
-		this.db = new Database(dbPath);
+	constructor(dbOrPath: Database | string = ":memory:") {
+		if (dbOrPath instanceof Database) {
+			this.db = dbOrPath;
+		} else {
+			this.db = new Database(dbOrPath);
+		}
 		this.initSchema();
 	}
 
@@ -214,6 +218,27 @@ export class SqliteSubscriptionAdapter
 			createdAt: new Date(row.created_at),
 			updatedAt: new Date(row.updated_at),
 		};
+	}
+
+	async findAccessGrantsByUserId(input: {
+		userId: string;
+	}): Promise<AccessGrantDto[]> {
+		const stmt = this.db.prepare(`
+			SELECT * FROM access_grants WHERE user_id = ?
+		`);
+
+		const rows = stmt.all(input.userId) as any[];
+
+		return rows.map((row) => ({
+			id: row.id,
+			userId: row.user_id,
+			resourceId: row.resource_id,
+			resourceType: row.resource_type as any,
+			status: row.status as any,
+			subscriptionId: row.subscription_id,
+			createdAt: new Date(row.created_at),
+			updatedAt: new Date(row.updated_at),
+		}));
 	}
 
 	close(): void {

@@ -8,16 +8,84 @@
 import "./paywall.composition";
 import { TelegramPaywallBot } from "./infrastructure/adapters/telegram-bot";
 import { createGrammyBot } from "./infrastructure/adapters/grammy-bot";
+import { confirmPaymentCommand, getFormattedMessageQuery } from "./application";
+import { InlineKeyboard } from "grammy";
 
 async function run() {
   const token = process.env.BOT_TOKEN;
   const adminId = parseInt(process.env.ADMIN_ID || "0");
+  const webhookPort = process.env.BOT_WEBHOOK_PORT || 4000;
 
   if (token) {
     console.log("🚀 Starting real Telegram Bot (grammY)...");
     const bot = createGrammyBot(token, adminId);
+    const SIGNING_SECRET = process.env.PAYMENT_SIGNING_SECRET || "demo_secret_123";
+
+    // Функция проверки подписи
+    const verifySignature = (subId: string, sig: string | null) => {
+      const expected = Buffer.from(`${subId}:${SIGNING_SECRET}`).toString("base64");
+      return sig === expected;
+    };
     
-    // Запуск бота
+    // Запуск HTTP-сервера для приема вебхуков прямо внутри процесса бота
+    Bun.serve({
+      port: Number(webhookPort),
+      async fetch(req) {
+        const url = new URL(req.url);
+        if (url.pathname === "/webhook/payment" && req.method === "POST") {
+          try {
+            const body = await req.json();
+            console.log(`[BOT-SERVER] 🔔 Received webhook:`, JSON.stringify(body, null, 2));
+
+            let subscriptionId: string | undefined;
+
+            // Логика определения формата (ЮKassa vs Наша Демо-платежка)
+            if (body.event === "payment.succeeded") {
+              // Формат ЮKassa
+              subscriptionId = body.object?.metadata?.subscriptionId;
+            } else {
+              // Наш упрощенный формат или проверка подписи
+              const signature = req.headers.get("X-Signature");
+              if (verifySignature(body.subscriptionId, signature)) {
+                subscriptionId = body.subscriptionId;
+              }
+            }
+            
+            if (!subscriptionId) {
+              console.warn(`[BOT-SERVER] ❌ Could not determine subscriptionId or invalid signature`);
+              return new Response("Invalid payload", { status: 400 });
+            }
+
+            const result = await confirmPaymentCommand({
+              subscriptionId,
+              externalPaymentId: body.object?.id || `webhook_${Date.now()}`
+            });
+
+            if (result.success) {
+              const message = await getFormattedMessageQuery("payment_confirmed", {
+                expiresAt: result.expiresAt?.toLocaleDateString() || "unknown"
+              });
+
+              await bot.api.sendMessage(result.userId, message, {
+                parse_mode: "HTML",
+                reply_markup: new InlineKeyboard().url("➡ Вступить в канал", result.inviteLink)
+              });
+              console.log(`[BOT-SERVER] ✅ User ${result.userId} notified about payment`);
+            }
+            
+            return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
+          } catch (e: any) {
+            console.error(`[BOT-SERVER] ❌ Error processing webhook: ${e.message}`);
+            return new Response(e.message, { status: 400 });
+          }
+        }
+        return new Response("Not Found", { status: 404 });
+      }
+    });
+
+    console.log(`📡 Bot Webhook Server listening on port ${webhookPort}`);
+    
+    // Запуск бота (long polling)
     bot.start({
       onStart: (info) => console.log(`✅ Bot @${info.username} is running!`),
     });

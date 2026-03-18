@@ -69,6 +69,7 @@ export const confirmPaymentCommand = async (input: ConfirmPaymentInput) => {
 
   return {
     success: true,
+    userId: subscription.props.userId,
     inviteLink,
     expiresAt: subscription.props.expiresAt,
   };
