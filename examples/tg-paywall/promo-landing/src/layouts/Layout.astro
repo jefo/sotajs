@@ -1,0 +1,32 @@
+---
+import "../styles/global.css";
+---
+
+<html lang="ru">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Telegram Paywall Infrastructure | Powered by SotaJS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+	</head>
+	<body class="noise-overlay">
+    <nav class="max-w-6xl mx-auto px-6 py-8 flex justify-between items-center">
+      <div class="font-mono font-bold tracking-tighter text-xl">
+        PAYWALL<span class="text-[var(--color-brand-primary)]">.INFRA</span>
+      </div>
+      <div class="hidden md:flex gap-8 secondary-label font-medium">
+        <a href="#features" class="hover:text-[var(--text-high)] transition-colors">Features</a>
+        <a href="#architecture" class="hover:text-[var(--text-high)] transition-colors">Architecture</a>
+        <a href="#pricing" class="hover:text-[var(--text-high)] transition-colors">Pricing</a>
+      </div>
+    </nav>
+		<slot />
+    <footer class="max-w-6xl mx-auto px-6 py-20 border-t border-[var(--color-border-subtle)] mt-20">
+      <div class="secondary-label">© 2026 SotaJS Engineering. Built for experts.</div>
+    </footer>
+	</body>
+</html>

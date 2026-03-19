@@ -22,6 +22,17 @@ Bun.serve({
       const subId = url.pathname.split("/")[2];
       const amount = url.searchParams.get("amount");
       const currency = url.searchParams.get("currency");
+      const providerRaw = url.searchParams.get("provider") || "demo";
+      
+      const providers: Record<string, string> = {
+        yookassa: "ЮKassa (Simulation)",
+        stripe: "Stripe Checkout (Simulation)",
+        robokassa: "Robokassa (Simulation)",
+        prodamus: "Prodamus (Simulation)",
+        demo: "Demo Gateway"
+      };
+      
+      const providerName = providers[providerRaw] || providers.demo;
 
       return new Response(
         `
@@ -30,7 +41,7 @@ Bun.serve({
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>SotaJS Demo Payment Gateway</title>
+          <title>SotaJS - ${providerName}</title>
           <style>
             body { font-family: -apple-system, system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
             .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 90%; transition: border 0.3s; }
@@ -49,8 +60,8 @@ Bun.serve({
           <div class="card">
             <div class="logo">💎</div>
             <h1>Безопасная оплата</h1>
-            <div class="service">Product Accelerator</div>
-            <div class="amount">${amount} ${currency}</div>
+            <div class="service">${providerName}</div>
+            <div class="amount">${amount || ""} ${currency || ""}</div>
             <div class="sub-id">ID: ${subId}</div>
             <button onclick="pay()">Оплатить сейчас</button>
             <div class="footer">Это демонстрационная платежная система.<br>Реальные средства не списываются.</div>

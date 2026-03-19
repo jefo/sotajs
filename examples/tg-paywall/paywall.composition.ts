@@ -13,9 +13,19 @@ import {
 	SqliteSubscriptionAdapter,
 	SqliteTemplateAdapter,
 	MockPaymentAdapter,
+	YookassaPaymentAdapter,
+	RobokassaPaymentAdapter,
+	ProdamusPaymentAdapter,
+	StripePaymentAdapter,
 	RealTelegramAdapter,
 	ConsoleLoggerAdapter,
+	setupNetworkInterceptor,
 } from "./infrastructure";
+
+// Если включена симуляция сети - перехватываем fetch
+if (process.env.MOCK_NETWORK === "true") {
+	setupNetworkInterceptor();
+}
 
 export const core = defineCore({
 	plans: PlanManagementFeature,
@@ -111,12 +121,40 @@ class SubscriptionAdapterWrapper {
 }
 
 /**
- * Платежный адаптер остается фикстурой (Mock) для удобства тестирования и демо.
+ * Платежный адаптер теперь динамический: выбирает реализацию на основе конфига.
  */
 class PaymentAdapterWrapper {
-	private adapter: MockPaymentAdapter;
+	private adapter: any;
 	constructor() {
-		this.adapter = new MockPaymentAdapter();
+		const provider = process.env.PAYMENT_PROVIDER || "mock";
+		
+		if (provider === "yookassa") {
+			console.log("[DI] Binding YookassaPaymentAdapter");
+			this.adapter = new YookassaPaymentAdapter(
+				process.env.YOOKASSA_SHOP_ID || "test_123",
+				process.env.YOOKASSA_SECRET_KEY || "test_key"
+			);
+		} else if (provider === "robokassa") {
+			console.log("[DI] Binding RobokassaPaymentAdapter");
+			this.adapter = new RobokassaPaymentAdapter(
+				process.env.ROBOKASSA_LOGIN || "test_login",
+				process.env.ROBOKASSA_PASS1 || "test_pass1"
+			);
+		} else if (provider === "prodamus") {
+			console.log("[DI] Binding ProdamusPaymentAdapter");
+			this.adapter = new ProdamusPaymentAdapter(
+				process.env.PRODAMUS_SHOP_ID || "demo",
+				process.env.PRODAMUS_SECRET || "secret"
+			);
+		} else if (provider === "stripe") {
+			console.log("[DI] Binding StripePaymentAdapter");
+			this.adapter = new StripePaymentAdapter(
+				process.env.STRIPE_SECRET_KEY || "sk_test_123"
+			);
+		} else {
+			console.log("[DI] Binding MockPaymentAdapter");
+			this.adapter = new MockPaymentAdapter();
+		}
 	}
 
 	async paymentProvider(input: {

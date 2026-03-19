@@ -34,17 +34,36 @@ async function run() {
         const url = new URL(req.url);
         if (url.pathname === "/webhook/payment" && req.method === "POST") {
           try {
-            const body = await req.json();
+            const contentType = req.headers.get("content-type") || "";
+            let body: any;
+            
+            if (contentType.includes("application/json")) {
+              body = await req.json();
+            } else {
+              // Поддержка form-urlencoded (для Robokassa)
+              const formData = await req.formData();
+              body = Object.fromEntries(formData.entries());
+            }
+
             console.log(`[BOT-SERVER] 🔔 Received webhook:`, JSON.stringify(body, null, 2));
 
             let subscriptionId: string | undefined;
 
-            // Логика определения формата (ЮKassa vs Наша Демо-платежка)
+            // Логика определения формата
             if (body.event === "payment.succeeded") {
-              // Формат ЮKassa
+              // ЮKassa
               subscriptionId = body.object?.metadata?.subscriptionId;
+            } else if (body.type === "checkout.session.completed") {
+              // Stripe
+              subscriptionId = body.data?.object?.client_reference_id || body.data?.object?.metadata?.subscriptionId;
+            } else if (body.shp_subscriptionId) {
+              // Robokassa
+              subscriptionId = body.shp_subscriptionId;
+            } else if (body.subscriptionId && body.out_sum) {
+              // Prodamus (часто шлет напрямую в корне)
+              subscriptionId = body.subscriptionId;
             } else {
-              // Наш упрощенный формат или проверка подписи
+              // Наша Демо-платежка
               const signature = req.headers.get("X-Signature");
               if (verifySignature(body.subscriptionId, signature)) {
                 subscriptionId = body.subscriptionId;
@@ -58,7 +77,7 @@ async function run() {
 
             const result = await confirmPaymentCommand({
               subscriptionId,
-              externalPaymentId: body.object?.id || `webhook_${Date.now()}`
+              externalPaymentId: body.object?.id || body.InvId || `webhook_${Date.now()}`
             });
 
             if (result.success) {

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  /* Anchor Font: Geometric and technical */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  /* Color Palette: Focused and minimal */
+  --color-brand-primary: #0057FF; /* Solid Technical Blue */
+  --color-surface-base: #FFFFFF;
+  --color-surface-soft: #F4F4F7;
+  --color-border-subtle: #E2E2E9;
+  
+  /* Spacing: 8pt system */
+  --spacing-safe: 2rem;
+}
+
+:root {
+  /* Opacity Hierarchy Rule */
+  --text-high: rgba(0, 0, 0, 0.87);
+  --text-medium: rgba(0, 0, 0, 0.60);
+  --text-low: rgba(0, 0, 0, 0.38);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-base);
+  color: var(--text-high);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Star of the Show: Noise texture for tangible depth */
+.noise-overlay::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 999;
+}
+
+h1, h2, h3 {
+  color: var(--text-high);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: var(--text-medium);
+  line-height: 1.6;
+}
+
+.secondary-label {
+  color: var(--text-low);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
