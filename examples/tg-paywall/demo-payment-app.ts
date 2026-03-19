@@ -8,8 +8,11 @@ const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || `http://lvh.me:4000/webho
 const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
 const db = new Database(sqliteDbPath);
 
+// Хранилище SMS кодов в памяти (для демо)
+const smsCodes = new Map<string, { code: string; subscriptionId: string; amount: number }>();
+
 /**
- * Demo Payment & TMA Gateway
+ * Demo Payment & TMA Gateway с красивым UI
  */
 Bun.serve({
   port: Number(PORT),
@@ -32,7 +35,6 @@ Bun.serve({
           });
         }
 
-        // Создаем подписку в БД
         const subscriptionId = crypto.randomUUID();
         const plan = db.prepare("SELECT * FROM plans WHERE id = ?").get(planId) as any;
         
@@ -82,49 +84,157 @@ Bun.serve({
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
           <title>Product Accelerator</title>
           <script src="https://telegram.org/js/telegram-web-app.js"></script>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
-            :root { --tg-theme-bg-color: #ffffff; --tg-theme-text-color: #000000; --tg-theme-button-color: #007bff; --tg-theme-button-text-color: #ffffff; }
-            body { font-family: -apple-system, sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); margin: 0; padding: 16px; overflow-x: hidden; }
-            .header { text-align: center; padding: 20px 0; }
-            .header h1 { font-size: 24px; margin: 0; font-weight: 800; }
-            .header p { opacity: 0.6; font-size: 14px; margin-top: 4px; }
-            .grid { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
-            .card { border: 1px solid rgba(0,0,0,0.1); padding: 16px; border-radius: 12px; cursor: pointer; transition: transform 0.1s; position: relative; }
+            :root {
+              --tg-theme-bg-color: #ffffff;
+              --tg-theme-text-color: #1a1a1a;
+              --tg-theme-button-color: #007bff;
+              --tg-theme-button-text-color: #ffffff;
+              --tg-theme-secondary-bg-color: #f5f5f7;
+              --tg-theme-hint-color: #8e8e93;
+              --tg-theme-link-color: #007bff;
+              --success-color: #34c759;
+              --error-color: #ff3b30;
+              --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+            * { box-sizing: border-box; }
+            body {
+              font-family: 'Inter', -apple-system, sans-serif;
+              background: var(--tg-theme-bg-color);
+              color: var(--tg-theme-text-color);
+              margin: 0;
+              padding: 0;
+              overflow-x: hidden;
+              -webkit-font-smoothing: antialiased;
+            }
+            .container { padding: 20px 16px; }
+            .header { text-align: center; padding: 24px 0 16px; }
+            .header h1 {
+              font-size: 28px;
+              margin: 0 0 8px;
+              font-weight: 800;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
+            .header p {
+              opacity: 0.7;
+              font-size: 15px;
+              margin: 0;
+              line-height: 1.5;
+            }
+            .grid { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+            .card {
+              border: 2px solid rgba(0,0,0,0.06);
+              padding: 20px;
+              border-radius: 16px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              position: relative;
+              background: var(--tg-theme-bg-color);
+              box-shadow: var(--card-shadow);
+            }
             .card:active { transform: scale(0.98); }
-            .card.selected { border: 2px solid var(--tg-theme-button-color); background: rgba(0,123,255,0.05); }
-            .card-title { font-weight: 700; font-size: 18px; }
-            .card-price { font-weight: 800; color: var(--tg-theme-button-color); margin-top: 4px; }
-            .card-features { font-size: 12px; opacity: 0.6; margin-top: 8px; list-style: none; padding: 0; }
-            .card-features li::before { content: "• "; color: var(--tg-theme-button-color); }
-            .badge { position: absolute; top: 12px; right: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; }
-            .badge-popular { background: #dc3545; }
-            .loading { text-align: center; padding: 20px; display: none; }
+            .card.selected {
+              border-color: var(--tg-theme-button-color);
+              background: linear-gradient(135deg, rgba(0,123,255,0.08) 0%, rgba(118,75,162,0.08) 100%);
+            }
+            .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+            .card-title { font-weight: 700; font-size: 17px; line-height: 1.3; }
+            .card-price {
+              font-weight: 800;
+              font-size: 24px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+              margin-top: 8px;
+            }
+            .card-features {
+              font-size: 13px;
+              opacity: 0.7;
+              margin-top: 12px;
+              list-style: none;
+              padding: 0;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+            }
+            .card-features li { display: flex; align-items: center; gap: 8px; }
+            .card-features li::before {
+              content: "✓";
+              color: var(--success-color);
+              font-weight: 700;
+              font-size: 14px;
+            }
+            .badge {
+              position: absolute;
+              top: 12px;
+              right: 12px;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+              color: white;
+              padding: 4px 8px;
+              border-radius: 6px;
+              letter-spacing: 0.5px;
+            }
+            .badge-popular {
+              background: linear-gradient(135deg, #ff6b6b 0%, #ff3b30 100%);
+            }
+            .loading {
+              text-align: center;
+              padding: 40px 20px;
+              display: none;
+            }
+            .spinner {
+              width: 40px;
+              height: 40px;
+              border: 3px solid rgba(0,123,255,0.1);
+              border-top-color: var(--tg-theme-button-color);
+              border-radius: 50%;
+              animation: spin 0.8s linear infinite;
+              margin: 0 auto 16px;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
+            .loading-text { font-size: 15px; font-weight: 500; opacity: 0.7; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Invest in Your Career</h1>
-            <p>Choose your membership format</p>
-          </div>
+          <div class="container">
+            <div class="header">
+              <h1>Invest in Your Career</h1>
+              <p>Choose your membership format and join the elite community</p>
+            </div>
 
-          <div class="loading" id="loading">⏳ Creating subscription...</div>
+            <div class="loading" id="loading">
+              <div class="spinner"></div>
+              <div class="loading-text">Creating your subscription...</div>
+            </div>
 
-          <div class="grid">
-            ${plans.map(p => {
-              const isLifetime = p.duration_days > 365;
-              return `
-                <div class="card" onclick="selectPlan('${p.id}', '${p.name}', ${p.price})">
-                  ${isLifetime ? '<div class="badge badge-popular">Lifetime</div>' : ''}
-                  <div class="card-title">${p.name.replace(/ \\(.*\\)/, '')}</div>
-                  <div class="card-price">${p.price} ${p.currency}</div>
-                  <ul class="card-features">
-                    <li>Access Level: ${p.access_level.toUpperCase()}</li>
-                    <li>Duration: ${isLifetime ? 'Forever' : p.duration_days + ' days'}</li>
-                    <li>One-time payment</li>
-                  </ul>
-                </div>
-              `;
-            }).join("")}
+            <div class="grid">
+              ${plans.map(p => {
+                const isLifetime = p.duration_days > 365;
+                return `
+                  <div class="card" onclick="selectPlan('${p.id}', '${p.name}', ${p.price})">
+                    ${isLifetime ? '<div class="badge badge-popular">Lifetime</div>' : ''}
+                    <div class="card-header">
+                      <div class="card-title">${p.name.replace(/ \\(.*\\)/, '')}</div>
+                    </div>
+                    <div class="card-price">${p.price} ${p.currency}</div>
+                    <ul class="card-features">
+                      <li>Access Level: <strong>${p.access_level.toUpperCase()}</strong></li>
+                      <li>Duration: ${isLifetime ? 'Forever Access' : p.duration_days + ' days'}</li>
+                      <li>One-time payment</li>
+                      <li>Instant access</li>
+                    </ul>
+                  </div>
+                `;
+              }).join("")}
+            </div>
           </div>
 
           <script>
@@ -141,18 +251,16 @@ Bun.serve({
               document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
               event.currentTarget.classList.add('selected');
 
-              tg.MainButton.setText('Invest in ' + name.split(' ')[0]);
+              tg.MainButton.setText('Continue - ' + price + ' ' + (price === 14990 ? 'RUB' : 'RUB'));
               tg.MainButton.show();
             }
 
             tg.onEvent('mainButtonClicked', async function() {
               tg.MainButton.showProgress();
               document.getElementById('loading').style.display = 'block';
-              // Скрываем кнопку чтобы не мешала
               tg.MainButton.hide();
 
               try {
-                // Создаем подписку через API
                 const res = await fetch('/api/create-subscription', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -163,12 +271,12 @@ Bun.serve({
 
                 const data = await res.json();
                 
-                // Перенаправляем на страницу оплаты с subscriptionId
+                // Перенаправляем на страницу оплаты
                 window.location.href = '/pay/' + data.subscriptionId;
               } catch (err) {
-                tg.showAlert('Error: ' + err.message);
                 tg.MainButton.hideProgress();
                 document.getElementById('loading').style.display = 'none';
+                tg.MainButton.show();
               }
             });
           </script>
@@ -179,10 +287,16 @@ Bun.serve({
       );
     }
 
-    // 2. Страница оплаты (как раньше, но с поддержкой TMA)
+    // 2. Страница оплаты с красивым UI и SMS верификацией
     if (url.pathname.startsWith("/pay/")) {
-      const subIdOrPlanId = url.pathname.split("/")[2];
-      const provider = url.searchParams.get("provider") || "tma";
+      const subscriptionId = url.pathname.split("/")[2];
+      const subscription = db.prepare("SELECT * FROM subscriptions WHERE id = ?").get(subscriptionId) as any;
+      
+      if (!subscription) {
+        return new Response("Subscription not found", { status: 404 });
+      }
+
+      const plan = db.prepare("SELECT * FROM plans WHERE id = ?").get(subscription.plan_id) as any;
 
       return new Response(
         `
@@ -190,66 +304,367 @@ Bun.serve({
         <html>
         <head>
           <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
           <title>Secure Payment</title>
           <script src="https://telegram.org/js/telegram-web-app.js"></script>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
-            body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
-            .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
-            button { background: #28a745; color: white; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.1rem; cursor: pointer; }
-            button:disabled { background: #ccc; cursor: not-allowed; }
-            .success { display: none; color: #28a745; font-size: 1.2rem; margin-top: 1rem; }
+            :root {
+              --bg-color: #f5f5f7;
+              --card-bg: #ffffff;
+              --text-primary: #1a1a1a;
+              --text-secondary: #8e8e93;
+              --accent: #007bff;
+              --success: #34c759;
+              --error: #ff3b30;
+              --border: rgba(0,0,0,0.08);
+              --shadow: 0 8px 24px rgba(0,0,0,0.12);
+            }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: 'Inter', -apple-system, sans-serif;
+              background: var(--bg-color);
+              color: var(--text-primary);
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 20px;
+              -webkit-font-smoothing: antialiased;
+            }
+            .payment-card {
+              background: var(--card-bg);
+              border-radius: 24px;
+              padding: 32px 24px;
+              width: 100%;
+              max-width: 420px;
+              box-shadow: var(--shadow);
+            }
+            .secure-badge {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 8px;
+              background: linear-gradient(135deg, rgba(52,199,89,0.1) 0%, rgba(48,209,88,0.1) 100%);
+              padding: 10px 16px;
+              border-radius: 12px;
+              margin-bottom: 24px;
+            }
+            .secure-badge svg { width: 20px; height: 20px; color: var(--success); }
+            .secure-badge span { font-size: 13px; font-weight: 600; color: var(--success); }
+            .plan-info { text-align: center; margin-bottom: 24px; }
+            .plan-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+            .plan-price {
+              font-size: 36px;
+              font-weight: 800;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
+            .plan-desc { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+            .step { display: none; }
+            .step.active { display: block; }
+            .step-header { text-align: center; margin-bottom: 24px; }
+            .step-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+            .step-desc { font-size: 14px; color: var(--text-secondary); }
+            .input-group { margin-bottom: 20px; }
+            .input-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+            .input-field {
+              width: 100%;
+              padding: 16px;
+              border: 2px solid var(--border);
+              border-radius: 14px;
+              font-size: 17px;
+              font-weight: 500;
+              transition: all 0.2s;
+              background: var(--card-bg);
+            }
+            .input-field:focus {
+              outline: none;
+              border-color: var(--accent);
+              box-shadow: 0 0 0 4px rgba(0,123,255,0.1);
+            }
+            .sms-input { letter-spacing: 8px; text-align: center; font-size: 24px !important; font-weight: 700; }
+            .btn {
+              width: 100%;
+              padding: 18px;
+              border: none;
+              border-radius: 14px;
+              font-size: 16px;
+              font-weight: 700;
+              cursor: pointer;
+              transition: all 0.2s;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+            }
+            .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+            .btn:active { transform: translateY(0); }
+            .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+            .btn-secondary {
+              background: var(--card-bg);
+              color: var(--text-primary);
+              border: 2px solid var(--border);
+              box-shadow: none;
+              margin-top: 12px;
+            }
+            .card-icons { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+            .card-icon {
+              width: 48px;
+              height: 32px;
+              background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 100%);
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 10px;
+              font-weight: 700;
+              color: var(--text-secondary);
+              border: 1px solid var(--border);
+            }
+            .success-animation {
+              text-align: center;
+              padding: 20px;
+            }
+            .success-checkmark {
+              width: 80px;
+              height: 80px;
+              margin: 0 auto 20px;
+              background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              animation: scaleIn 0.4s ease;
+            }
+            .success-checkmark svg { width: 40px; height: 40px; color: white; }
+            @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
+            .success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+            .success-desc { font-size: 15px; color: var(--text-secondary); }
+            .error-message {
+              background: rgba(255,59,48,0.1);
+              color: var(--error);
+              padding: 12px 16px;
+              border-radius: 12px;
+              font-size: 14px;
+              font-weight: 500;
+              margin-bottom: 20px;
+              display: none;
+            }
           </style>
         </head>
         <body>
-          <div class="card">
-            <h2>Complete Payment</h2>
-            <p>ID: ${subIdOrPlanId}</p>
-            <button id="payBtn" onclick="pay()">Confirm & Pay</button>
-            <div class="success" id="success">✅ Payment Success! Redirecting...</div>
+          <div class="payment-card">
+            <div class="secure-badge">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span>Secure 256-bit SSL Encryption</span>
+            </div>
+
+            <div class="plan-info">
+              <div class="plan-name">${plan?.name || 'Membership'}</div>
+              <div class="plan-price">${subscription.price} ${subscription.currency}</div>
+              <div class="plan-desc">One-time payment • Lifetime access</div>
+            </div>
+
+            <div class="card-icons">
+              <div class="card-icon">VISA</div>
+              <div class="card-icon">MC</div>
+              <div class="card-icon">MIR</div>
+              <div class="card-icon">SBP</div>
+            </div>
+
+            <!-- Step 1: Card Details -->
+            <div class="step active" id="step1">
+              <div class="step-header">
+                <div class="step-title">Card Details</div>
+                <div class="step-desc">Enter your payment information</div>
+              </div>
+              <div class="error-message" id="error1"></div>
+              <div class="input-group">
+                <label class="input-label">Card Number</label>
+                <input type="text" class="input-field" placeholder="0000 0000 0000 0000" maxlength="19" id="cardNumber">
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <div class="input-group" style="flex: 1;">
+                  <label class="input-label">Expiry Date</label>
+                  <input type="text" class="input-field" placeholder="MM/YY" maxlength="5" id="expiry">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                  <label class="input-label">CVV</label>
+                  <input type="password" class="input-field" placeholder="123" maxlength="3" id="cvv">
+                </div>
+              </div>
+              <button class="btn" onclick="goToStep2()">Continue</button>
+            </div>
+
+            <!-- Step 2: SMS Verification -->
+            <div class="step" id="step2">
+              <div class="step-header">
+                <div class="step-title">SMS Verification</div>
+                <div class="step-desc">Enter the code sent to your phone</div>
+              </div>
+              <div class="error-message" id="error2"></div>
+              <div class="input-group">
+                <label class="input-label">Phone Number</label>
+                <input type="tel" class="input-field" placeholder="+7 (999) 000-00-00" value="+7 (900) 123-45-67" id="phone">
+              </div>
+              <button class="btn" onclick="sendSMS()">Send Code</button>
+              <button class="btn btn-secondary" onclick="goBackToStep1()">Back</button>
+            </div>
+
+            <!-- Step 3: Enter Code -->
+            <div class="step" id="step3">
+              <div class="step-header">
+                <div class="step-title">Enter Verification Code</div>
+                <div class="step-desc">We sent a code to your phone</div>
+              </div>
+              <div class="error-message" id="error3"></div>
+              <div class="input-group">
+                <input type="text" class="input-field sms-input" placeholder="1234" maxlength="4" id="smsCode">
+              </div>
+              <button class="btn" onclick="verifyCode()">Verify & Pay</button>
+              <button class="btn btn-secondary" onclick="goBackToStep2()" style="margin-top: 12px;">Back</button>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div class="step" id="step4">
+              <div class="success-animation">
+                <div class="success-checkmark">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="success-title">Payment Successful!</div>
+                <div class="success-desc">Redirecting to bot...</div>
+              </div>
+            </div>
           </div>
+
           <script>
             const tg = window.Telegram.WebApp;
             tg.ready();
-            // Скрываем главную кнопку Telegram чтобы не сбивала с толку
             tg.MainButton.hide();
-            
-            async function pay() {
-              const btn = document.getElementById('payBtn');
-              const success = document.getElementById('success');
+
+            const subscriptionId = '${subscriptionId}';
+            const amount = ${subscription.price};
+            const smsCode = '1234'; // Demo fixed code
+
+            // Format card number
+            document.getElementById('cardNumber').addEventListener('input', function(e) {
+              let value = e.target.value.replace(/\\D/g, '');
+              value = value.replace(/(.{4})/g, '$1 ').trim();
+              e.target.value = value.slice(0, 19);
+            });
+
+            // Format expiry
+            document.getElementById('expiry').addEventListener('input', function(e) {
+              let value = e.target.value.replace(/\\D/g, '');
+              if (value.length >= 2) {
+                value = value.slice(0,2) + '/' + value.slice(2,4);
+              }
+              e.target.value = value;
+            });
+
+            // SMS code auto-format
+            document.getElementById('smsCode').addEventListener('input', function(e) {
+              e.target.value = e.target.value.replace(/\\D/g, '').slice(0, 4);
+            });
+
+            function showError(step, message) {
+              document.getElementById('error' + step).textContent = message;
+              document.getElementById('error' + step).style.display = 'block';
+            }
+
+            function hideError(step) {
+              document.getElementById('error' + step).style.display = 'none';
+            }
+
+            function goToStep(step) {
+              document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+              document.getElementById('step' + step).classList.add('active');
+            }
+
+            function goToStep2() {
+              const cardNumber = document.getElementById('cardNumber').value;
+              const expiry = document.getElementById('expiry').value;
+              const cvv = document.getElementById('cvv').value;
+
+              if (cardNumber.length < 19 || expiry.length < 5 || cvv.length < 3) {
+                showError(1, 'Please fill in all fields correctly');
+                return;
+              }
+
+              hideError(1);
+              goToStep(2);
+            }
+
+            function goBackToStep1() {
+              goToStep(1);
+            }
+
+            function sendSMS() {
+              const phone = document.getElementById('phone').value;
+              if (phone.length < 10) {
+                showError(2, 'Please enter a valid phone number');
+                return;
+              }
+
+              // Demo: fixed code 1234
+              console.log('[SMS] Code for ' + phone + ': 1234');
+              tg.showAlert('Demo Mode: Your SMS code is 1234');
+
+              hideError(2);
+              goToStep(3);
+            }
+
+            function goBackToStep2() {
+              goToStep(2);
+            }
+
+            function verifyCode() {
+              const code = document.getElementById('smsCode').value;
               
-              btn.disabled = true;
-              btn.textContent = 'Processing...';
+              if (code.length !== 4) {
+                showError(3, 'Please enter the 4-digit code');
+                return;
+              }
+
+              if (code !== smsCode) {
+                showError(3, 'Invalid code. Please try again.');
+                return;
+              }
+
+              hideError(3);
+              processPayment();
+            }
+
+            async function processPayment() {
+              goToStep(4);
 
               try {
                 const res = await fetch('/gateway/process', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ subscriptionId: '${subIdOrPlanId}' })
+                  body: JSON.stringify({ subscriptionId })
                 });
-                
+
                 if (res.ok) {
-                  btn.style.display = 'none';
-                  success.style.display = 'block';
-                  
-                  // Через 2 секунды закрываем TMA или перенаправляем в бот
+                  // Wait 2.5 seconds then close/redirect
                   setTimeout(() => {
                     if (tg && tg.close) {
                       tg.close();
                     } else {
-                      // Фоллбэк: открываем бота
                       window.location.href = 'https://t.me/EasyPaywallBot';
                     }
-                  }, 2000);
+                  }, 2500);
                 } else {
-                  btn.disabled = false;
-                  btn.textContent = 'Try Again';
-                  alert('Payment failed. Please try again.');
+                  tg.showAlert('Payment processing error. Please contact support.');
                 }
               } catch (err) {
-                btn.disabled = false;
-                btn.textContent = 'Try Again';
-                alert('Payment error: ' + err.message);
+                tg.showAlert('Error: ' + err.message);
               }
             }
           </script>
@@ -285,5 +700,5 @@ Bun.serve({
   }
 });
 
-console.log(`\n🚀 TMA Simulator: http://${HOST}:${PORT}/tma`);
-console.log(`📡 Bot Webhook: ${BOT_WEBHOOK_URL}\n`);
+console.log(`\\n🚀 TMA Simulator: http://${HOST}:${PORT}/tma`);
+console.log(`📡 Bot Webhook: ${BOT_WEBHOOK_URL}\\n`);
