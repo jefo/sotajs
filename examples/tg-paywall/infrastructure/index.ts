@@ -5,3 +5,9 @@ export * from "./adapters/mock-payment.adapter";
 export * from "./adapters/real-telegram.adapter";
 export * from "./adapters/console-logger.adapter";
 export * from "./adapters/sqlite-template.adapter";
+export * from './adapters/prodamus-payment.adapter';
+export * from './adapters/yookassa-payment.adapter';
+export * from './adapters/stripe-payment.adapter';
+export * from './adapters/robokassa-payment.adapter';
+export * from './network-interceptor';
+

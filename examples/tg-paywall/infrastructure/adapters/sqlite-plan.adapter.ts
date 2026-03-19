@@ -23,9 +23,13 @@ export class SqlitePlanAdapter
 			CREATE TABLE IF NOT EXISTS plans (
 				id TEXT PRIMARY KEY,
 				name TEXT NOT NULL,
+        plan_group TEXT NOT NULL DEFAULT 'standard',
+        access_level TEXT NOT NULL DEFAULT 'base',
 				price INTEGER NOT NULL,
 				currency TEXT NOT NULL,
 				duration_days INTEGER NOT NULL,
+        trial_days INTEGER NOT NULL DEFAULT 0,
+        is_recurring INTEGER NOT NULL DEFAULT 0,
 				channel_id TEXT NOT NULL,
 				created_at TEXT NOT NULL,
 				updated_at TEXT NOT NULL
@@ -36,16 +40,20 @@ export class SqlitePlanAdapter
 	async savePlan(input: { plan: PlanDto }): Promise<void> {
 		const stmt = this.db.prepare(`
 			INSERT OR REPLACE INTO plans
-			(id, name, price, currency, duration_days, channel_id, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			(id, name, plan_group, access_level, price, currency, duration_days, trial_days, is_recurring, channel_id, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`);
 
 		stmt.run(
 			input.plan.id,
 			input.plan.name,
+      input.plan.group,
+      input.plan.accessLevel,
 			input.plan.price,
 			input.plan.currency,
 			input.plan.durationDays,
+      input.plan.trialDays,
+      input.plan.isRecurring ? 1 : 0,
 			input.plan.channelId,
 			input.plan.createdAt.toISOString(),
 			input.plan.updatedAt.toISOString(),
@@ -64,9 +72,13 @@ export class SqlitePlanAdapter
 		return {
 			id: row.id,
 			name: row.name,
+      group: row.plan_group,
+      accessLevel: row.access_level,
 			price: row.price,
 			currency: row.currency,
 			durationDays: row.duration_days,
+      trialDays: row.trial_days,
+      isRecurring: row.is_recurring === 1,
 			channelId: row.channel_id,
 			createdAt: new Date(row.created_at),
 			updatedAt: new Date(row.updated_at),
@@ -85,9 +97,13 @@ export class SqlitePlanAdapter
 		return {
 			id: row.id,
 			name: row.name,
+      group: row.plan_group,
+      accessLevel: row.access_level,
 			price: row.price,
 			currency: row.currency,
 			durationDays: row.duration_days,
+      trialDays: row.trial_days,
+      isRecurring: row.is_recurring === 1,
 			channelId: row.channel_id,
 			createdAt: new Date(row.created_at),
 			updatedAt: new Date(row.updated_at),
@@ -104,9 +120,13 @@ export class SqlitePlanAdapter
 		return rows.map((row) => ({
 			id: row.id,
 			name: row.name,
+      group: row.plan_group,
+      accessLevel: row.access_level,
 			price: row.price,
 			currency: row.currency,
 			durationDays: row.duration_days,
+      trialDays: row.trial_days,
+      isRecurring: row.is_recurring === 1,
 			channelId: row.channel_id,
 			createdAt: new Date(row.created_at),
 			updatedAt: new Date(row.updated_at),

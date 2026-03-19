@@ -1,38 +1,77 @@
+import Database from "bun:sqlite";
+
 const PORT = process.env.PAYMENT_PORT || 3000;
 const HOST = process.env.PAYMENT_HOST || "lvh.me";
-// Куда слать вебхук об успешной оплате (обычно это URL нашего бэкенда)
 const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || `http://lvh.me:4000/webhook/payment`;
-const SIGNING_SECRET = process.env.PAYMENT_SIGNING_SECRET || "demo_secret_123";
 
-function signPayload(subId: string): string {
-  return Buffer.from(`${subId}:${SIGNING_SECRET}`).toString("base64");
-}
+// Общая база данных
+const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
+const db = new Database(sqliteDbPath);
 
 /**
- * Demo Payment Gateway (Web Application)
- * Имитирует работу Stripe / ЮKassa для демонстрации и разработки.
+ * Demo Payment & TMA Gateway
  */
 Bun.serve({
   port: Number(PORT),
   async fetch(req) {
     const url = new URL(req.url);
+    const headers = {
+      "Content-Type": "text/html",
+      "ngrok-skip-browser-warning": "true"
+    };
 
-    // 1. Страница оплаты: /pay/:subscriptionId?amount=100&currency=RUB
-    if (url.pathname.startsWith("/pay/")) {
-      const subId = url.pathname.split("/")[2];
-      const amount = url.searchParams.get("amount");
-      const currency = url.searchParams.get("currency");
-      const providerRaw = url.searchParams.get("provider") || "demo";
-      
-      const providers: Record<string, string> = {
-        yookassa: "ЮKassa (Simulation)",
-        stripe: "Stripe Checkout (Simulation)",
-        robokassa: "Robokassa (Simulation)",
-        prodamus: "Prodamus (Simulation)",
-        demo: "Demo Gateway"
-      };
-      
-      const providerName = providers[providerRaw] || providers.demo;
+    // API endpoint для создания подписки
+    if (url.pathname === "/api/create-subscription" && req.method === "POST") {
+      try {
+        const { userId, planId } = await req.json();
+        
+        if (!userId || !planId) {
+          return new Response(JSON.stringify({ error: "userId and planId required" }), { 
+            status: 400,
+            headers: { "Content-Type": "application/json", ...headers }
+          });
+        }
+
+        // Создаем подписку в БД
+        const subscriptionId = crypto.randomUUID();
+        const plan = db.prepare("SELECT * FROM plans WHERE id = ?").get(planId) as any;
+        
+        if (!plan) {
+          return new Response(JSON.stringify({ error: "Plan not found" }), { 
+            status: 404,
+            headers: { "Content-Type": "application/json", ...headers }
+          });
+        }
+
+        const now = new Date().toISOString();
+        
+        db.run(`
+          INSERT INTO subscriptions (id, user_id, plan_id, status, price, currency, created_at, updated_at)
+          VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)
+        `, subscriptionId, userId, planId, plan.price, plan.currency, now, now);
+
+        console.log(`[TMA] Created subscription ${subscriptionId} for user ${userId}, plan ${planId}`);
+
+        return new Response(JSON.stringify({ 
+          subscriptionId,
+          planName: plan.name,
+          amount: plan.price,
+          currency: plan.currency
+        }), { 
+          headers: { "Content-Type": "application/json", ...headers }
+        });
+      } catch (e: any) {
+        console.error(`[TMA] Error creating subscription: ${e.message}`);
+        return new Response(JSON.stringify({ error: e.message }), { 
+          status: 500,
+          headers: { "Content-Type": "application/json", ...headers }
+        });
+      }
+    }
+
+    // 1. Витрина TMA: /tma
+    if (url.pathname === "/tma") {
+      const plans = db.prepare("SELECT * FROM plans").all() as any[];
 
       return new Response(
         `
@@ -40,110 +79,211 @@ Bun.serve({
         <html lang="ru">
         <head>
           <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>SotaJS - ${providerName}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <title>Product Accelerator</title>
+          <script src="https://telegram.org/js/telegram-web-app.js"></script>
           <style>
-            body { font-family: -apple-system, system-ui, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
-            .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 90%; transition: border 0.3s; }
-            .logo { font-size: 3rem; margin-bottom: 1rem; }
-            h1 { font-size: 1.5rem; color: #1c1e21; margin: 0; }
-            .service { color: #606770; margin-bottom: 1.5rem; }
-            .amount { font-size: 2.5rem; font-weight: 800; color: #007bff; margin: 1rem 0; }
-            .sub-id { font-size: 0.7rem; color: #bec3c9; margin-bottom: 2rem; word-break: break-all; }
-            button { background: #28a745; color: white; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; width: 100%; transition: transform 0.1s, background 0.2s; }
-            button:active { transform: scale(0.98); }
-            button:hover { background: #218838; }
-            .footer { margin-top: 1.5rem; font-size: 0.8rem; color: #8d949e; line-height: 1.4; }
+            :root { --tg-theme-bg-color: #ffffff; --tg-theme-text-color: #000000; --tg-theme-button-color: #007bff; --tg-theme-button-text-color: #ffffff; }
+            body { font-family: -apple-system, sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); margin: 0; padding: 16px; overflow-x: hidden; }
+            .header { text-align: center; padding: 20px 0; }
+            .header h1 { font-size: 24px; margin: 0; font-weight: 800; }
+            .header p { opacity: 0.6; font-size: 14px; margin-top: 4px; }
+            .grid { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+            .card { border: 1px solid rgba(0,0,0,0.1); padding: 16px; border-radius: 12px; cursor: pointer; transition: transform 0.1s; position: relative; }
+            .card:active { transform: scale(0.98); }
+            .card.selected { border: 2px solid var(--tg-theme-button-color); background: rgba(0,123,255,0.05); }
+            .card-title { font-weight: 700; font-size: 18px; }
+            .card-price { font-weight: 800; color: var(--tg-theme-button-color); margin-top: 4px; }
+            .card-features { font-size: 12px; opacity: 0.6; margin-top: 8px; list-style: none; padding: 0; }
+            .card-features li::before { content: "• "; color: var(--tg-theme-button-color); }
+            .badge { position: absolute; top: 12px; right: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #28a745; color: white; padding: 2px 6px; border-radius: 4px; }
+            .badge-popular { background: #dc3545; }
+            .loading { text-align: center; padding: 20px; display: none; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Invest in Your Career</h1>
+            <p>Choose your membership format</p>
+          </div>
+
+          <div class="loading" id="loading">⏳ Creating subscription...</div>
+
+          <div class="grid">
+            ${plans.map(p => {
+              const isLifetime = p.duration_days > 365;
+              return `
+                <div class="card" onclick="selectPlan('${p.id}', '${p.name}', ${p.price})">
+                  ${isLifetime ? '<div class="badge badge-popular">Lifetime</div>' : ''}
+                  <div class="card-title">${p.name.replace(/ \\(.*\\)/, '')}</div>
+                  <div class="card-price">${p.price} ${p.currency}</div>
+                  <ul class="card-features">
+                    <li>Access Level: ${p.access_level.toUpperCase()}</li>
+                    <li>Duration: ${isLifetime ? 'Forever' : p.duration_days + ' days'}</li>
+                    <li>One-time payment</li>
+                  </ul>
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <script>
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.MainButton.setText('Choose membership');
+            tg.MainButton.hide();
+
+            let selectedPlanId = null;
+            const userId = tg.initDataUnsafe.user?.id?.toString() || "demo_user";
+
+            function selectPlan(id, name, price) {
+              selectedPlanId = id;
+              document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+              event.currentTarget.classList.add('selected');
+
+              tg.MainButton.setText('Invest in ' + name.split(' ')[0]);
+              tg.MainButton.show();
+            }
+
+            tg.onEvent('mainButtonClicked', async function() {
+              tg.MainButton.showProgress();
+              document.getElementById('loading').style.display = 'block';
+              // Скрываем кнопку чтобы не мешала
+              tg.MainButton.hide();
+
+              try {
+                // Создаем подписку через API
+                const res = await fetch('/api/create-subscription', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, planId: selectedPlanId })
+                });
+
+                if (!res.ok) throw new Error('Failed to create subscription');
+
+                const data = await res.json();
+                
+                // Перенаправляем на страницу оплаты с subscriptionId
+                window.location.href = '/pay/' + data.subscriptionId;
+              } catch (err) {
+                tg.showAlert('Error: ' + err.message);
+                tg.MainButton.hideProgress();
+                document.getElementById('loading').style.display = 'none';
+              }
+            });
+          </script>
+        </body>
+        </html>
+        `,
+        { headers: { ...headers, "Content-Type": "text/html" } }
+      );
+    }
+
+    // 2. Страница оплаты (как раньше, но с поддержкой TMA)
+    if (url.pathname.startsWith("/pay/")) {
+      const subIdOrPlanId = url.pathname.split("/")[2];
+      const provider = url.searchParams.get("provider") || "tma";
+
+      return new Response(
+        `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Secure Payment</title>
+          <script src="https://telegram.org/js/telegram-web-app.js"></script>
+          <style>
+            body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
+            .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+            button { background: #28a745; color: white; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.1rem; cursor: pointer; }
+            button:disabled { background: #ccc; cursor: not-allowed; }
+            .success { display: none; color: #28a745; font-size: 1.2rem; margin-top: 1rem; }
           </style>
         </head>
         <body>
           <div class="card">
-            <div class="logo">💎</div>
-            <h1>Безопасная оплата</h1>
-            <div class="service">${providerName}</div>
-            <div class="amount">${amount || ""} ${currency || ""}</div>
-            <div class="sub-id">ID: ${subId}</div>
-            <button onclick="pay()">Оплатить сейчас</button>
-            <div class="footer">Это демонстрационная платежная система.<br>Реальные средства не списываются.</div>
+            <h2>Complete Payment</h2>
+            <p>ID: ${subIdOrPlanId}</p>
+            <button id="payBtn" onclick="pay()">Confirm & Pay</button>
+            <div class="success" id="success">✅ Payment Success! Redirecting...</div>
           </div>
           <script>
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            // Скрываем главную кнопку Telegram чтобы не сбивала с толку
+            tg.MainButton.hide();
+            
             async function pay() {
-              const btn = document.querySelector('button');
-              const card = document.querySelector('.card');
-              btn.disabled = true;
-              btn.innerText = 'Проверка транзакции...';
+              const btn = document.getElementById('payBtn');
+              const success = document.getElementById('success');
               
-              try {
-                await new Promise(resolve => setTimeout(resolve, 800));
+              btn.disabled = true;
+              btn.textContent = 'Processing...';
 
+              try {
                 const res = await fetch('/gateway/process', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ subscriptionId: '${subId}' })
+                  body: JSON.stringify({ subscriptionId: '${subIdOrPlanId}' })
                 });
                 
                 if (res.ok) {
-                  btn.style.background = '#007bff';
-                  btn.innerText = '✅ Оплачено';
-                  card.style.border = '2px solid #28a745';
+                  btn.style.display = 'none';
+                  success.style.display = 'block';
+                  
+                  // Через 2 секунды закрываем TMA или перенаправляем в бот
                   setTimeout(() => {
-                    alert('Инвестиция подтверждена! Возвращайтесь в Telegram для завершения онбординга.');
-                  }, 200);
+                    if (tg && tg.close) {
+                      tg.close();
+                    } else {
+                      // Фоллбэк: открываем бота
+                      window.location.href = 'https://t.me/EasyPaywallBot';
+                    }
+                  }, 2000);
                 } else {
-                  throw new Error('Gateway error');
+                  btn.disabled = false;
+                  btn.textContent = 'Try Again';
+                  alert('Payment failed. Please try again.');
                 }
-              } catch (e) {
-                btn.style.background = '#dc3545';
-                btn.innerText = '❌ Ошибка шлюза';
+              } catch (err) {
                 btn.disabled = false;
-                setTimeout(() => {
-                  alert('Произошла техническая ошибка на стороне шлюза. Попробуйте еще раз.');
-                  btn.innerText = 'Повторить оплату';
-                  btn.style.background = '#28a745';
-                }, 500);
+                btn.textContent = 'Try Again';
+                alert('Payment error: ' + err.message);
               }
             }
           </script>
         </body>
         </html>
         `,
-        { headers: { "Content-Type": "text/html" } }
+        { headers }
       );
     }
 
-    // 2. Внутренний эндпоинт "Шлюза", который имитирует отправку вебхука на сервер бота
+    // 3. Обработка шлюза (Webhooks)
     if (url.pathname === "/gateway/process" && req.method === "POST") {
       try {
         const { subscriptionId } = await req.json();
-        const signature = signPayload(subscriptionId);
-        
-        console.log(`[GATEWAY] 💰 User paid. Sending signed webhook...`);
-        
-        const response = await fetch(BOT_WEBHOOK_URL, {
+        const SIGNING_SECRET = process.env.PAYMENT_SIGNING_SECRET || "demo_secret_123";
+        const signature = Buffer.from(`${subscriptionId}:${SIGNING_SECRET}`).toString("base64");
+
+        console.log(`[GATEWAY] 💰 Processing payment for ${subscriptionId}...`);
+
+        await fetch(BOT_WEBHOOK_URL, {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "X-Signature": signature 
-          },
+          headers: { "Content-Type": "application/json", "X-Signature": signature },
           body: JSON.stringify({ subscriptionId })
         });
-        
-        if (response.ok) {
-          console.log(`[GATEWAY] ✅ Webhook successfully delivered to bot.`);
-          return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } });
-        } else {
-          console.error(`[GATEWAY] ❌ Webhook delivery failed: ${response.status}`);
-          return new Response("Webhook delivery failed", { status: 500 });
-        }
+
+        return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" } });
       } catch (e: any) {
-        console.error(`[GATEWAY] ❌ Processing error: ${e.message}`);
         return new Response(e.message, { status: 400 });
       }
     }
 
-    return new Response("Demo Payment Server Running", { status: 200 });
+    return new Response("TMA & Payment Server Running", { status: 200, headers });
   }
 });
 
-console.log(`\n🚀 Demo Payment Gateway App: http://${HOST}:${PORT}`);
-console.log(`📡 Bot Webhook Configured: ${BOT_WEBHOOK_URL}\n`);
+console.log(`\n🚀 TMA Simulator: http://${HOST}:${PORT}/tma`);
+console.log(`📡 Bot Webhook: ${BOT_WEBHOOK_URL}\n`);

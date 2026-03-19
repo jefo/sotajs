@@ -78,12 +78,12 @@ export function createGrammyBot(token: string, adminId: number) {
 			}
 		}
 
+		const tmaUrl = process.env.TMA_URL || "https://lvh.me:3000/tma"; // Fallback to https for validation
 		const keyboard = new InlineKeyboard()
-			.text("🚀 Участие", "list_tariffs")
-			.text("📅 Мой статус", "my_sub")
-			.row()
-			.text("❓ Помощь", "help");
-
+		  .webApp("💎 Premium Membership", tmaUrl)
+		  .row()
+		  .text("🚀 Участие (Legacy)", "list_tariffs")
+		  .text("📅 Мой статус", "my_sub");
 		await ctx.reply(
 			`👋 <b>Приветствую в Product Accelerator!</b>\n\n` +
 				`Я ваш персональный проводник в закрытое сообщество Product-менеджеров из BigTech. Здесь мы делимся кейсами, которые не попадают в Medium, и вакансиями, которых нет на рынке.\n\n` +

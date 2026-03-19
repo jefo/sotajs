@@ -8,10 +8,14 @@ import { createAggregate } from "../../../lib";
 const PlanSchema = z.object({
 	id: z.string().uuid(),
 	name: z.string().min(1),
-	price: z.number().positive(),
+  group: z.string().default("standard"), // Напр. "career_accelerator"
+  accessLevel: z.enum(["resident", "legend"]),
+	price: z.number().nonnegative(),
 	currency: z.string().length(3),
 	durationDays: z.number().positive(),
-	channelId: z.string().min(1), // NEW: Telegram channel ID ( @username или -100...)
+  trialDays: z.number().default(0),
+  isRecurring: z.boolean().default(false),
+	channelId: z.string().min(1),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -23,7 +27,7 @@ export const Plan = createAggregate({
 	schema: PlanSchema,
 	invariants: [
 		(props) => {
-			if (props.price <= 0) throw new Error("Price must be positive");
+			if (props.price < 0) throw new Error("Price cannot be negative");
 			if (props.durationDays <= 0) throw new Error("Duration must be positive");
 		},
 	],

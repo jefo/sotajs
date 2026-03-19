@@ -7,10 +7,14 @@ import { createPort } from "../../../../lib";
 export type PlanDto = {
   id: string;
   name: string;
+  group: string;
+  accessLevel: "base" | "vip" | "ultra";
   price: number;
   currency: string;
   durationDays: number;
-  channelId: string; // NEW
+  trialDays: number;
+  isRecurring: boolean;
+  channelId: string; 
   createdAt: Date;
   updatedAt: Date;
 };
