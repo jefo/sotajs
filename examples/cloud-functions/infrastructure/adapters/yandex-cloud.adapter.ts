@@ -1,148 +1,127 @@
-import { FeaturePorts } from "../../../../lib";
 import {
-  DeployFunctionInput,
-  DeployFunctionResult,
-  InvokeFunctionInput,
-  InvokeFunctionResult,
-  DeleteFunctionInput,
-  DeleteFunctionResult,
-  GetFunctionInput,
-  FunctionDto,
-  ListFunctionsInput,
-  ListFunctionsResult,
-} from "../ports/cloud.ports";
-import { CloudFunctionFeature } from "../ports/cloud-feature";
+  Session,
+  serviceClients,
+  waitForOperation,
+  decodeMessage
+} from "@yandex-cloud/nodejs-sdk";
+import {
+  Function,
+  Version
+} from "@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function";
+import {
+  CreateFunctionRequest,
+  CreateFunctionVersionRequest,
+  GetFunctionRequest,
+  ListFunctionsRequest,
+  DeleteFunctionRequest
+} from "@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service";
+import { FeaturePorts } from "../../../../lib";
+
+import { execSync } from "child_process";
+import { CloudFunctionFeature } from "../../application/ports/cloud-feature";
+import { DeleteFunctionInput, DeleteFunctionResult, DeployFunctionInput, DeployFunctionResult, GetFunctionInput, InvokeFunctionInput, InvokeFunctionResult, ListFunctionsInput, ListFunctionsResult } from "../../application";
+import { FunctionDto } from "../../application/ports";
 
 /**
- * Yandex Cloud Adapter
- *
- * Real implementation using @yandex-cloud/sdk
- * Requires authentication via IAM token or service account key
+ * Real Yandex Cloud Adapter (Node.js SDK v2)
+ * 
+ * Использует актуальную версию @yandex-cloud/nodejs-sdk.
  */
 export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeature> {
-  private functions: Map<string, FunctionDto> = new Map();
+  private session: Session;
   private folderId: string;
-  private iamToken?: string;
 
-  constructor(config: { folderId: string; iamToken?: string } = { folderId: "default" }) {
+  constructor(config: { folderId: string; oauthToken?: string; iamToken?: string }) {
     this.folderId = config.folderId;
-    this.iamToken = config.iamToken;
+    this.session = new Session({
+      oauthToken: config.oauthToken,
+      iamToken: config.iamToken,
+    });
+  }
+
+  private get client() {
+    return this.session.client(serviceClients.FunctionServiceClient);
   }
 
   async deployFunction(input: DeployFunctionInput): Promise<DeployFunctionResult> {
     try {
-      const functionId = this.generateFunctionId(input.name);
+      console.log(`☁️  [YC] Deploying function: ${input.name}...`);
 
-      // Check if function with same name exists
-      const existing = Array.from(this.functions.values()).find(
-        (f) => f.name === input.name && f.status !== "deleting"
-      );
+      // 1. Поиск или создание функции
+      let functionId = await this.findFunctionIdByName(input.name);
 
-      if (existing) {
-        return {
-          success: false,
-          error: `Function with name '${input.name}' already exists`,
-        };
+      if (!functionId) {
+        console.log(`🔨 [YC] Creating new function '${input.name}'...`);
+        const createOp = await this.client.create(CreateFunctionRequest.fromPartial({
+          folderId: this.folderId,
+          name: input.name,
+          description: "Auto-deployed via SotaJS Cloud Functions DX",
+          labels: { "managed-by": "sotajs" }
+        }));
+
+        const resultOp = await waitForOperation(createOp, this.session);
+        if (resultOp.error) throw new Error(resultOp.error.message);
+
+        const createdFunc = decodeMessage(resultOp.response!);
+        functionId = createdFunc.id;
+        console.log(`✅ [YC] Function created: ${functionId}`);
       }
 
-      const now = new Date();
-      const functionDto: FunctionDto = {
-        id: functionId,
-        name: input.name,
-        runtime: input.runtime,
+      // 2. Создание новой версии
+      console.log(`📦 [YC] Creating version for ${functionId}...`);
+      const zipBuffer = await this.createZipBuffer(input.code);
+
+      const versionOp = await this.client.createVersion(CreateFunctionVersionRequest.fromPartial({
+        functionId: functionId!,
+        runtime: input.runtime, // Напр. "nodejs18"
         entrypoint: input.entrypoint,
-        memory: input.memory,
-        executionTimeout: input.executionTimeout,
-        code: input.code,
+        resources: {
+          memory: input.memory * 1024 * 1024, // Конвертируем MB в байты
+        },
+        executionTimeout: { seconds: input.executionTimeout, nanos: 0 },
+        content: zipBuffer,
         environment: input.environment || {},
-        status: "active",
-        version: "1.0.0",
-        createdAt: now,
-        updatedAt: now,
-      };
+      }));
 
-      this.functions.set(functionId, functionDto);
+      const resultVersionOp = await waitForOperation(versionOp, this.session);
 
-      console.log(`☁️  Deployed function '${input.name}' to Yandex Cloud`);
+      if (resultVersionOp.error) {
+        throw new Error(`Version deployment failed: ${resultVersionOp.error.message}`);
+      }
+
+      const createdVersion = decodeMessage(resultVersionOp.response!);
+      console.log(`🚀 [YC] Version ${createdVersion.id} is LIVE!`);
 
       return {
         success: true,
-        functionId,
-        version: "1.0.0",
+        functionId: functionId!,
+        version: createdVersion.id,
       };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
+    } catch (error: any) {
+      console.error(`❌ [YC] Deployment error: ${error.message}`);
       return {
         success: false,
-        error: message,
+        error: error.message,
       };
     }
   }
 
   async invokeFunction(input: InvokeFunctionInput): Promise<InvokeFunctionResult> {
-    try {
-      const func = this.functions.get(input.functionId);
-
-      if (!func) {
-        return {
-          success: false,
-          error: `Function '${input.functionId}' not found`,
-        };
-      }
-
-      if (func.status !== "active") {
-        return {
-          success: false,
-          error: `Function is not active (status: ${func.status})`,
-        };
-      }
-
-      // Simulate function invocation
-      const startTime = Date.now();
-
-      // In real implementation, this would call Yandex Cloud Functions API
-      // const response = await this.functionsService.callFunction({
-      //   functionId: input.functionId,
-      //   payload: JSON.stringify(input.payload),
-      // });
-
-      const executionTime = Date.now() - startTime;
-
-      // For demo, execute the code in a sandbox manner
-      const response = await this.executeFunctionCode(func.code, input.payload);
-
-      console.log(`⚡ Invoked function '${func.name}' in ${executionTime}ms`);
-
-      return {
-        success: true,
-        response,
-        executionTime,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      return {
-        success: false,
-        error: message,
-      };
-    }
+    return { success: false, error: "Direct invocation via SDK not implemented. Use public web-link." };
   }
 
   async getFunction(input: GetFunctionInput): Promise<FunctionDto | null> {
-    const func = this.functions.get(input.functionId);
-    if (!func) return null;
-
-    // Return a copy with new Date objects
-    return this.cloneFunctionDto(func);
+    try {
+      const func = await this.client.get(GetFunctionRequest.fromPartial({ functionId: input.functionId }));
+      return this.mapToDto(func);
+    } catch {
+      return null;
+    }
   }
 
   async listFunctions(input: ListFunctionsInput): Promise<ListFunctionsResult> {
-    let functions = Array.from(this.functions.values()).map((f) => this.cloneFunctionDto(f));
-
-    // Apply filters
-    if (input.status) {
-      functions = functions.filter((f) => f.status === input.status);
-    }
-
+    const response = await this.client.list(ListFunctionsRequest.fromPartial({ folderId: this.folderId }));
+    const functions = (response.functions || []).map(f => this.mapToDto(f));
     return {
       functions,
       totalCount: functions.length,
@@ -150,110 +129,60 @@ export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeat
   }
 
   async deleteFunction(input: DeleteFunctionInput): Promise<DeleteFunctionResult> {
-    const func = this.functions.get(input.functionId);
-
-    if (!func) {
-      return {
-        success: false,
-        error: `Function '${input.functionId}' not found`,
-      };
-    }
-
-    if (func.status === "deleting") {
-      return {
-        success: false,
-        error: "Function is already being deleted",
-      };
-    }
-
-    // Mark for deletion
-    func.status = "deleting";
-    func.updatedAt = new Date();
-
-    // In real implementation, this would call Yandex Cloud Functions delete API
-    // await this.functionsService.deleteFunction({ functionId: input.functionId });
-
-    // Remove from storage
-    this.functions.delete(input.functionId);
-
-    console.log(`🗑️  Deleted function '${func.name}'`);
-
-    return {
-      success: true,
-    };
-  }
-
-  async logger(input: {
-    level: "info" | "warn" | "error";
-    message: string;
-    context?: Record<string, any>;
-  }): Promise<void> {
-    const emoji = {
-      info: "ℹ️",
-      warn: "⚠️",
-      error: "❌",
-    }[input.level];
-
-    const contextStr = input.context ? ` | ${JSON.stringify(input.context)}` : "";
-    console.log(`${emoji} [${input.level.toUpperCase()}] ${input.message}${contextStr}`);
-  }
-
-  // ============================================================================
-  // Private Helpers
-  // ============================================================================
-
-  private generateFunctionId(name: string): string {
-    // Generate a proper UUID v4
-    const randomBytes = new Uint8Array(16);
-    crypto.getRandomValues(randomBytes);
-    
-    // Set version (4) and variant bits
-    randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40;
-    randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80;
-    
-    // Convert to hex string
-    const hex = Array.from(randomBytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-    
-    // Format as UUID
-    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-  }
-
-  private cloneFunctionDto(func: FunctionDto): FunctionDto {
-    return {
-      ...func,
-      createdAt: new Date(func.createdAt),
-      updatedAt: new Date(func.updatedAt),
-    };
-  }
-
-  /**
-   * Execute function code in a sandbox
-   * In production, this would be handled by Yandex Cloud
-   */
-  private async executeFunctionCode(code: string, payload?: Record<string, any>): Promise<any> {
     try {
-      // Create function that has module in scope and returns exports
-      // This allows user code to use `module.exports.handler = ...` pattern
-      const evalCode = `{ const module = { exports: {} }; ${code}; return module.exports; }`;
-      const evalFn = new Function(evalCode);
-      const exports = evalFn();
-
-      // Get the handler from exports
-      const handler = exports?.handler;
-      
-      if (typeof handler !== "function") {
-        throw new Error("No handler function exported");
-      }
-
-      // Call the handler with payload
-      const result = await handler(payload || {});
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Function execution failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      const op = await this.client.delete(DeleteFunctionRequest.fromPartial({ functionId: input.functionId }));
+      const result = await waitForOperation(op, this.session);
+      if (result.error) throw new Error(result.error.message);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
+  }
+
+  async logger(input: { level: string; message: string; context?: any }): Promise<void> {
+    const emoji = input.level === 'error' ? '❌' : 'ℹ️';
+    console.log(`${emoji} [${input.level.toUpperCase()}] ${input.message}`, input.context || "");
+  }
+
+  // ============================================================================
+  // Helpers
+  // ============================================================================
+
+  private async findFunctionIdByName(name: string): Promise<string | null> {
+    const response = await this.client.list(ListFunctionsRequest.fromPartial({ folderId: this.folderId }));
+    const found = (response.functions || []).find(f => f.name === name);
+    return found ? found.id : null;
+  }
+
+  private mapToDto(f: Function): FunctionDto {
+    return {
+      id: f.id,
+      name: f.name,
+      runtime: f.runtime as any,
+      entrypoint: "",
+      memory: 0,
+      executionTimeout: 0,
+      code: "",
+      environment: {},
+      status: "active",
+      version: "",
+      createdAt: f.createdAt!,
+      updatedAt: f.createdAt!,
+    };
+  }
+
+  private async createZipBuffer(code: string): Promise<Uint8Array> {
+    const tempDir = `/tmp/yc-deploy-${Date.now()}`;
+    execSync(`mkdir -p ${tempDir}`);
+    await Bun.write(`${tempDir}/index.js`, code);
+
+    execSync(`cd ${tempDir} && zip -q -r function.zip .`);
+
+    const zipFile = Bun.file(`${tempDir}/function.zip`);
+    const arrayBuffer = await zipFile.arrayBuffer();
+
+    execSync(`rm -rf ${tempDir}`);
+
+    return new Uint8Array(arrayBuffer);
   }
 }

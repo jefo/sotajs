@@ -2,10 +2,10 @@ import { z } from "zod";
 import { usePort } from "../../../../lib";
 import { CloudFunction } from "../../domain/function.aggregate";
 import {
-  invokeFunctionPort,
   getFunctionPort,
+  invokeFunctionPort,
   loggerPort,
-} from "../../infrastructure/ports/cloud.ports";
+} from "../ports";
 
 /**
  * Command: Invoke a cloud function

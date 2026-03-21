@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { usePort } from "../../../../lib";
-import { listFunctionsPort, loggerPort, FunctionDto } from "../../infrastructure/ports/cloud.ports";
+import { FunctionDto, listFunctionsPort, loggerPort } from "../ports";
 
 /**
  * Query: List cloud functions with optional filtering

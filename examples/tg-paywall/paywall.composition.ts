@@ -7,6 +7,7 @@ import {
 	TelegramFeature,
 	LoggingFeature,
 	MessagingFeature,
+	DeploymentFeature,
 } from "./application";
 import {
 	SqlitePlanAdapter,
@@ -19,6 +20,7 @@ import {
 	StripePaymentAdapter,
 	RealTelegramAdapter,
 	ConsoleLoggerAdapter,
+	CloudDeploymentAdapter,
 	setupNetworkInterceptor,
 } from "./infrastructure";
 
@@ -34,7 +36,10 @@ export const core = defineCore({
 	telegram: TelegramFeature,
 	logging: LoggingFeature,
 	messaging: MessagingFeature,
+	deployment: DeploymentFeature,
 });
+
+// ... (remaining code updated in next turns if needed)
 
 // Единая база данных для всего приложения
 const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
@@ -224,11 +229,23 @@ class TemplateAdapterWrapper {
 	}
 }
 
-core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging }) => {
+class DeploymentAdapterWrapper {
+	private adapter: CloudDeploymentAdapter;
+	constructor() {
+		this.adapter = new CloudDeploymentAdapter();
+	}
+
+	async deploy(input: any): Promise<any> {
+		return this.adapter.deploy(input);
+	}
+}
+
+core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging, deployment }) => {
 	plans.bind(PlanAdapterWrapper);
 	subscriptions.bind(SubscriptionAdapterWrapper);
 	payment.bind(PaymentAdapterWrapper);
 	telegram.bind(TelegramAdapterWrapper);
 	logging.bind(LoggerAdapterWrapper);
 	messaging.bind(TemplateAdapterWrapper);
+	deployment.bind(DeploymentAdapterWrapper);
 });

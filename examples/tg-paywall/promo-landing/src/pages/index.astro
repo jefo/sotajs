@@ -218,8 +218,8 @@ import {
             <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
               <Code class="w-8 h-8 text-blue-400" />
             </div>
-            <h3 class="text-2xl font-bold mb-4 text-white">Infrastructure (IaaS)</h3>
-            <p class="text-white/70 mb-8 leading-relaxed">
+            <h3 class="text-2xl font-bold mb-4 !text-white">Infrastructure (IaaS)</h3>
+            <p class="!text-slate-300 mb-8 leading-relaxed">
               Для разработчиков и агентств. Установите SotaJS на свой сервер. Полный доступ к исходному коду, кастомная база данных и отсутствие абонентской платы.
             </p>
             <ul class="space-y-4 mb-10 flex-1">
@@ -229,13 +229,13 @@ import {
                 'Кастомные интеграции и логика',
                 'Zero-Knowledge архитектура',
               ].map((item) => (
-                <li class="flex items-center gap-3 text-sm font-medium text-white/90">
+                <li class="flex items-center gap-3 text-sm font-medium !text-slate-200">
                   <CheckCircle2 class="w-5 h-5 text-blue-400" />
-                  {item}
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
-            <a href="https://github.com/maxdev1/sotajs" target="_blank" class="btn border border-white/20 text-white hover:bg-white/10 w-full group-hover:translate-y-[-2px] transition-transform">
+            <a href="https://github.com/maxdev1/sotajs" target="_blank" class="btn border border-white/20 !text-white hover:bg-white/10 w-full group-hover:translate-y-[-2px] transition-transform">
               Развернуть на своём сервере
             </a>
           </div>

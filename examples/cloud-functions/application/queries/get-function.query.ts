@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { usePort } from "../../../../lib";
-import { getFunctionPort, loggerPort, FunctionDto } from "../../infrastructure/ports/cloud.ports";
+import { FunctionDto, getFunctionPort, loggerPort } from "../ports";
 
 /**
  * Query: Get a cloud function by ID

@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { usePort } from "../../../../lib";
-import {
-  deleteFunctionPort,
-  getFunctionPort,
-  loggerPort,
-} from "../../infrastructure/ports/cloud.ports";
 import { CloudFunction } from "../../domain/function.aggregate";
+import { deleteFunctionPort, getFunctionPort, loggerPort } from "../ports";
 
 /**
  * Command: Delete a cloud function

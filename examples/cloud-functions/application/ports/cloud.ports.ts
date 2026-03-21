@@ -80,7 +80,6 @@ export type FunctionDto = {
   createdAt: Date;
   updatedAt: Date;
 };
-
 export type DeployFunctionInput = {
   name: string;
   runtime: FunctionDto["runtime"];
