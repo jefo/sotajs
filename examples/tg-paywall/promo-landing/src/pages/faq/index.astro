@@ -1,0 +1,313 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { HelpCircle, ChevronDown } from 'lucide-astro';
+---
+
+<Layout
+  title="Частые вопросы (FAQ) | TG Paywall — Ответы на все вопросы"
+  description="Ответы на частые вопросы о TG Paywall: настройка, оплата, интеграции, безопасность. Не нашли ответ? Свяжитесь с поддержкой."
+  canonicalURL="/faq"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">FAQ</span>
+        </div>
+        <h1 class="mb-6">
+          Частые <span class="gradient-text">вопросы</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Ответы на самые популярные вопросы о TG Paywall.
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ Sections -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-4xl">
+        <!-- Общие вопросы -->
+        <div class="mb-16">
+          <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <HelpCircle class="w-5 h-5 text-blue-600" />
+            </div>
+            Общие вопросы
+          </h2>
+          
+          <div class="space-y-4">
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl" open>
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Что такое TG Paywall?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>TG Paywall — это SaaS-сервис для автоматизации платного доступа в Telegram-каналы. Он принимает оплаты, выдаёт доступ и автоматически удаляет неплательщиков.</p>
+                <p class="mt-4">Основные возможности:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li>Приём платежей через 5+ провайдеров</li>
+                  <li>Автоматическая выдача доступа за 2 секунды</li>
+                  <li>Удаление неплательщиков по истечении подписки</li>
+                  <li>Аналитика доходов и подписчиков</li>
+                </ul>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Сколько стоит TG Paywall?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>У нас 3 тарифных плана:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>Starter:</strong> $49/мес (до 100 подписчиков)</li>
+                  <li><strong>Pro:</strong> $99/мес (до 500 подписчиков)</li>
+                  <li><strong>Enterprise:</strong> $249/мес (безлимит)</li>
+                </ul>
+                <p class="mt-4">Все тарифы включают 14 дней бесплатного тестирования без привязки карты.</p>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Нужно ли программирование для настройки?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Нет, TG Paywall — готовый SaaS-сервис. Всё настраивается через веб-интерфейс:</p>
+                <ol class="list-decimal list-inside mt-2 space-y-1">
+                  <li>Создайте бота через @BotFather (2 минуты)</li>
+                  <li>Подключите бота в личном кабинете TG Paywall</li>
+                  <li>Настройте платёжного провайдера</li>
+                  <li>Создайте тарифы</li>
+                </ol>
+                <p class="mt-4">Вся настройка занимает 15 минут. Код нужен только для кастомных интеграций в тарифе Enterprise.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Платежи -->
+        <div class="mb-16">
+          <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+              <HelpCircle class="w-5 h-5 text-green-600" />
+            </div>
+            Платежи
+          </h2>
+          
+          <div class="space-y-4">
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl" open>
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Какие платёжные системы поддерживаются?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Мы поддерживаем 5+ платёжных провайдеров:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>Stripe</strong> — международные платежи, карты, Apple/Google Pay</li>
+                  <li><strong>ЮKassa</strong> — Россия и СНГ</li>
+                  <li><strong>Robokassa</strong> — альтернатива для России</li>
+                  <li><strong>Prodamus</strong> — для самозанятых и ИП</li>
+                  <li><strong>CryptoPay</strong> — криптовалюты (TON, USDT, BTC)</li>
+                </ul>
+                <p class="mt-4">Можно подключить несколько провайдеров одновременно для покрытия разных регионов.</p>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Как быстро я получу доступ после оплаты?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Доступ выдаётся автоматически в течение <strong>2 секунд</strong> после подтверждения платежа.</p>
+                <p class="mt-4">Процесс:</p>
+                <ol class="list-decimal list-inside mt-2 space-y-1">
+                  <li>Пользователь оплачивает подписку</li>
+                  <li>Платёжный провайдер подтверждает оплату</li>
+                  <li>TG Paywall создаёт AccessGrant</li>
+                  <li>Бот отправляет пользователю ссылку-приглашение</li>
+                  <li>Пользователь нажимает «Вступить» и автоматически добавляется в канал</li>
+                </ol>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Можно ли принимать рекуррентные платежи?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Да, рекуррентные (автоматические) платежи поддерживаются через Stripe и ЮKassa.</p>
+                <p class="mt-4">Как это работает:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li>Пользователь один раз привязывает карту</li>
+                  <li>Списание происходит автоматически каждый месяц</li>
+                  <li>При неудачной оплате бот отправляет уведомление</li>
+                  <li>Если оплата не прошла в течение 3 дней — доступ приостанавливается</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Безопасность -->
+        <div class="mb-16">
+          <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+              <HelpCircle class="w-5 h-5 text-purple-600" />
+            </div>
+            Безопасность
+          </h2>
+          
+          <div class="space-y-4">
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl" open>
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Как защищён доступ от пересылки ссылок?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Мы используем <strong>Join Request flow</strong> вместо обычных invite links:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li>Пользователь получает персональную ссылку-заявку</li>
+                  <li>При нажатии «Вступить» бот проверяет базу данных на наличие активной подписки</li>
+                  <li>Доступ одобряется автоматически ТОЛЬКО если подписка активна</li>
+                  <li>Ссылка привязана к Telegram ID пользователя и не работает для других</li>
+                </ul>
+                <p class="mt-4">Это исключает возможность пересылки доступа третьим лицам на 100%.</p>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Где хранятся данные?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Данные хранятся в защищённой базе данных с шифрованием:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>SQLite</strong> — по умолчанию для небольших проектов</li>
+                  <li><strong>PostgreSQL</strong> — для production с высокой нагрузкой (тариф Pro+)</li>
+                </ul>
+                <p class="mt-4">Платёжные данные НЕ хранятся на наших серверах — они обрабатываются напрямую платёжными провайдерами (Stripe, ЮKassa и др.).</p>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Технические вопросы -->
+        <div class="mb-16">
+          <h2 class="text-2xl font-bold mb-8 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+              <HelpCircle class="w-5 h-5 text-amber-600" />
+            </div>
+            Технические вопросы
+          </h2>
+          
+          <div class="space-y-4">
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl" open>
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Можно ли использовать для нескольких каналов?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Да, в зависимости от тарифа:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li><strong>Starter:</strong> 1 канал</li>
+                  <li><strong>Pro:</strong> до 5 каналов</li>
+                  <li><strong>Enterprise:</strong> безлимитное количество каналов</li>
+                </ul>
+                <p class="mt-4">Один аккаунт TG Paywall может управлять несколькими ботами и каналами одновременно.</p>
+              </div>
+            </details>
+            
+            <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+              <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                <span class="font-semibold text-[var(--text-high)] pr-8">Есть ли API для интеграции?</span>
+                <ChevronDown class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+                <p>Да, полный REST API доступен в тарифе Enterprise. Документация: <a href="/docs" class="text-[var(--color-brand-primary)] hover:underline">/docs/api</a></p>
+                <p class="mt-4">Возможности API:</p>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                  <li>Создание и управление тарифами</li>
+                  <li>Проверка статуса подписки</li>
+                  <li>Управление доступом (grant/revoke)</li>
+                  <li>Получение аналитики</li>
+                  <li>Вебхуки для уведомлений о платежах</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="text-center mt-16 p-8 bg-[var(--color-surface-soft)] rounded-2xl">
+          <h3 class="text-2xl font-bold mb-4">Остался вопрос?</h3>
+          <p class="text-[var(--text-medium)] mb-6">
+            Наша команда поддержки готова помочь вам с любым вопросом.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/contact" class="btn btn-primary">
+              Связаться с нами
+            </a>
+            <a href="https://t.me/sotajs_dev" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+              Telegram канал
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schema.org FAQ Markup -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Что такое TG Paywall?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TG Paywall — это SaaS-сервис для автоматизации платного доступа в Telegram-каналы. Он принимает оплаты, выдаёт доступ и автоматически удаляет неплательщиков."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Сколько стоит TG Paywall?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "У нас 3 тарифных плана: Starter $49/мес (до 100 подписчиков), Pro $99/мес (до 500 подписчиков), Enterprise $249/мес (безлимит). Все тарифы включают 14 дней бесплатного тестирования."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Нужно ли программирование для настройки?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Нет, TG Paywall — готовый SaaS-сервис. Всё настраивается через веб-интерфейс за 15 минут. Код нужен только для кастомных интеграций в тарифе Enterprise."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Какие платёжные системы поддерживаются?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Мы поддерживаем 5+ платёжных провайдеров: Stripe (международные), ЮKassa (Россия/СНГ), Robokassa, Prodamus, CryptoPay (криптовалюты)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Как защищён доступ от пересылки ссылок?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Мы используем Join Request flow вместо обычных invite links. Ссылка привязана к Telegram ID пользователя и не работает для других, что исключает пересылку доступа на 100%."
+          }
+        }
+      ]
+    })} />
+  </main>
+</Layout>

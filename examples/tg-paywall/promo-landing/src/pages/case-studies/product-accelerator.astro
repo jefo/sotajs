@@ -1,0 +1,272 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { TrendingUp, DollarSign, Clock, CheckCircle2, ArrowRight } from 'lucide-astro';
+---
+
+<Layout
+  title="Product Accelerator: $12K/мес с автоматизацией | TG Paywall Кейс"
+  description="Кейс: Product Management сообщество автоматизировало доступ в закрытый канал и увеличило доход на 47% за 3 месяца."
+  canonicalURL="/case-studies/product-accelerator"
+>
+  <article>
+    <!-- Article Header -->
+    <header class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl">
+        <a href="/case-studies" class="inline-flex items-center gap-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)] transition-colors mb-8">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Назад к кейсам
+        </a>
+        
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">Case Study</span>
+        </div>
+        
+        <h1 class="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">
+          Product Accelerator: Как сообщество вышло на $12K/мес с автоматизацией
+        </h1>
+        
+        <p class="text-xl text-[var(--text-medium)] mb-8 leading-relaxed">
+          Кейс: Product Management сообщество автоматизировало доступ в закрытый канал и увеличило доход на 47% за 3 месяца.
+        </p>
+        
+        <!-- Meta information -->
+        <div class="flex flex-wrap items-center gap-6 pb-8 border-b border-[var(--color-border-subtle)]">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/20 flex items-center justify-center">
+              <span class="text-[var(--color-brand-primary)] font-bold">M</span>
+            </div>
+            <div>
+              <div class="font-semibold text-[var(--text-high)]">Max Dev</div>
+              <div class="text-xs text-[var(--text-low)]">Creator of SotaJS</div>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-4 text-sm text-[var(--text-low)]">
+            <span class="flex items-center gap-1">
+              <Clock class="w-4 h-4" />
+              8 мин чтение
+            </span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Article Content -->
+    <div class="py-20 md:py-32">
+      <div class="container max-w-4xl">
+        <div class="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-[var(--color-brand-primary)]">
+          
+          <!-- О клиенте -->
+          <h2 class="text-2xl font-bold mt-12 mb-6">О клиенте</h2>
+          
+          <div class="my-8 p-6 bg-[var(--color-surface-soft)] rounded-xl">
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-1">Ниша</p>
+                <p class="font-semibold">Product Management / Карьерное сообщество</p>
+              </div>
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-1">Аудитория</p>
+                <p class="font-semibold">8,500 подписчиков</p>
+              </div>
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-1">Гео</p>
+                <p class="font-semibold">СНГ + Европа</p>
+              </div>
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-1">Модель</p>
+                <p class="font-semibold">Платные подписки ($50/мес)</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-[var(--text-medium)] leading-relaxed mb-8">
+            <strong>Product Accelerator</strong> — закрытое сообщество продуктовых менеджеров из BigTech компаний. Участники делятся кейсами, вакансиями и инсайтами, которые не попадают в публичные источники.
+          </p>
+
+          <!-- Проблема -->
+          <h2 class="text-2xl font-bold mt-12 mb-6">Проблема</h2>
+          
+          <div class="space-y-6 mb-8">
+            <div class="p-6 border-l-4 border-red-500 bg-red-50 rounded-r-xl">
+              <h3 class="font-bold text-red-800 mb-3">1. Ручная проверка оплат (3 часа/неделю)</h3>
+              <p class="text-red-700">
+                Администратор вручную проверял скриншоты оплат в ЛС, после чего добавлял пользователя в канал.
+              </p>
+              <p class="text-red-700 mt-2 text-sm">
+                <strong>Влияние:</strong> 12-15 часов в месяц на рутинную проверку, задержки доступа 1-24 часа
+              </p>
+            </div>
+
+            <div class="p-6 border-l-4 border-red-500 bg-red-50 rounded-r-xl">
+              <h3 class="font-bold text-red-800 mb-3">2. Утечки доступа (15-20% потерь)</h3>
+              <p class="text-red-700">
+                После оплаты пользователь получал пригласительную ссылку, которую мог переслать друзьям.
+              </p>
+              <p class="text-red-700 mt-2 text-sm">
+                <strong>Влияние:</strong> ~30 человек пользовались каналом без оплаты, потери $1,500-2,000/мес
+              </p>
+            </div>
+
+            <div class="p-6 border-l-4 border-red-500 bg-red-50 rounded-r-xl">
+              <h3 class="font-bold text-red-800 mb-3">3. Не удаляли неплательщиков</h3>
+              <p class="text-red-700">
+                Когда подписка заканчивалась, пользователи оставались в канале.
+              </p>
+              <p class="text-red-700 mt-2 text-sm">
+                <strong>Влияние:</strong> Ещё ~20 человек «бесплатников», потери $1,000-1,500/мес
+              </p>
+            </div>
+          </div>
+
+          <!-- Решение -->
+          <h2 class="text-2xl font-bold mt-12 mb-6">Решение</h2>
+          
+          <p class="text-[var(--text-medium)] leading-relaxed mb-6">
+            Команда выбрала TG Paywall по следующим причинам:
+          </p>
+
+          <div class="overflow-x-auto my-8">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="border-b-2 border-[var(--color-border-subtle)]">
+                  <th class="text-left py-3 px-4 font-semibold">Критерий</th>
+                  <th class="text-left py-3 px-4 font-semibold text-[var(--color-brand-primary)]">TG Paywall</th>
+                  <th class="text-left py-3 px-4 font-semibold">Paywall.pw</th>
+                  <th class="text-left py-3 px-4 font-semibold">Самописное</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-[var(--color-border-subtle)]">
+                  <td class="py-3 px-4 font-medium">Стоимость</td>
+                  <td class="py-3 px-4 text-green-600 font-semibold">$99/мес</td>
+                  <td class="py-3 px-4">$840/мес (7%)</td>
+                  <td class="py-3 px-4">$500/мес</td>
+                </tr>
+                <tr class="border-b border-[var(--color-border-subtle)]">
+                  <td class="py-3 px-4 font-medium">Настройка</td>
+                  <td class="py-3 px-4 text-green-600 font-semibold">15 минут</td>
+                  <td class="py-3 px-4">30 минут</td>
+                  <td class="py-3 px-4">40+ часов</td>
+                </tr>
+                <tr class="border-b border-[var(--color-border-subtle)]">
+                  <td class="py-3 px-4 font-medium">Брендинг</td>
+                  <td class="py-3 px-4 text-green-600 font-semibold">Свой бот</td>
+                  <td class="py-3 px-4">Их бот</td>
+                  <td class="py-3 px-4">Свой бот</td>
+                </tr>
+                <tr class="border-b border-[var(--color-border-subtle)]">
+                  <td class="py-3 px-4 font-medium">Join Requests</td>
+                  <td class="py-3 px-4 text-green-600 font-semibold">✅</td>
+                  <td class="py-3 px-4">❌</td>
+                  <td class="py-3 px-4">⚠️ Сложно</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Результаты -->
+          <h2 class="text-2xl font-bold mt-12 mb-6">Результаты (через 3 месяца)</h2>
+          
+          <div class="my-8 grid md:grid-cols-3 gap-6">
+            <div class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center">
+              <div class="text-4xl font-extrabold text-[var(--color-brand-primary)] mb-2">+47%</div>
+              <div class="text-sm text-[var(--text-medium)]">Рост дохода</div>
+            </div>
+            <div class="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl text-center">
+              <div class="text-4xl font-extrabold text-green-600 mb-2">−92%</div>
+              <div class="text-sm text-[var(--text-medium)]">Время на админ</div>
+            </div>
+            <div class="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center">
+              <div class="text-4xl font-extrabold text-purple-600 mb-2">−100%</div>
+              <div class="text-sm text-[var(--text-medium)]">Утечки доступа</div>
+            </div>
+          </div>
+
+          <div class="my-8 p-6 bg-[var(--color-surface-soft)] rounded-xl">
+            <h3 class="font-bold mb-4">Финансовый расчёт</h3>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-2">До TG Paywall</p>
+                <ul class="space-y-2 text-[var(--text-medium)]">
+                  <li>Доход: $8,400/мес</li>
+                  <li>Администрирование: $500/мес</li>
+                  <li>Потери от утечек: $2,500/мес</li>
+                  <li class="font-bold">Чистыми: $5,400/мес</li>
+                </ul>
+              </div>
+              <div>
+                <p class="text-sm text-[var(--text-low)] mb-2">После TG Paywall</p>
+                <ul class="space-y-2 text-[var(--text-medium)]">
+                  <li>Доход: $12,350/мес</li>
+                  <li>Стоимость TG Paywall: $99/мес</li>
+                  <li>Потери от утечек: $0</li>
+                  <li class="font-bold text-green-600">Чистыми: $12,251/мес</li>
+                </ul>
+              </div>
+            </div>
+            <div class="mt-6 p-4 bg-green-50 rounded-lg">
+              <p class="text-green-800 font-bold">
+                📈 Дополнительная прибыль: $6,851/мес или $82,212/год
+              </p>
+            </div>
+          </div>
+
+          <!-- Цитата -->
+          <div class="my-12 p-8 bg-[var(--color-surface-soft)] rounded-xl border-l-4 border-[var(--color-brand-primary)]">
+            <svg class="w-8 h-8 text-[var(--color-brand-primary)]/30 mb-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+            </svg>
+            <blockquote class="text-lg text-[var(--text-high)] italic mb-4">
+              TG Paywall окупился за первую неделю. Мы вернули больше утечек, чем стоит разработка за год, и теперь фокусируемся на контенте вместо ручной проверки скриншотов.
+            </blockquote>
+            <cite class="text-[var(--text-medium)] not-italic">
+              — <strong>Алексей Петров</strong>, основатель Product Accelerator
+            </cite>
+          </div>
+
+          <!-- Выводы -->
+          <h2 class="text-2xl font-bold mt-12 mb-6">Выводы</h2>
+          
+          <div class="space-y-4 mb-8">
+            <div class="flex items-start gap-3">
+              <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p class="font-semibold">Join Requests вместо ссылок</p>
+                <p class="text-[var(--text-medium)]">Полностью исключили пересылку доступа</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p class="font-semibold">Автоматическое удаление</p>
+                <p class="text-[var(--text-medium)]">100% точность, никаких обид от ручного бана</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+              <div>
+                <p class="font-semibold">Мгновенный онбординг</p>
+                <p class="text-[var(--text-medium)]">Конверсия в первую оплату выросла на 23%</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CTA в конце кейса -->
+          <div class="my-12 p-8 bg-[var(--color-brand-primary)]/10 rounded-xl text-center">
+            <h3 class="text-2xl font-bold mb-4">Хотите такие же результаты?</h3>
+            <p class="text-[var(--text-medium)] mb-6">
+              Запустите TG Paywall за 15 минут и начните экономить время уже сегодня
+            </p>
+            <a href="/pricing" class="btn btn-primary">
+              Начать бесплатно
+              <ArrowRight class="w-5 h-5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</Layout>

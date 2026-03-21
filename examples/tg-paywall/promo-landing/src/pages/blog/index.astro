@@ -1,0 +1,134 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ArrowRight, Clock, Calendar } from 'lucide-astro';
+
+// Static blog posts data
+const blogPosts = [
+  {
+    id: 'monetization-guide-2026',
+    title: 'Как монетизировать Telegram канал в 2026: Полное руководство',
+    description: 'Пошаговое руководство по монетизации Telegram-канала: от 0 до $10,000/мес. 5 проверенных способов, сравнение сервисов, реальные кейсы.',
+    pubDate: new Date('2026-03-21'),
+    readingTime: '15 мин',
+    expertise: 'tutorial',
+    includesCodeExamples: false,
+  },
+];
+---
+
+<Layout
+  title="Блог | TG Paywall — Гайды по монетизации Telegram-каналов"
+  description="Гайды, tutorials и кейсы по монетизации Telegram-каналов. Hexagonal Architecture, DDD, SaaS — технический блог для разработчиков и предпринимателей."
+  canonicalURL="/blog"
+>
+  <main>
+    <!-- Blog Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">Блог</span>
+        </div>
+        <h1 class="mb-6">
+          Инженерный подход к <span class="gradient-text">монетизации</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Глубокие технические статьи о создании SaaS, архитектуре платежных систем и автоматизации Telegram-каналов.
+        </p>
+      </div>
+    </section>
+
+    <!-- Blog Posts Grid -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-7xl">
+        {blogPosts.length > 0 ? (
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {blogPosts.map((post) => (
+              <article class="group">
+                <a href={`/blog/${post.id}`} class="block h-full">
+                  <div class="card p-6 h-full flex flex-col">
+                    <div class="flex items-center gap-2 mb-4 flex-wrap">
+                      <span class={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        post.expertise === 'technical' ? 'bg-blue-100 text-blue-700' :
+                        post.expertise === 'case-study' ? 'bg-green-100 text-green-700' :
+                        post.expertise === 'tutorial' ? 'bg-purple-100 text-purple-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {post.expertise}
+                      </span>
+                      {post.includesCodeExamples && (
+                        <span class="px-3 py-1 bg-[var(--color-surface-soft)] text-[var(--text-low)] text-xs rounded-full">
+                          Код
+                        </span>
+                      )}
+                    </div>
+                    <h2 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors line-clamp-2">
+                      {post.title}
+                    </h2>
+                    <p class="text-[var(--text-medium)] text-sm mb-4 line-clamp-3 flex-1">
+                      {post.description}
+                    </p>
+                    <div class="flex items-center justify-between pt-4 border-t border-[var(--color-border-subtle)] mt-auto">
+                      <div class="flex items-center gap-3 text-xs text-[var(--text-low)]">
+                        <span class="flex items-center gap-1">
+                          <Calendar class="w-3 h-3" />
+                          {post.pubDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                        </span>
+                        <span class="flex items-center gap-1">
+                          <Clock class="w-3 h-3" />
+                          {post.readingTime}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-20">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-surface-soft)] flex items-center justify-center">
+              <svg class="w-10 h-10 text-[var(--text-low)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-9-3h10m0 0a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z" />
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Статьи скоро появятся</h3>
+            <p class="text-[var(--text-medium)] mb-6 max-w-md mx-auto">
+              Мы готовим несколько глубоких технических статей о монетизации и архитектуре платежных систем.
+            </p>
+            <a href="/" class="btn btn-primary">
+              Вернуться на главную
+              <ArrowRight class="w-5 h-5" />
+            </a>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- Newsletter CTA -->
+    <section class="py-20 bg-[var(--color-surface-soft)] border-y border-[var(--color-border-subtle)]">
+      <div class="container max-w-2xl text-center">
+        <h2 class="text-3xl font-bold mb-4">Подпишитесь на обновления</h2>
+        <p class="text-[var(--text-medium)] mb-8">
+          Получайте уведомления о новых статьях. Никакого спама, только полезный контент.
+        </p>
+        <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" action="/api/subscribe" method="POST">
+          <input 
+            type="email" 
+            placeholder="your@email.com" 
+            required
+            class="flex-1 px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
+          />
+          <button 
+            type="submit" 
+            class="btn btn-primary whitespace-nowrap"
+          >
+            Подписаться
+          </button>
+        </form>
+        <p class="text-xs text-[var(--text-low)] mt-4">
+          Отписка в один клик. Мы уважаем вашу конфиденциальность.
+        </p>
+      </div>
+    </section>
+  </main>
+</Layout>

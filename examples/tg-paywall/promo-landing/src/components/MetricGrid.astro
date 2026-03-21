@@ -1,0 +1,30 @@
+---
+interface Props {
+  items: Array<{
+    metric: string;
+    value: string;
+    label?: string;
+  }>;
+  variant?: 'default' | 'compact';
+}
+
+const variant = Props.variant || 'default';
+---
+
+<div class={`grid ${variant === 'compact' ? 'grid-cols-2 gap-8' : 'grid-cols-2 md:grid-cols-4 gap-12'}`}>
+  {Props.items.map((item) => (
+    <div class="text-center">
+      <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">
+        {item.value}
+      </div>
+      <div class={`font-semibold ${variant === 'compact' ? 'text-sm text-[var(--text-medium)]' : 'text-base text-[var(--text-high)]'}`}>
+        {item.metric}
+      </div>
+      {item.label && (
+        <div class="text-xs text-[var(--text-low)] mt-1 uppercase tracking-wider">
+          {item.label}
+        </div>
+      )}
+    </div>
+  ))}
+</div>

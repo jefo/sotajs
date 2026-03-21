@@ -1,0 +1,52 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  primaryText?: string;
+  primaryHref?: string;
+  secondaryText?: string;
+  secondaryHref?: string;
+  variant?: 'default' | 'dark';
+}
+
+const variant = Props.variant || 'default';
+---
+
+<section class={`py-20 md:py-32 ${variant === 'dark' ? 'bg-black text-white' : ''}`}>
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class={`text-3xl md:text-5xl font-bold mb-6 ${variant === 'dark' ? 'text-white' : 'text-[var(--text-high)]'}`}>
+      {Props.title}
+    </h2>
+    {Props.description && (
+      <p class={`text-lg md:text-xl mb-10 max-w-2xl mx-auto ${variant === 'dark' ? 'text-white/70' : 'text-[var(--text-medium)]'}`}>
+        {Props.description}
+      </p>
+    )}
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      {Props.primaryHref && (
+        <a 
+          href={Props.primaryHref} 
+          class={`inline-flex items-center justify-center px-8 py-4 rounded-sm font-semibold transition-all ${
+            variant === 'dark' 
+              ? 'bg-[var(--color-brand-primary)] text-white hover:opacity-90' 
+              : 'bg-[var(--color-brand-primary)] text-white hover:opacity-90'
+          }`}
+        >
+          {Props.primaryText || 'Get Started'}
+        </a>
+      )}
+      {Props.secondaryHref && (
+        <a 
+          href={Props.secondaryHref} 
+          class={`inline-flex items-center justify-center px-8 py-4 rounded-sm font-semibold transition-all ${
+            variant === 'dark'
+              ? 'border border-white/30 text-white hover:bg-white/10'
+              : 'border border-[var(--color-border-subtle)] text-[var(--text-high)] hover:bg-[var(--color-surface-soft)]'
+          }`}
+        >
+          {Props.secondaryText || 'Learn More'}
+        </a>
+      )}
+    </div>
+  </div>
+</section>

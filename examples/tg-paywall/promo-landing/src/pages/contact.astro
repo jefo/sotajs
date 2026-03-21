@@ -1,0 +1,196 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { CheckCircle2, Mail, MessageCircle, Calendar, Clock } from 'lucide-astro';
+---
+
+<Layout
+  title="Связаться с нами | TG Paywall SaaS"
+  description="Остались вопросы? Закажите демо или свяжитесь с нашей командой. Ответим в течение 24 часов."
+  canonicalURL="/contact"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <h1 class="mb-6">Свяжитесь с нами</h1>
+        <p class="text-xl text-[var(--text-medium)]">
+          Закажите персональную демонстрацию или задайте любой вопрос.
+        </p>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-6xl">
+        <div class="grid lg:grid-cols-2 gap-16">
+          <!-- Contact Form -->
+          <div>
+            <h2 class="text-2xl font-bold mb-6">Отправьте нам сообщение</h2>
+            <form class="space-y-6" action="/api/contact" method="POST">
+              <div>
+                <label for="name" class="block text-sm font-medium text-[var(--text-high)] mb-2">
+                  Имя *
+                </label>
+                <input 
+                  type="text" 
+                  id="name" 
+                  name="name" 
+                  required
+                  placeholder="Иван Петров"
+                  class="w-full px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20 transition-all"
+                />
+              </div>
+              
+              <div>
+                <label for="email" class="block text-sm font-medium text-[var(--text-high)] mb-2">
+                  Email *
+                </label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  required
+                  placeholder="ivan@company.com"
+                  class="w-full px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20 transition-all"
+                />
+              </div>
+              
+              <div>
+                <label for="telegram" class="block text-sm font-medium text-[var(--text-high)] mb-2">
+                  Telegram (необязательно)
+                </label>
+                <input 
+                  type="text" 
+                  id="telegram" 
+                  name="telegram" 
+                  placeholder="@username"
+                  class="w-full px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20 transition-all"
+                />
+              </div>
+              
+              <div>
+                <label for="company" class="block text-sm font-medium text-[var(--text-high)] mb-2">
+                  Компания / Проект
+                </label>
+                <input 
+                  type="text" 
+                  id="company" 
+                  name="company" 
+                  placeholder="Название проекта"
+                  class="w-full px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20 transition-all"
+                />
+              </div>
+              
+              <div>
+                <label for="message" class="block text-sm font-medium text-[var(--text-high)] mb-2">
+                  Сообщение *
+                </label>
+                <textarea 
+                  id="message" 
+                  name="message" 
+                  required
+                  rows="5"
+                  placeholder="Расскажите о вашем проекте и вопросах..."
+                  class="w-full px-4 py-3 border border-[var(--color-border-subtle)] rounded-lg focus:outline-none focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20 transition-all resize-none"
+                ></textarea>
+              </div>
+              
+              <div class="flex items-start gap-3">
+                <input 
+                  type="checkbox" 
+                  id="consent" 
+                  name="consent" 
+                  required
+                  class="mt-1 w-4 h-4 text-[var(--color-brand-primary)] border-[var(--color-border-subtle)] rounded focus:ring-[var(--color-brand-primary)]"
+                />
+                <label for="consent" class="text-sm text-[var(--text-medium)]">
+                  Я согласен на обработку <a href="/privacy" class="text-[var(--color-brand-primary)] underline">персональных данных</a> *
+                </label>
+              </div>
+              
+              <button type="submit" class="btn btn-primary btn-large w-full">
+                Отправить сообщение
+                <Mail class="w-5 h-5" />
+              </button>
+              
+              <p class="text-xs text-[var(--text-low)] text-center">
+                Отвечаем в течение 24 часов в рабочие дни
+              </p>
+            </form>
+          </div>
+          
+          <!-- Contact Info & Demo Request -->
+          <div class="space-y-8">
+            <!-- Quick Contact -->
+            <div class="p-8 bg-[var(--color-surface-soft)] rounded-2xl">
+              <h3 class="text-xl font-bold mb-6">Контактная информация</h3>
+              <div class="space-y-4">
+                <a href="mailto:support@tgpaywall.dev" class="flex items-center gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Mail class="w-6 h-6 text-[var(--color-brand-primary)]" />
+                  </div>
+                  <div>
+                    <div class="text-sm text-[var(--text-low)]">Email</div>
+                    <div class="font-semibold">support@tgpaywall.dev</div>
+                  </div>
+                </a>
+                
+                <a href="https://t.me/sotajs_dev" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <MessageCircle class="w-6 h-6 text-[var(--color-brand-primary)]" />
+                  </div>
+                  <div>
+                    <div class="text-sm text-[var(--text-low)]">Telegram</div>
+                    <div class="font-semibold">@sotajs_dev</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+            
+            <!-- Demo Request -->
+            <div class="p-8 bg-[var(--color-surface-soft)] rounded-2xl">
+              <h3 class="text-xl font-bold mb-6">Заказать демо</h3>
+              <p class="text-[var(--text-medium)] mb-6">
+                Персональная 30-минутная демонстрация возможностей TG Paywall. Покажем все функции, ответим на вопросы, поможем с настройкой.
+              </p>
+              
+              <div class="space-y-4 mb-6">
+                <div class="flex items-center gap-3">
+                  <Calendar class="w-5 h-5 text-[var(--color-brand-primary)]" />
+                  <span class="text-sm text-[var(--text-medium)]">Удобное время</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <Clock class="w-5 h-5 text-[var(--color-brand-primary)]" />
+                  <span class="text-sm text-[var(--text-medium)]">30 минут</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <CheckCircle2 class="w-5 h-5 text-green-500" />
+                  <span class="text-sm text-[var(--text-medium)]">Бесплатно</span>
+                </div>
+              </div>
+              
+              <a href="https://calendly.com/tgpaywall/demo" target="_blank" rel="noopener noreferrer" class="btn btn-primary w-full">
+                Выбрать время в Calendly
+              </a>
+            </div>
+            
+            <!-- Response Time -->
+            <div class="p-6 bg-green-50 border border-green-200 rounded-2xl">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <CheckCircle2 class="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h4 class="font-bold text-green-800 mb-1">Гарантия ответа</h4>
+                  <p class="text-sm text-green-700">
+                    Отвечаем на все запросы в течение 24 часов в рабочие дни (Пн-Пт, 10:00-19:00 MSK).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

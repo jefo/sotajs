@@ -1,0 +1,129 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { HelpCircle, MessageCircle, Mail, Book } from 'lucide-astro';
+---
+
+<Layout
+  title="Помощь | TG Paywall — База знаний и поддержка"
+  description="Центр помощи TG Paywall: ответы на частые вопросы, руководства, база знаний и контакты поддержки."
+  canonicalURL="/help"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">Помощь</span>
+        </div>
+        <h1 class="mb-6">
+          Центр <span class="gradient-text">помощи</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Найдите ответы на вопросы или свяжитесь с нашей командой поддержки.
+        </p>
+      </div>
+    </section>
+
+    <!-- Help Sections -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-7xl">
+        <div class="grid md:grid-cols-2 gap-8 mb-16">
+          <!-- FAQ -->
+          <a href="/#faq" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-6">
+              <HelpCircle class="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Частые вопросы
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Ответы на самые популярные вопросы о настройке, оплате и использовании TG Paywall.
+            </p>
+          </a>
+
+          <!-- Knowledge Base -->
+          <a href="/help/knowledge-base" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-6">
+              <Book class="w-6 h-6 text-green-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              База знаний
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Подробные статьи и руководства по всем аспектам использования TG Paywall.
+            </p>
+          </a>
+
+          <!-- Telegram Support -->
+          <a href="https://t.me/sotajs_dev" target="_blank" rel="noopener noreferrer" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-6">
+              <MessageCircle class="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Telegram поддержка
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Быстрая помощь в нашем Telegram канале. Ответ в течение 24 часов.
+            </p>
+          </a>
+
+          <!-- Email Support -->
+          <a href="mailto:support@tgpaywall.dev" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-6">
+              <Mail class="w-6 h-6 text-amber-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Email поддержка
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Напишите нам на support@tgpaywall.dev для решения сложных вопросов.
+            </p>
+          </a>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="bg-[var(--color-surface-soft)] rounded-2xl p-8 md:p-12">
+          <h2 class="text-2xl font-bold mb-8 text-center">Быстрые ссылки</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <a href="/docs/getting-started" class="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+              <span class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">1</span>
+              <span class="font-medium">Быстрый старт</span>
+            </a>
+            <a href="/docs/api" class="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+              <span class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-sm">2</span>
+              <span class="font-medium">API документация</span>
+            </a>
+            <a href="/pricing" class="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+              <span class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">3</span>
+              <span class="font-medium">Тарифы и планы</span>
+            </a>
+            <a href="/blog" class="flex items-center gap-3 p-4 bg-white rounded-xl hover:shadow-md transition-all">
+              <span class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-sm">4</span>
+              <span class="font-medium">Блог и гайды</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <section class="py-20 bg-[var(--color-surface-dark)] text-white">
+      <div class="container max-w-4xl text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">
+          Не нашли что искали?
+        </h2>
+        <p class="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
+          Наша команда поддержки готова помочь вам с любым вопросом.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/contact" class="btn btn-primary btn-large bg-white text-[var(--color-surface-dark)] hover:bg-white/90">
+            Связаться с нами
+          </a>
+          <a href="https://t.me/sotajs_dev" target="_blank" class="btn btn-secondary btn-large border-white/30 text-white hover:bg-white/10">
+            Telegram канал
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

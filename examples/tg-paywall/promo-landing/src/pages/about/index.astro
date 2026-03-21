@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Users, Target, Award, Globe } from 'lucide-astro';
+---
+
+<Layout
+  title="О нас | TG Paywall — История и миссия компании"
+  description="Узнайте больше о команде TG Paywall: наша миссия, ценности и история создания сервиса для автоматизации монетизации Telegram-каналов."
+  canonicalURL="/about"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">О компании</span>
+        </div>
+        <h1 class="mb-6">
+          Миссия <span class="gradient-text">TG Paywall</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Делаем монетизацию Telegram-каналов простой, надёжной и доступной для каждого эксперта.
+        </p>
+      </div>
+    </section>
+
+    <!-- Our Story -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-4xl">
+        <div class="prose prose-lg max-w-none">
+          <h2 class="text-3xl font-bold mb-8">Наша история</h2>
+          
+          <p class="text-[var(--text-medium)] leading-relaxed mb-6">
+            TG Paywall начался как внутренняя разработка для автоматизации монетизации экспертных Telegram-каналов. Мы столкнулись с той же проблемой, что и многие создатели контента: ручная проверка оплат, утечки доступа и постоянные вопросы от подписчиков.
+          </p>
+          
+          <p class="text-[var(--text-medium)] leading-relaxed mb-6">
+            В 2024 году мы решили превратить наше решение в публичный сервис. Используя принципы Hexagonal Architecture и DDD, мы создали систему, которая обрабатывает тысячи платежей ежемесячно с надёжностью 99.9%.
+          </p>
+          
+          <p class="text-[var(--text-medium)] leading-relaxed">
+            Сегодня TG Paywall помогает более чем 500 сообществам зарабатывать на своём контенте, автоматизируя рутину и позволяя фокусироваться на том, что действительно важно — создании ценного контента.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Values -->
+    <section class="py-24 md:py-40 bg-[var(--color-surface-soft)]">
+      <div class="container max-w-7xl">
+        <h2 class="text-3xl font-bold mb-16 text-center">Наши ценности</h2>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div class="card bg-white border-none shadow-premium text-center">
+            <div class="w-16 h-16 mx-auto mb-8 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <Users class="w-8 h-8 text-[var(--color-brand-primary)]" />
+            </div>
+            <h3 class="text-lg font-bold mb-4">Клиентоцентричность</h3>
+            <p class="text-sm text-[var(--text-medium)] leading-relaxed">
+              Каждый наш продукт начинается с глубокого понимания реальных проблем экспертов и разработчиков.
+            </p>
+          </div>
+          
+          <div class="card bg-white border-none shadow-premium text-center">
+            <div class="w-16 h-16 mx-auto mb-8 rounded-2xl bg-emerald-50 flex items-center justify-center">
+              <Award class="w-8 h-8 text-[var(--color-brand-secondary)]" />
+            </div>
+            <h3 class="text-lg font-bold mb-4">Инженерное качество</h3>
+            <p class="text-sm text-[var(--text-medium)] leading-relaxed">
+              Чистая архитектура (Hexagonal, DDD) и 100% покрытие тестами — основа нашей надёжности.
+            </p>
+          </div>
+          
+          <div class="card bg-white border-none shadow-premium text-center">
+            <div class="w-16 h-16 mx-auto mb-8 rounded-2xl bg-amber-50 flex items-center justify-center">
+              <Target class="w-8 h-8 text-[var(--color-brand-accent)]" />
+            </div>
+            <h3 class="text-lg font-bold mb-4">Прозрачность</h3>
+            <p class="text-sm text-[var(--text-medium)] leading-relaxed">
+              Мы верим в честные цены без скрытых комиссий и открытый исходный код для всего сообщества.
+            </p>
+          </div>
+          
+          <div class="card bg-white border-none shadow-premium text-center">
+            <div class="w-16 h-16 mx-auto mb-8 rounded-2xl bg-indigo-50 flex items-center justify-center">
+              <Globe class="w-8 h-8 text-indigo-600" />
+            </div>
+            <h3 class="text-lg font-bold mb-4">Автономия данных</h3>
+            <p class="text-sm text-[var(--text-medium)] leading-relaxed">
+              Мы даём вам инфраструктуру, которой вы владеете. Ваши данные не заперты в проприетарном облаке.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-7xl">
+        <h2 class="text-3xl font-bold mb-12 text-center">Цифры в фактах</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">500+</div>
+            <div class="text-sm text-[var(--text-medium)]">Сообществ используют</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">$2.5M+</div>
+            <div class="text-sm text-[var(--text-medium)]">Обработано платежей</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">99.9%</div>
+            <div class="text-sm text-[var(--text-medium)]">Время безотказной работы</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">&lt;2с</div>
+            <div class="text-sm text-[var(--text-medium)]">Выдача доступа</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team CTA -->
+    <section class="py-20 bg-[var(--color-surface-dark)] text-white">
+      <div class="container max-w-4xl text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">
+          Присоединяйтесь к нам
+        </h2>
+        <p class="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
+          Мы постоянно ищем талантливых людей. Посмотрите открытые вакансии или свяжитесь с нами.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/contact" class="btn btn-primary btn-large bg-white text-[var(--color-surface-dark)] hover:bg-white/90">
+            Связаться с нами
+          </a>
+          <a href="https://github.com/maxdev1/sotajs" target="_blank" class="btn btn-secondary btn-large border-white/30 text-white hover:bg-white/10">
+            GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

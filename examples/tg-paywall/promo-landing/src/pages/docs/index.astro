@@ -1,0 +1,134 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { Book, FileText, Video, Code } from 'lucide-astro';
+---
+
+<Layout
+  title="Документация | TG Paywall — API и руководства по интеграции"
+  description="Полная документация TG Paywall: API reference, руководства по интеграции, примеры кода для разработчиков."
+  canonicalURL="/docs"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">Документация</span>
+        </div>
+        <h1 class="mb-6">
+          Документация <span class="gradient-text">TG Paywall</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Полное руководство по интеграции и использованию TG Paywall API.
+        </p>
+      </div>
+    </section>
+
+    <!-- Documentation Sections -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-7xl">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Getting Started -->
+          <a href="/docs/getting-started" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-6">
+              <Book class="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Быстрый старт
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Настройка TG Paywall за 15 минут. Пошаговое руководство для первого запуска.
+            </p>
+          </a>
+
+          <!-- API Reference -->
+          <a href="/docs/api" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-6">
+              <Code class="w-6 h-6 text-green-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              API Reference
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Полная спецификация API: endpoints, параметры, примеры запросов и ответов.
+            </p>
+          </a>
+
+          <!-- Integration Guides -->
+          <a href="/docs/integrations" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-6">
+              <FileText class="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Руководства по интеграции
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Интеграция с популярными платформами: Stripe, ЮKassa, Robokassa, CryptoPay.
+            </p>
+          </a>
+
+          <!-- Webhooks -->
+          <a href="/docs/webhooks" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-6">
+              <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Вебхуки
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Настройка вебхуков для получения уведомлений о платежах и подписках.
+            </p>
+          </a>
+
+          <!-- SDK & Libraries -->
+          <a href="/docs/sdk" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center mb-6">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              SDK и библиотеки
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Официальные SDK: JavaScript/TypeScript, Python, PHP, Go.
+            </p>
+          </a>
+
+          <!-- Video Tutorials -->
+          <a href="/docs/tutorials" class="card p-8 group hover:border-[var(--color-brand-primary)] transition-all">
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center mb-6">
+              <Video class="w-6 h-6 text-indigo-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3 group-hover:text-[var(--color-brand-primary)] transition-colors">
+              Видео уроки
+            </h3>
+            <p class="text-[var(--text-medium)] text-sm">
+              Пошаговые видео инструкции по настройке и использованию TG Paywall.
+            </p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coming Soon -->
+    <section class="py-20 bg-[var(--color-surface-soft)] border-y border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <h2 class="text-3xl font-bold mb-6">Больше документации скоро</h2>
+        <p class="text-xl text-[var(--text-medium)] mb-8 max-w-2xl">
+          Мы активно работаем над полной документацией. Следите за обновлениями в нашем блоге.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/blog" class="btn btn-primary">
+            Читать блог
+          </a>
+          <a href="/contact" class="btn btn-secondary">
+            Запросить документацию
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

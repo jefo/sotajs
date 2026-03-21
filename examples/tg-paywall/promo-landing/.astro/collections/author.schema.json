@@ -1,0 +1,69 @@
+{
+  "$ref": "#/definitions/author",
+  "definitions": {
+    "author": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "avatar": {
+          "type": "string"
+        },
+        "bio": {
+          "type": "string"
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "socialLinks": {
+          "type": "object",
+          "properties": {
+            "github": {
+              "type": "string"
+            },
+            "twitter": {
+              "type": "string"
+            },
+            "linkedin": {
+              "type": "string"
+            },
+            "telegram": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "expertise": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "yearsOfExperience": {
+          "type": "number",
+          "default": 0
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "title",
+        "bio"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

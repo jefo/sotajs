@@ -1,0 +1,139 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ArrowRight, TrendingUp, DollarSign } from 'lucide-astro';
+
+// Static case studies data
+const caseStudies = [
+  {
+    id: 'product-accelerator',
+    title: 'Product Accelerator: Как сообщество вышло на $12K/мес с автоматизацией',
+    description: 'Кейс: Product Management сообщество автоматизировало доступ в закрытый канал и увеличило доход на 47% за 3 месяца.',
+    pubDate: new Date('2026-03-21'),
+    clientIndustry: 'Product Management / Карьерное сообщество',
+    results: [
+      { value: '90%', metric: 'Время сэкономлено' },
+      { value: '$7.5K', metric: 'Доход/мес', improvement: '+47%' },
+      { value: '<2с', metric: 'Выдача доступа' },
+    ],
+  },
+];
+---
+
+<Layout
+  title="Кейсы клиентов | TG Paywall — Реальные результаты монетизации"
+  description="Истории успеха: как эксперты и сообщества зарабатывают от $5K до $50K/мес с автоматизацией платного доступа через TG Paywall."
+  canonicalURL="/case-studies"
+>
+  <main>
+    <!-- Header -->
+    <section class="py-20 md:py-32 border-b border-[var(--color-border-subtle)]">
+      <div class="container max-w-4xl text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+          <span class="secondary-label text-xs">Кейсы</span>
+        </div>
+        <h1 class="mb-6">
+          Реальные результаты <span class="gradient-text">наших клиентов</span>
+        </h1>
+        <p class="text-xl text-[var(--text-medium)] max-w-2xl">
+          Истории успеха экспертов и сообществ, которые автоматизировали монетизацию и увеличили доход с TG Paywall.
+        </p>
+      </div>
+    </section>
+
+    <!-- Case Studies Grid -->
+    <section class="py-20 md:py-32">
+      <div class="container max-w-7xl">
+        {caseStudies.length > 0 ? (
+          <div class="space-y-12">
+            {caseStudies.map((study, index) => (
+              <article class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                  <div class="aspect-video bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl flex items-center justify-center">
+                    <div class="text-center p-8">
+                      <TrendingUp class="w-16 h-16 text-[var(--color-brand-primary)]/20 mx-auto mb-4" />
+                      <div class="secondary-label text-sm">Кейс</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  {study.clientIndustry && (
+                    <div class="secondary-label mb-4">{study.clientIndustry}</div>
+                  )}
+                  <h2 class="text-3xl font-bold mb-6">
+                    {study.title}
+                  </h2>
+                  <p class="text-lg text-[var(--text-medium)] mb-8 leading-relaxed">
+                    {study.description}
+                  </p>
+                  
+                  <!-- Results -->
+                  {study.results.length > 0 && (
+                    <div class="mb-8 p-6 bg-[var(--color-surface-soft)] rounded-xl">
+                      <h3 class="font-bold text-[var(--text-high)] mb-4">Результаты</h3>
+                      <div class="grid grid-cols-2 gap-4">
+                        {study.results.map((result) => (
+                          <div>
+                            <div class="text-3xl font-bold text-[var(--color-brand-primary)]">
+                              {result.value}
+                            </div>
+                            <div class="text-sm text-[var(--text-low)]">
+                              {result.metric}
+                              {result.improvement && (
+                                <span class="text-green-600 ml-2">{result.improvement}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <a href={`/case-studies/${study.id}`} class="inline-flex items-center gap-2 text-[var(--color-brand-primary)] font-semibold hover:gap-3 transition-all">
+                    Читать полный кейс
+                    <ArrowRight class="w-4 h-4" />
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div class="text-center py-20">
+            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-surface-soft)] flex items-center justify-center">
+              <DollarSign class="w-10 h-10 text-[var(--text-low)]" />
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Кейсы скоро появятся</h3>
+            <p class="text-[var(--text-medium)] mb-6 max-w-md mx-auto">
+              Мы собираем истории успеха наших клиентов. Первый кейс будет опубликован в ближайшее время.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+              <a href="/" class="btn btn-primary">
+                На главную
+                <ArrowRight class="w-5 h-5" />
+              </a>
+              <a href="/contact" class="btn btn-secondary">
+                Поделиться своей историей
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-20 bg-[var(--color-surface-dark)] text-white">
+      <div class="container max-w-4xl text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">
+          Хотите быть следующим в кейсе?
+        </h2>
+        <p class="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
+          Присоединяйтесь к TG Paywall и мы опубликуем вашу историю успеха с реальными цифрами.
+        </p>
+        <a href="#pricing" class="btn btn-primary btn-large bg-white text-[var(--color-surface-dark)] hover:bg-white/90">
+          Начать бесплатно
+          <ArrowRight class="w-5 h-5" />
+        </a>
+      </div>
+    </section>
+  </main>
+</Layout>

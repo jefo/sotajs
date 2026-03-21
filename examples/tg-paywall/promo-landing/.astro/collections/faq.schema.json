@@ -1,0 +1,44 @@
+{
+  "$ref": "#/definitions/faq",
+  "definitions": {
+    "faq": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "technical",
+            "pricing",
+            "security",
+            "integration",
+            "general"
+          ],
+          "default": "general"
+        },
+        "order": {
+          "type": "number",
+          "default": 0
+        },
+        "featured": {
+          "type": "boolean",
+          "default": false
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "answer"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -1,0 +1,34 @@
+---
+interface Props {
+  quote: string;
+  author: string;
+  role: string;
+  company?: string;
+  avatar?: string;
+}
+---
+
+<figure class="relative p-8 md:p-12 bg-[var(--color-surface-soft)] border border-[var(--color-border-subtle)]">
+  <svg class="absolute top-6 left-6 w-12 h-12 text-[var(--color-brand-primary)]/20" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+  </svg>
+  <blockquote class="relative z-10">
+    <p class="text-lg md:text-xl text-[var(--text-high)] leading-relaxed italic mb-6">"{Props.quote}"</p>
+    <figcaption class="flex items-center gap-4">
+      {Props.avatar ? (
+        <img src={Props.avatar} alt={Props.author} class="w-12 h-12 rounded-full object-cover" />
+      ) : (
+        <div class="w-12 h-12 rounded-full bg-[var(--color-brand-primary)]/20 flex items-center justify-center">
+          <span class="text-[var(--color-brand-primary)] font-bold text-lg">{Props.author.charAt(0)}</span>
+        </div>
+      )}
+      <div>
+        <cite class="not-italic font-bold text-[var(--text-high)]">{Props.author}</cite>
+        <p class="text-sm text-[var(--text-medium)]">
+          {Props.role}
+          {Props.company && <span>, {Props.company}</span>}
+        </p>
+      </div>
+    </figcaption>
+  </blockquote>
+</figure>

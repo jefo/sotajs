@@ -1,0 +1,24 @@
+---
+interface Props {
+  icon: typeof import('lucide-astro').LucideIcon;
+  title: string;
+  description: string;
+  href?: string;
+}
+---
+
+<div class="group p-10 border border-[var(--color-border-subtle)] bg-[var(--color-surface-base)] rounded-3xl hover:border-[var(--color-brand-primary)]/30 hover:shadow-premium transition-all duration-500 flex flex-col items-start">
+  <div class="w-14 h-14 rounded-2xl bg-[var(--color-brand-primary)]/10 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-[var(--color-brand-primary)] group-hover:text-white transition-all duration-500">
+    <Props.icon class="w-7 h-7" />
+  </div>
+  <h3 class="text-xl font-bold mb-4 text-[var(--text-high)] tracking-tight">{Props.title}</h3>
+  <p class="text-[var(--text-medium)] leading-relaxed text-sm mb-6 flex-1">{Props.description}</p>
+  {Props.href && (
+    <a href={Props.href} class="inline-flex items-center gap-2 text-sm font-bold text-[var(--color-brand-primary)] group-hover:gap-3 transition-all">
+      Подробнее
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </a>
+  )}
+</div>

@@ -1,32 +1,352 @@
 ---
 import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalURL?: string;
+  openGraph?: {
+    type?: 'website' | 'article';
+    image?: string;
+  };
+  article?: {
+    publishedTime?: Date;
+    author?: string;
+    tags?: string[];
+  };
+  noIndex?: boolean;
+}
+
+const {
+  title = "TG Paywall SaaS | Автоматизированный доступ в Telegram-каналы для экспертов",
+  description = "Готовый SaaS-сервис для монетизации Telegram-сообществ. Автоматическая проверка оплат, управление доступом, защита от неплательщиков. Запуск за 15 минут.",
+  canonicalURL,
+  openGraph,
+  article,
+  noIndex = false,
+} = Astro.props;
+
+const siteUrl = 'https://tg-paywall.sotajs.dev';
+const defaultImage = `${siteUrl}/og-default.jpg`;
+const ogImage = openGraph?.image || defaultImage;
+const fullURL = canonicalURL || siteUrl;
 ---
 
 <html lang="ru">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Telegram Paywall Infrastructure | Powered by SotaJS</title>
+    
+    <!-- Primary Meta Tags -->
+		<title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    
+    <!-- SEO -->
+    <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
+    {canonicalURL && <link rel="canonical" href={canonicalURL} />}
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={openGraph?.type || 'website'} />
+    <meta property="og:url" content={fullURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content="TG Paywall SaaS" />
+    <meta property="og:locale" content="ru_RU" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={fullURL} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    
+    <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Space Grotesk: Display/Anchor font -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'TG Paywall',
+      url: siteUrl,
+      description: description,
+      sameAs: [
+        'https://github.com/maxdev1/sotajs',
+        'https://t.me/sotajs_dev',
+      ],
+    })} />
+    
+    <!-- Structured Data - SoftwareApplication -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'TG Paywall SaaS',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Cloud-based',
+      offers: {
+        '@type': 'Offer',
+        price: '49',
+        priceCurrency: 'USD',
+      },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '4.9',
+        ratingCount: '127',
+      },
+    })} />
+    
+    <!-- Analytics placeholder - add GA4/Plausible here -->
+    <!-- <script async src="https://analytics.example.com/script.js"></script> -->
 	</head>
 	<body class="noise-overlay">
-    <nav class="max-w-6xl mx-auto px-6 py-8 flex justify-between items-center">
-      <div class="font-mono font-bold tracking-tighter text-xl">
-        PAYWALL<span class="text-[var(--color-brand-primary)]">.INFRA</span>
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[var(--color-border-subtle)]">
+      <nav class="container flex justify-between items-center py-4">
+        <a href="/" class="font-display font-bold tracking-tight text-xl text-[var(--text-high)] hover:opacity-80 transition-opacity flex items-center gap-4">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-100">
+            <span class="w-2 h-2 rounded-full bg-green-500 status-pulse shadow-[0_0_10px_rgba(34,197,94,0.4)]"></span>
+            <span class="text-[10px] font-mono font-bold text-green-700 uppercase tracking-widest leading-none">System Online</span>
+          </div>
+          <span class="ml-1">TG<span class="text-[var(--color-brand-primary)]">Paywall</span></span>
+        </a>
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden lg:flex items-center gap-1">
+          <!-- Продукт -->
+          <div class="relative group">
+            <button class="px-4 py-2 text-sm font-medium text-[var(--text-medium)] hover:text-[var(--color-brand-primary)] transition-colors flex items-center gap-1">
+              Продукт
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <!-- Dropdown -->
+            <div class="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-[var(--color-border-subtle)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div class="py-2">
+                <a href="/#features" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">Возможности</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Все функции сервиса</span>
+                </a>
+                <a href="/#pricing" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">Тарифы</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Планы от $49/мес</span>
+                </a>
+                <a href="/#how-it-works" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">Как работает</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">4 шага запуска</span>
+                </a>
+                <a href="/#faq" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">FAQ</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Частые вопросы</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Ресурсы -->
+          <div class="relative group">
+            <button class="px-4 py-2 text-sm font-medium text-[var(--text-medium)] hover:text-[var(--color-brand-primary)] transition-colors flex items-center gap-1">
+              Ресурсы
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <!-- Dropdown -->
+            <div class="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-[var(--color-border-subtle)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div class="py-2">
+                <a href="/blog" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">📖 Блог</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Гайды по монетизации</span>
+                </a>
+                <a href="/case-studies" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">📚 Кейсы</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Реальные результаты</span>
+                </a>
+                <a href="/docs" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">📄 Документация</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">API и интеграции</span>
+                </a>
+                <a href="/help" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">❓ Помощь</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">База знаний</span>
+                </a>
+                <a href="/faq" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">💬 FAQ</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Частые вопросы</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Компания -->
+          <div class="relative group">
+            <button class="px-4 py-2 text-sm font-medium text-[var(--text-medium)] hover:text-[var(--color-brand-primary)] transition-colors flex items-center gap-1">
+              Компания
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <!-- Dropdown -->
+            <div class="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-[var(--color-border-subtle)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div class="py-2">
+                <a href="/about" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">О нас</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">История и миссия</span>
+                </a>
+                <a href="/contact" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">Контакты</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Связаться с нами</span>
+                </a>
+                <a href="https://t.me/tgpaywall_dev" target="_blank" class="block px-4 py-2.5 text-sm text-[var(--text-medium)] hover:bg-[var(--color-surface-soft)] hover:text-[var(--color-brand-primary)] transition-colors">
+                  <span class="font-medium">Telegram канал</span>
+                  <span class="block text-xs text-[var(--text-low)] mt-0.5">Новости и апдейты</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <a href="/pricing" class="px-4 py-2 text-sm font-medium text-[var(--text-medium)] hover:text-[var(--color-brand-primary)] transition-colors">
+            Тарифы
+          </a>
+          <a href="/dashboard" class="px-4 py-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Dashboard Demo
+          </a>
+        </div>
+        
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="lg:hidden p-2 text-[var(--text-medium)] hover:text-[var(--text-high)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        
+        <!-- Right side: Login + CTA -->
+        <div class="hidden lg:flex items-center gap-3">
+          <a href="/login" class="text-sm font-medium text-[var(--text-medium)] hover:text-[var(--text-high)] transition-colors">
+            Войти
+          </a>
+          <a href="#pricing" class="btn btn-primary text-sm">
+            Начать бесплатно
+          </a>
+        </div>
+      </nav>
+      
+      <!-- Mobile Menu -->
+      <div id="mobile-menu" class="hidden lg:hidden border-t border-[var(--color-border-subtle)] bg-white">
+        <div class="container py-4 space-y-4">
+          <a href="/#features" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Возможности</a>
+          <a href="/pricing" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Тарифы</a>
+          <a href="/#how-it-works" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Как работает</a>
+          <a href="/dashboard" class="block py-2 font-bold text-emerald-600 hover:text-emerald-700">Dashboard Demo</a>
+          <a href="/blog" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Блог</a>
+          <a href="/case-studies" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Кейсы</a>
+          <a href="/docs" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Документация</a>
+          <a href="/help" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Помощь</a>
+          <a href="/faq" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">FAQ</a>
+          <a href="/about" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">О нас</a>
+          <a href="/contact" class="block py-2 text-[var(--text-medium)] hover:text-[var(--color-brand-primary)]">Контакты</a>
+          <div class="pt-4 border-t border-[var(--color-border-subtle)] flex flex-col gap-3">
+            <a href="/login" class="text-center py-2 text-[var(--text-medium)] hover:text-[var(--text-high)]">Войти</a>
+            <a href="#pricing" class="btn btn-primary text-center">Начать бесплатно</a>
+          </div>
+        </div>
       </div>
-      <div class="hidden md:flex gap-8 secondary-label font-medium">
-        <a href="#features" class="hover:text-[var(--text-high)] transition-colors">Features</a>
-        <a href="#architecture" class="hover:text-[var(--text-high)] transition-colors">Architecture</a>
-        <a href="#pricing" class="hover:text-[var(--text-high)] transition-colors">Pricing</a>
-      </div>
-    </nav>
+    </header>
+    
+    <script>
+      // Mobile menu toggle
+      const menuBtn = document.getElementById('mobile-menu-btn');
+      const mobileMenu = document.getElementById('mobile-menu');
+      
+      if (menuBtn && mobileMenu) {
+        menuBtn.addEventListener('click', () => {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
+    </script>
+    
 		<slot />
-    <footer class="max-w-6xl mx-auto px-6 py-20 border-t border-[var(--color-border-subtle)] mt-20">
-      <div class="secondary-label">© 2026 SotaJS Engineering. Built for experts.</div>
+    
+    <footer class="bg-[var(--color-surface-dark)] text-white mt-32">
+      <div class="container py-16">
+        <div class="grid md:grid-cols-4 gap-12 mb-12">
+          <div class="md:col-span-2">
+            <a href="/" class="font-display font-bold tracking-tight text-xl mb-4 inline-block">
+              TG<span class="text-[var(--color-brand-primary)]">Paywall</span>
+            </a>
+            <p class="text-[var(--text-medium)] mb-6 max-w-md">
+              Готовый SaaS-сервис для автоматизации платного доступа в Telegram-каналы.
+              Запустите монетизацию сообщества за 15 минут без разработки.
+            </p>
+            <div class="flex gap-4">
+              <a href="https://github.com/maxdev1/sotajs" target="_blank" rel="noopener noreferrer" class="text-[var(--text-low)] hover:text-white transition-colors" aria-label="GitHub">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              </a>
+              <a href="https://t.me/sotajs_dev" target="_blank" rel="noopener noreferrer" class="text-[var(--text-low)] hover:text-white transition-colors" aria-label="Telegram">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              </a>
+            </div>
+            <p class="text-xs text-[var(--text-low)] mt-4">
+              © 2026 TG Paywall. Все права защищены.<br>
+              <a href="/" class="hover:text-white">Главная</a> •
+              <a href="/pricing" class="hover:text-white">Тарифы</a> •
+              <a href="/blog" class="hover:text-white">Блог</a> •
+              <a href="/faq" class="hover:text-white">FAQ</a>
+            </p>
+          </div>
+
+          <div>
+            <h4 class="font-semibold mb-4">Продукт</h4>
+            <ul class="space-y-3">
+              <li><a href="/#features" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Возможности</a></li>
+              <li><a href="/pricing" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Тарифы</a></li>
+              <li><a href="/#how-it-works" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Как работает</a></li>
+              <li><a href="/faq" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">FAQ</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-semibold mb-4">Ресурсы</h4>
+            <ul class="space-y-3">
+              <li><a href="/blog" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Блог</a></li>
+              <li><a href="/case-studies" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Кейсы</a></li>
+              <li><a href="/docs" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Документация</a></li>
+              <li><a href="/help" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Помощь</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 class="font-semibold mb-4">Компания</h4>
+            <ul class="space-y-3">
+              <li><a href="/about" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">О нас</a></li>
+              <li><a href="/contact" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Контакты</a></li>
+              <li><a href="/privacy" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="/terms" class="text-sm text-[var(--text-medium)] hover:text-white transition-colors">Terms</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p class="secondary-label text-sm">
+            © {new Date().getFullYear()} TG Paywall. Все права защищены.
+          </p>
+          <p class="secondary-label text-sm">
+            Работает на <a href="https://github.com/maxdev1/sotajs" class="hover:text-white transition-colors">SotaJS</a>
+          </p>
+        </div>
+      </div>
     </footer>
 	</body>
 </html>

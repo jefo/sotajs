@@ -1,169 +1,859 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { ShieldCheck, Cpu, Globe, Zap, Layers } from 'lucide-astro';
+import { 
+  ShieldCheck, 
+  Zap, 
+  Lock, 
+  RefreshCw, 
+  CheckCircle2, 
+  ArrowRight,
+  Bot,
+  CreditCard,
+  Users,
+  TrendingUp,
+  Clock,
+  BarChart3,
+  Smartphone,
+  Globe,
+  Headphones,
+  Play,
+  Star,
+  MessageCircle,
+  Code,
+  Layers
+} from 'lucide-astro';
 ---
 
-<Layout>
-	<main class="max-w-6xl mx-auto px-6">
-		<!-- HERO SECTION: The Star of the Show -->
-		<section class="py-24 md:py-40 grid md:grid-cols-2 gap-16 items-center">
-			<div>
-				<div class="secondary-label mb-4">Infrastructure-as-a-Service</div>
-				<h1 class="text-5xl md:text-7xl font-extrabold mb-8 leading-[1.1]">
-					Engineering access control for <span class="text-[var(--color-brand-primary)]">Telegram experts.</span>
-				</h1>
-				<p class="text-xl mb-10 max-w-lg">
-					A professional paywall infrastructure built on SotaJS. Secure, provider-agnostic, and designed for high-ticket expert communities.
-				</p>
-				<div class="flex gap-4">
-					<a href="#showcase" class="bg-[var(--color-brand-primary)] text-white px-8 py-4 rounded-sm font-semibold hover:opacity-90 transition-all">
-						View Showcase
-					</a>
-					<a href="https://github.com/maxdev1/sotajs" class="border border-[var(--color-border-subtle)] px-8 py-4 rounded-sm font-semibold hover:bg-[var(--color-surface-soft)] transition-all">
-						Documentation
-					</a>
-				</div>
-			</div>
+<Layout
+  title="TG Paywall SaaS | Автоматизация платного доступа в Telegram-каналы"
+  description="Готовый SaaS-сервис для монетизации Telegram-сообществ. Автоматическая проверка оплат, управление доступом, защита от неплательщиков. Запуск за 15 минут. Попробуйте бесплатно."
+>
+  <main>
+    <!-- HERO SECTION - Premium SaaS & IaaS positioning -->
+    <section class="relative py-24 md:py-48 overflow-hidden star-of-show">
+      <!-- Star of the Show background glow -->
+      <div class="star-of-show-glow"></div>
+      
+      <div class="container relative z-10">
+        <div class="grid lg:grid-cols-2 gap-20 items-center min-h-[600px]">
+          <!-- Left: Value Proposition -->
+          <div class="max-w-2xl animate-fade-in-up flex flex-col justify-center">
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-10 w-fit">
+              <span class="w-2 h-2 rounded-full bg-[var(--color-brand-primary)] animate-pulse"></span>
+              <span class="secondary-label text-[10px] font-bold">Managed SaaS & Infrastructure Ownership</span>
+            </div>
+            
+            <!-- Headline -->
+            <h1 class="text-balance mb-8 tracking-tight font-extrabold leading-[1.05]">
+              Владейте своей <span class="gradient-text">инфраструктурой</span> монетизации
+            </h1>
+            
+            <!-- Subheadline -->
+            <p class="text-xl text-[var(--text-medium)] mb-12 leading-[1.6] max-w-xl">
+              Принимайте оплату и управляйте доступом в Telegram без посредников. 
+              Готовый сервис для экспертов и мощная инфраструктура для разработчиков. 
+              <span class="font-semibold text-[var(--text-high)]">Ваши данные — в ваших руках.</span>
+            </p>
+            
+            <!-- CTAs -->
+            <div class="flex flex-col sm:flex-row gap-5 mb-16">
+              <a href="#pricing" class="btn btn-primary btn-large px-10">
+                Начать бесплатно
+                <ArrowRight class="w-5 h-5" />
+              </a>
+              <a href="https://github.com/maxdev1/sotajs" target="_blank" class="btn btn-secondary btn-large px-10">
+                <Globe class="w-5 h-5" />
+                Смотреть IaaS
+              </a>
+            </div>
+            
+            <!-- Trust indicators with opacity hierarchy -->
+            <div class="flex flex-wrap items-center gap-x-10 gap-y-6 pt-12 border-t border-[var(--color-border-subtle)]">
+              <div class="flex items-center gap-2.5">
+                <CheckCircle2 class="w-5 h-5 text-green-500" />
+                <span class="text-[10px] font-bold text-[var(--text-high)] uppercase tracking-widest">14 дней бесплатно</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <Lock class="w-5 h-5 text-blue-500" />
+                <span class="text-[10px] font-bold text-[var(--text-high)] uppercase tracking-widest">Zero Platform Risk</span>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <ShieldCheck class="w-5 h-5 text-purple-500" />
+                <span class="text-[10px] font-bold text-[var(--text-high)] uppercase tracking-widest">Ваш код — ваши правила</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right: Star of the Show - Layered Premium Dashboard -->
+          <div class="relative lg:order-last h-full flex items-center justify-center py-12">
+            <!-- Background animated blobs -->
+            <div class="absolute top-1/4 -right-10 w-64 h-64 bg-blue-400/20 rounded-full blur-[80px] animate-pulse"></div>
+            <div class="absolute bottom-1/4 -left-10 w-64 h-64 bg-emerald-400/20 rounded-full blur-[80px] animate-pulse" style="animation-delay: 2s;"></div>
+            
+            <!-- Layer 1: Main Dashboard (Glass) -->
+            <div class="relative w-full max-w-md glass card-premium p-8 z-20 animate-float">
+              <div class="flex items-center justify-between mb-8 pb-4 border-b border-[var(--color-border-subtle)]">
+                <div class="flex gap-1.5">
+                  <div class="w-2.5 h-2.5 rounded-full bg-red-400/50"></div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-yellow-400/50"></div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-green-400/50"></div>
+                </div>
+                <div class="secondary-label text-[9px] font-bold">Admin Console v2.0</div>
+              </div>
+              
+              <div class="space-y-6">
+                <div class="flex justify-between items-end">
+                  <div>
+                    <div class="secondary-label text-[10px] mb-1">Выручка за март</div>
+                    <div class="text-4xl font-display font-bold text-[var(--text-high)] tracking-tighter">$12,450.00</div>
+                  </div>
+                  <div class="text-green-500 text-xs font-bold bg-green-50 px-2 py-1 rounded flex items-center gap-1">
+                    <TrendingUp class="w-3 h-3" /> +24%
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-4 bg-white/50 rounded-xl border border-white/50">
+                    <div class="text-xs text-[var(--text-low)] mb-1">Резиденты</div>
+                    <div class="text-xl font-bold text-[var(--text-high)]">342</div>
+                  </div>
+                  <div class="p-4 bg-white/50 rounded-xl border border-white/50">
+                    <div class="text-xs text-[var(--text-low)] mb-1">Утечки</div>
+                    <div class="text-xl font-bold text-green-600">0%</div>
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between p-3 bg-white/40 rounded-lg border border-white/20">
+                    <div class="flex items-center gap-3">
+                      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span class="text-xs font-medium">@premium_user_1</span>
+                    </div>
+                    <span class="text-xs font-bold">+$49</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-white/40 rounded-lg border border-white/20 opacity-60">
+                    <div class="flex items-center gap-3">
+                      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span class="text-xs font-medium">@alex_dev</span>
+                    </div>
+                    <span class="text-xs font-bold">+$99</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Layer 2: Floating Notification -->
+            <div class="absolute -top-4 right-0 glass-dark text-white p-4 rounded-2xl shadow-2xl z-30 animate-float flex items-center gap-4 border border-white/20" style="animation-delay: -3s;">
+              <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                <CheckCircle2 class="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div class="text-xs font-bold opacity-60 uppercase tracking-widest">Payment Received</div>
+                <div class="text-sm font-semibold">Access Granted to @user</div>
+              </div>
+            </div>
+            
+            <!-- Layer 3: Technical Details (IaaS indicator) -->
+            <div class="absolute -bottom-8 -left-4 glass p-4 rounded-xl shadow-xl z-10 border border-white/50 max-w-[200px]">
+              <div class="flex items-center gap-2 mb-2">
+                <Code class="w-4 h-4 text-blue-500" />
+                <span class="text-[10px] font-bold uppercase tracking-tight">Open Source Core</span>
+              </div>
+              <div class="font-mono text-[9px] text-[var(--text-low)] leading-tight">
+                $ bun install @sotajs/core<br>
+                $ core.bind(PrismaAdapter)<br>
+                $ core.run()
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-			<!-- STAR OF THE SHOW: Stylized Technical Component -->
-			<div class="relative group">
-				<div class="absolute -inset-4 bg-[var(--color-brand-primary)] opacity-[0.03] rounded-3xl group-hover:opacity-[0.05] transition-opacity"></div>
-				<div class="relative bg-white border border-[var(--color-border-subtle)] p-8 rounded-sm shadow-2xl overflow-hidden">
-					<!-- Visual Rhyme: Coding Grid -->
-					<div class="absolute top-0 right-0 w-32 h-32 opacity-5 pointer-events-none">
-						<div class="grid grid-cols-4 gap-2">
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-							<div class="w-full h-8 bg-black"></div>
-						</div>
-					</div>
-					
-					<div class="font-mono text-sm opacity-40 mb-6 border-b border-[var(--color-border-subtle)] pb-4 uppercase tracking-widest">
-						Paywall Core v1.0
-					</div>
-					
-					<div class="space-y-4">
-						<div class="flex items-center gap-4 p-4 bg-[var(--color-surface-soft)] rounded-sm">
-							<div class="w-2 h-2 rounded-full bg-[var(--color-brand-primary)] animate-pulse"></div>
-							<div class="flex-1 font-mono text-xs uppercase tracking-widest">System Operational</div>
-						</div>
-						<div class="grid grid-cols-2 gap-4">
-							<div class="p-4 border border-[var(--color-border-subtle)] rounded-sm">
-								<div class="secondary-label text-[10px] mb-1">Transactions</div>
-								<div class="font-bold">Verified</div>
-							</div>
-							<div class="p-4 border border-[var(--color-border-subtle)] rounded-sm">
-								<div class="secondary-label text-[10px] mb-1">State</div>
-								<div class="font-bold">Consistent</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+    <!-- DUAL MODEL SECTION -->
+    <section class="py-24 md:py-40 bg-[var(--color-surface-soft)] relative overflow-hidden">
+      <div class="container relative z-10">
+        <div class="text-center mb-20">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
+            <span class="text-[10px] font-bold text-blue-700 uppercase tracking-widest">Гибкость в выборе</span>
+          </div>
+          <h2 class="text-balance mb-6">Выберите ваш путь к успеху</h2>
+          <p class="text-xl text-[var(--text-medium)] max-w-3xl mx-auto leading-relaxed">
+            Мы предлагаем как готовое решение для быстрого старта, так и мощную инфраструктуру 
+            для тех, кто хочет полный контроль над своим бизнесом.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-10">
+          <!-- SaaS Card -->
+          <div class="group p-10 bg-white rounded-3xl border border-[var(--color-border-subtle)] hover:border-[var(--color-brand-primary)] hover:shadow-2xl transition-all duration-500">
+            <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+              <Zap class="w-8 h-8 text-[var(--color-brand-primary)]" />
+            </div>
+            <h3 class="text-2xl font-bold mb-4">Managed SaaS</h3>
+            <p class="text-[var(--text-medium)] mb-8 leading-relaxed">
+              Идеально для экспертов и блогеров. Мы берём на себя хостинг, безопасность, обновления и поддержку. Вы просто подключаете бота и начинаете зарабатывать через 15 минут.
+            </p>
+            <ul class="space-y-4 mb-10">
+              {[
+                'Запуск без кода и серверов',
+                'Готовый веб-интерфейс админа',
+                'Автоматические обновления',
+                'Поддержка 24/7 включена',
+              ].map((item) => (
+                <li class="flex items-center gap-3 text-sm font-medium text-[var(--text-high)]">
+                  <CheckCircle2 class="w-5 h-5 text-green-500" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a href="#pricing" class="btn btn-primary w-full group-hover:translate-y-[-2px] transition-transform">
+              Начать как SaaS
+            </a>
+          </div>
+          
+          <!-- IaaS Card -->
+          <div class="group p-10 bg-[var(--color-surface-dark)] text-white rounded-3xl border border-white/10 hover:border-blue-500 hover:shadow-2xl transition-all duration-500 flex flex-col">
+            <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+              <Code class="w-8 h-8 text-blue-400" />
+            </div>
+            <h3 class="text-2xl font-bold mb-4 text-white">Infrastructure (IaaS)</h3>
+            <p class="text-white/70 mb-8 leading-relaxed">
+              Для разработчиков и агентств. Установите SotaJS на свой сервер. Полный доступ к исходному коду, кастомная база данных и отсутствие абонентской платы.
+            </p>
+            <ul class="space-y-4 mb-10 flex-1">
+              {[
+                'Полный контроль над данными',
+                'Любая база данных (Postgres/SQLite)',
+                'Кастомные интеграции и логика',
+                'Zero-Knowledge архитектура',
+              ].map((item) => (
+                <li class="flex items-center gap-3 text-sm font-medium text-white/90">
+                  <CheckCircle2 class="w-5 h-5 text-blue-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a href="https://github.com/maxdev1/sotajs" target="_blank" class="btn border border-white/20 text-white hover:bg-white/10 w-full group-hover:translate-y-[-2px] transition-transform">
+              Развернуть на своём сервере
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- FEATURES: Trusted Providers -->
-		<section id="features" class="py-20 border-t border-[var(--color-border-subtle)]">
-			<div class="grid md:grid-cols-3 gap-12">
-				<div class="md:col-span-1">
-					<h2 class="text-3xl font-bold mb-6 italic tracking-tighter">Multi-provider architecture.</h2>
-					<p class="text-sm opacity-80">One core logic. Multiple built-in payment adapters. Switch providers via environment variables without touching the business domain.</p>
-				</div>
-				<div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-					{['YooKassa', 'Robokassa', 'Prodamus', 'Stripe', 'CryptoPay', 'LocalMock'].map(provider => (
-						<div class="p-6 border border-[var(--color-border-subtle)] bg-[var(--color-surface-soft)]/30 rounded-sm hover:border-[var(--color-brand-primary)] transition-colors group">
-							<div class="font-mono font-bold text-xs mb-2 group-hover:text-[var(--color-brand-primary)] uppercase tracking-widest opacity-80">{provider}</div>
-							<div class="text-[9px] uppercase tracking-widest opacity-40">Module Configured</div>
-						</div>
-					))}
-				</div>
-			</div>
-		</section>
+    <!-- MULTI-CHANNEL ANALYTICS SECTION - The "Hook" for big clients -->
+    <section class="py-24 md:py-40 bg-white relative overflow-hidden">
+      <div class="container">
+        <div class="grid lg:grid-cols-2 gap-20 items-center">
+          <div class="order-2 lg:order-1 relative">
+            <!-- Glassmorphic Dashboard Preview -->
+            <div class="glass card-premium p-6 rounded-3xl shadow-premium animate-float">
+              <div class="flex items-center justify-between mb-6">
+                <div class="text-sm font-bold text-slate-900 tracking-tight">Аналитика сети</div>
+                <div class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-widest">Global</div>
+              </div>
+              <div class="space-y-4">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Общая выручка</div>
+                  <div class="text-3xl font-display font-bold text-slate-900">$42,850.00</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <div class="text-[9px] font-bold text-emerald-600 uppercase mb-1">Резидентов</div>
+                    <div class="text-xl font-bold text-emerald-900">1,248</div>
+                  </div>
+                  <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                    <div class="text-[9px] font-bold text-amber-600 uppercase mb-1">Отток</div>
+                    <div class="text-xl font-bold text-amber-900">4.2%</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 pt-6 border-t border-slate-100">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase">Top Channel</span>
+                  <span class="text-[10px] font-bold text-green-500 uppercase">Growth +12%</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-8 rounded-full bg-blue-500"></div>
+                  <div class="text-sm font-bold text-slate-900">Product Accelerator</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Floating Data points -->
+            <div class="absolute -top-10 -right-10 glass p-4 rounded-2xl shadow-xl border border-white/50 z-20 hidden md:block">
+              <div class="text-xs font-bold text-blue-600 mb-1">Сэкономлено на комиссии</div>
+              <div class="text-xl font-display font-extrabold text-slate-900">$4,285</div>
+            </div>
+          </div>
+          
+          <div class="order-1 lg:order-2 max-w-xl">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full mb-8">
+              <BarChart3 class="w-4 h-4 text-emerald-600" />
+              <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Профессиональная аналитика</span>
+            </div>
+            <h2 class="text-balance mb-8">Управляйте империей каналов из <span class="text-emerald-600 underline decoration-emerald-200 underline-offset-8">единого окна</span></h2>
+            <p class="text-xl text-[var(--text-medium)] mb-10 leading-relaxed">
+              Мы создали инструмент для тех, кто относится к Telegram-каналам как к серьезному бизнесу. 
+              Больше не нужно переключаться между ботами и сводить Excel-таблицы.
+            </p>
+            
+            <ul class="space-y-6 mb-12">
+              <li class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <Layers class="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900 mb-1">Агрегация всей сети</h4>
+                  <p class="text-sm text-slate-500">Смотрите общую выручку, количество активных участников и LTV по всем вашим продуктам сразу.</p>
+                </div>
+              </li>
+              <li class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                  <TrendingUp class="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900 mb-1">Глубокий анализ Churn Rate</h4>
+                  <p class="text-sm text-slate-500">Понимайте, на каком этапе и почему уходят резиденты. Снижайте отток за счет точных данных.</p>
+                </div>
+              </li>
+            </ul>
+            
+            <a href="/dashboard" class="btn btn-primary bg-emerald-600 hover:bg-emerald-700 px-10">
+              Посмотреть демо дашборда
+              <ArrowRight class="w-5 h-5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- ARCHITECTURE: Engineering Focus -->
-		<section id="architecture" class="py-32">
-			<div class="bg-black text-white p-12 md:p-24 rounded-sm relative overflow-hidden">
-				<div class="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-				
-				<div class="relative z-10 grid md:grid-cols-2 gap-20">
-					<div>
-						<h2 class="text-4xl font-bold mb-12 text-white italic">The SotaJS Advantage.</h2>
-						<ul class="space-y-8">
-							<li class="flex gap-6">
-								<Cpu class="text-[var(--color-brand-primary)] shrink-0 w-8 h-8" />
-								<div>
-									<div class="font-bold mb-2 text-lg">Rich Domain Aggregates</div>
-									<p class="text-white/50 text-sm leading-relaxed">No anemic models. All business invariants are enforced within the domain layer, preventing invalid states physically.</p>
-								</div>
-							</li>
-							<li class="flex gap-6">
-								<Layers class="text-[var(--color-brand-primary)] shrink-0 w-8 h-8" />
-								<div>
-									<div class="font-bold mb-2 text-lg">Clean Persistence Isolation</div>
-									<p class="text-white/50 text-sm leading-relaxed">Infrastructure is just a detail. Your business logic remains pure, testable, and completely detached from the database or API specifics.</p>
-								</div>
-							</li>
-						</ul>
-					</div>
-					<div class="border-l border-white/10 pl-12 hidden md:block">
-						<div class="font-mono text-[10px] text-white/30 mb-10 tracking-[0.4em] uppercase">Technical Stack Overview</div>
-						<div class="space-y-6 font-mono text-sm">
-							<div class="flex justify-between border-b border-white/10 pb-3">
-								<span class="text-white/30 uppercase text-[10px]">Logic Framework</span>
-								<span class="text-white/80">SotaJS Core</span>
-							</div>
-							<div class="flex justify-between border-b border-white/10 pb-3">
-								<span class="text-white/30 uppercase text-[10px]">Language</span>
-								<span class="text-white/80">TypeScript 5.x</span>
-							</div>
-							<div class="flex justify-between border-b border-white/10 pb-3">
-								<span class="text-white/30 uppercase text-[10px]">Engine</span>
-								<span class="text-white/80">Bun 1.3+</span>
-							</div>
-							<div class="flex justify-between border-b border-white/10 pb-3">
-								<span class="text-white/30 uppercase text-[10px]">Integration</span>
-								<span class="text-white/80">Webhooks / RSA</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+    <!-- METRICS BAR -->
+    <section class="py-16">
+      <div class="container">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">$2.5M+</div>
+            <div class="text-sm text-[var(--text-medium)]">Обработано платежей</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">500+</div>
+            <div class="text-sm text-[var(--text-medium)]">Сообществ используют</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">99.9%</div>
+            <div class="text-sm text-[var(--text-medium)]">Время безотказной работы</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl md:text-5xl font-extrabold text-[var(--color-brand-primary)] mb-2">&lt;2с</div>
+            <div class="text-sm text-[var(--text-medium)]">Выдача доступа</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- SHOWCASE: Placeholder for high-quality visuals -->
-		<section id="showcase" class="py-20">
-			<div class="text-center mb-20">
-				<h2 class="text-4xl font-bold mb-4">Implementation Showcase.</h2>
-				<p class="text-[var(--text-medium)]">Real-world flow of the Product Accelerator bot.</p>
-			</div>
-			
-			<div class="grid md:grid-cols-2 gap-8">
-				<div class="aspect-[9/16] bg-[var(--color-surface-soft)] border border-[var(--color-border-subtle)] rounded-sm flex items-center justify-center p-12 group hover:border-[var(--color-brand-primary)] transition-all">
-					<div class="text-center">
-						<div class="secondary-label mb-4 opacity-20">User Flow Video</div>
-						<div class="w-16 h-16 border border-[var(--color-border-subtle)] rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-							<Zap class="w-6 h-6 text-[var(--color-brand-primary)]" />
-						</div>
-					</div>
-				</div>
-				<div class="space-y-8">
-					<div class="h-1/2 bg-[var(--color-surface-soft)] border border-[var(--color-border-subtle)] rounded-sm p-10 flex flex-col justify-end relative overflow-hidden">
-						<div class="font-mono text-[10px] absolute top-6 right-6 opacity-20 uppercase tracking-widest">Dashboard Preview</div>
-						<div class="font-bold text-xl mb-2 italic underline underline-offset-8 decoration-[var(--color-brand-primary)]">Real-time control.</div>
-						<p class="text-sm">Manage participants, revenue streams, and automated expulsions from a single unified interface.</p>
-					</div>
-					<div class="h-1/2 bg-[var(--color-surface-soft)] border border-[var(--color-border-subtle)] rounded-sm p-10 flex flex-col justify-end relative overflow-hidden">
-						<div class="font-mono text-[10px] absolute top-6 right-6 opacity-20 uppercase tracking-widest">API Interface</div>
-						<div class="font-bold text-xl mb-2 italic underline underline-offset-8 decoration-[var(--color-brand-primary)]">Developer-First.</div>
-						<p class="text-sm">Expose your paywall as a secure API for custom integrations with external LMS or marketing tools.</p>
-					</div>
-				</div>
-			</div>
-		</section>
-	</main>
+    <!-- PROBLEM/SOLUTION -->
+    <section class="py-24 md:py-40 bg-[var(--color-surface-soft)]">
+      <div class="container">
+        <div class="max-w-4xl mx-auto text-center mb-20">
+          <h2 class="mb-6">Забудьте о ручной проверке оплат</h2>
+          <p class="text-xl text-[var(--text-medium)] leading-relaxed">
+            Вы создаёте контент. Мы автоматизируем доступ.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-12">
+          <!-- Before -->
+          <div class="p-10 bg-white rounded-3xl border border-red-100 shadow-sm">
+            <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-8">
+              <span class="text-3xl">😓</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-8 text-red-600">Без автоматизации</h3>
+            <ul class="space-y-5">
+              {[
+                'Проверяете скриншоты оплат вручную',
+                'Лично добавляете каждого подписчика',
+                'Забываете удалить неплательщиков',
+                'Теряете 15-20% дохода из-за утечек',
+                'Тратите 2-3 часа в день на рутину',
+              ].map((item) => (
+                <li class="flex items-start gap-4">
+                  <div class="mt-1 shrink-0 text-red-500">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <span class="text-[var(--text-medium)] leading-snug">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <!-- After -->
+          <div class="p-10 bg-white rounded-3xl border border-green-100 shadow-sm">
+            <div class="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center mb-8">
+              <span class="text-3xl">🚀</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-8 text-green-600">С TG Paywall</h3>
+            <ul class="space-y-5">
+              {[
+                'Оплаты проверяются автоматически',
+                'Доступ выдаётся за 2 секунды',
+                'Неплательщики удаляются сами',
+                'Утечки исключены на 100%',
+                '0 часов в день на администрирование',
+              ].map((item) => (
+                <li class="flex items-start gap-4">
+                  <div class="mt-1 shrink-0 text-green-500">
+                    <CheckCircle2 class="w-5 h-5" />
+                  </div>
+                  <span class="text-[var(--text-medium)] leading-snug font-medium">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="py-20 md:py-32">
+      <div class="container">
+        <div class="text-center mb-16">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+            <span class="secondary-label text-xs">Возможности</span>
+          </div>
+          <h2 class="mb-6">Всё для монетизации в одном сервисе</h2>
+          <p class="text-xl text-[var(--text-medium)] max-w-2xl mx-auto">
+            Полный цикл управления подписками: от приёма оплаты до автоматического удаления неплательщиков.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-6">
+              <Bot class="w-6 h-6 text-[var(--color-brand-primary)]" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">Telegram-бот для приёма оплат</h3>
+            <p class="text-[var(--text-medium)]">
+              Персональный бот вашего бренда принимает оплаты 24/7. Автоматически выдаёт доступ и отправляет приветственные сообщения.
+            </p>
+          </div>
+          
+          <!-- Feature 2 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-6">
+              <CreditCard class="w-6 h-6 text-[var(--color-brand-secondary)]" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">5+ платёжных провайдеров</h3>
+            <p class="text-[var(--text-medium)]">
+              Stripe, ЮKassa, Robokassa, Prodamus, CryptoPay. Подключайте любые способы оплаты. Переключение в один клик.
+            </p>
+          </div>
+          
+          <!-- Feature 3 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-6">
+              <Lock class="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">Защищённые заявки на вход</h3>
+            <p class="text-[var(--text-medium)]">
+              Вместо ссылок — персональные заявки. Бот проверяет оплату и одобряет вход только платящим пользователям.
+            </p>
+          </div>
+          
+          <!-- Feature 4 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-6">
+              <RefreshCw class="w-6 h-6 text-[var(--color-brand-accent)]" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">Автоматическое продление</h3>
+            <p class="text-[var(--text-medium)]">
+              Рекуррентные платежи настраиваются в один клик. Подписки продлеваются сами — без участия вас и клиента.
+            </p>
+          </div>
+          
+          <!-- Feature 5 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center mb-6">
+              <ShieldCheck class="w-6 h-6 text-red-500" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">Удаление неплательщиков</h3>
+            <p class="text-[var(--text-medium)]">
+              Фоновый процесс проверяет подписки каждый час и автоматически удаляет истёкшие. 100% точность.
+            </p>
+          </div>
+          
+          <!-- Feature 6 -->
+          <div class="card p-8">
+            <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center mb-6">
+              <BarChart3 class="w-6 h-6 text-indigo-500" />
+            </div>
+            <h3 class="text-xl font-bold mb-3">Аналитика доходов</h3>
+            <p class="text-[var(--text-medium)]">
+              Отслеживайте MRR, конверсии, отток. Экспорты в CSV. Прозрачная статистика по каждому тарифу.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works" class="py-20 md:py-32 bg-[var(--color-surface-soft)]">
+      <div class="container">
+        <div class="text-center mb-16">
+          <h2 class="mb-6">Как это работает</h2>
+          <p class="text-xl text-[var(--text-medium)] max-w-2xl mx-auto">
+            Запуск за 4 простых шага. Первый клиент может оплатить через 15 минут после настройки.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-4 gap-8">
+          {[
+            {
+              step: '01',
+              icon: Bot,
+              title: 'Создайте бота',
+              description: 'Подключите вашего Telegram-бота через @BotFather. Это займёт 2 минуты.',
+            },
+            {
+              step: '02',
+              icon: CreditCard,
+              title: 'Настройте оплату',
+              description: 'Выберите платёжного провайдера и укажите реквизиты. Поддерживаем 5+ сервисов.',
+            },
+            {
+              step: '03',
+              icon: Users,
+              title: 'Создайте тарифы',
+              description: 'Задайте названия, цены и длительность подписок. Добавьте описание преимуществ.',
+            },
+            {
+              step: '04',
+              icon: TrendingUp,
+              title: 'Запустите продажи',
+              description: 'Разместите ссылку на бота в канале. Принимайте оплаты 24/7 автоматически.',
+            },
+          ].map((item, index) => (
+            <div class="relative">
+              {index < 3 && (
+                <div class="hidden md:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-[var(--color-brand-primary)]/30 to-transparent -translate-x-8"></div>
+              )}
+              <div class="text-center">
+                <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-white border-2 border-[var(--color-brand-primary)] flex items-center justify-center">
+                  <item.icon class="w-10 h-10 text-[var(--color-brand-primary)]" />
+                </div>
+                <div class="secondary-label text-xs mb-2">Шаг {item.step}</div>
+                <h3 class="text-lg font-bold mb-3">{item.title}</h3>
+                <p class="text-sm text-[var(--text-medium)]">{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING PREVIEW -->
+    <section id="pricing" class="py-20 md:py-32">
+      <div class="container">
+        <div class="text-center mb-16">
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-primary)]/10 rounded-full mb-6">
+            <span class="secondary-label text-xs">Прозрачные тарифы</span>
+          </div>
+          <h2 class="mb-6">Платите фиксированную сумму, а не процент</h2>
+          <p class="text-xl text-[var(--text-medium)] max-w-2xl mx-auto">
+            В отличие от других сервисов, мы не берём % от вашего дохода. Вы сохраняете 100% прибыли.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <!-- Starter -->
+          <div class="card p-8 flex flex-col hover:shadow-2xl transition-all duration-500">
+            <div class="mb-6">
+              <h3 class="text-2xl font-bold mb-2">Starter</h3>
+              <p class="text-[var(--text-medium)] text-sm">Для начинающих</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-5xl font-display font-extrabold text-[var(--text-high)] tracking-tighter">$49</span>
+              <span class="text-[var(--text-low)] text-lg">/мес</span>
+            </div>
+            <ul class="space-y-4 mb-10 flex-1">
+              {[
+                'До 100 подписчиков',
+                '1 Telegram-канал',
+                '3 платёжных провайдера',
+                'Базовая аналитика',
+                'Email поддержка',
+              ].map((feature) => (
+                <li class="flex items-start gap-3">
+                  <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                  <span class="text-sm text-[var(--text-medium)] font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#signup" class="btn btn-secondary w-full">
+              Попробовать бесплатно
+            </a>
+          </div>
+          
+          <!-- Pro -->
+          <div class="card p-8 flex flex-col relative border-2 border-[var(--color-brand-primary)] shadow-xl scale-105 z-10 bg-white">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--color-brand-primary)] text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">
+              Популярный выбор
+            </div>
+            <div class="mb-6">
+              <h3 class="text-2xl font-bold mb-2">Pro</h3>
+              <p class="text-[var(--text-medium)] text-sm">Для растущих сообществ</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-5xl font-display font-extrabold text-[var(--text-high)] tracking-tighter">$99</span>
+              <span class="text-[var(--text-low)] text-lg">/мес</span>
+            </div>
+            <ul class="space-y-4 mb-10 flex-1">
+              {[
+                'До 500 подписчиков',
+                'До 5 каналов',
+                'Все платёжные провайдеры',
+                'Расширенная аналитика',
+                'Приоритетная поддержка',
+                'A/B тесты воронок',
+              ].map((feature) => (
+                <li class="flex items-start gap-3">
+                  <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                  <span class="text-sm text-[var(--text-high)] font-semibold">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#signup" class="btn btn-primary w-full shadow-lg shadow-blue-100">
+              Начать бесплатно
+            </a>
+          </div>
+          
+          <!-- Enterprise -->
+          <div class="card p-8 flex flex-col hover:shadow-2xl transition-all duration-500">
+            <div class="mb-6">
+              <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
+              <p class="text-[var(--text-medium)] text-sm">Для агентств и сетей</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-5xl font-display font-extrabold text-[var(--text-high)] tracking-tighter">$249</span>
+              <span class="text-[var(--text-low)] text-lg">/мес</span>
+            </div>
+            <ul class="space-y-4 mb-10 flex-1">
+              {[
+                'Безлимитные подписчики',
+                'Безлимитные каналы',
+                'Кастомные интеграции',
+                'White-label решение',
+                'Персональный менеджер',
+                'SLA 99.9%',
+              ].map((feature) => (
+                <li class="flex items-start gap-3">
+                  <CheckCircle2 class="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                  <span class="text-sm text-[var(--text-medium)] font-medium">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="#contact" class="btn btn-secondary w-full">
+              Связаться с нами
+            </a>
+          </div>
+        </div>
+        
+        <div class="text-center mt-12">
+          <p class="text-[var(--text-medium)] mb-4">
+            Все тарифы включают 14 дней бесплатного тестирования
+          </p>
+          <a href="/pricing" class="inline-flex items-center gap-2 text-[var(--color-brand-primary)] font-semibold hover:gap-3 transition-all">
+            Сравнить все возможности
+            <ArrowRight class="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section id="testimonials" class="py-20 md:py-32 bg-[var(--color-surface-soft)]">
+      <div class="container">
+        <div class="text-center mb-16">
+          <h2 class="mb-6">Отзывы клиентов</h2>
+          <p class="text-xl text-[var(--text-medium)] max-w-2xl mx-auto">
+            Более 500 сообществ уже автоматизировали монетизацию с TG Paywall.
+          </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+          {[
+            {
+              quote: "TG Paywall окупился за первую неделю. Мы вернули больше утечек, чем стоит разработка, и теперь фокусируемся на контенте.",
+              author: "Алексей Петров",
+              role: "Product Management Community",
+              avatar: "👨‍💼",
+              revenue: "$12K/мес",
+            },
+            {
+              quote: "Наконец-то не нужно проверять скриншоты оплат вручную. Бот всё делает сам, а я экономлю 2-3 часа в день.",
+              author: "Мария Иванова",
+              role: "English Learning Hub",
+              avatar: "👩‍🏫",
+              revenue: "$8K/мес",
+            },
+            {
+              quote: "Переключились с paywall.pw — сэкономили 10% комиссии. При доходе $50K это $5K в месяц или $60K в год!",
+              author: "Дмитрий Соколов",
+              role: "Crypto Insights",
+              avatar: "🧑‍💻",
+              revenue: "$50K/мес",
+            },
+          ].map((testimonial) => (
+            <div class="card p-8 bg-white">
+              <div class="flex items-center gap-1 mb-4">
+                {[...Array(5)].map(() => (
+                  <Star class="w-4 h-4 fill-[var(--color-brand-accent)] text-[var(--color-brand-accent)]" />
+                ))}
+              </div>
+              <blockquote class="text-[var(--text-medium)] mb-6 leading-relaxed">
+                "{testimonial.quote}"
+              </blockquote>
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-[var(--color-surface-soft)] flex items-center justify-center text-2xl">
+                  {testimonial.avatar}
+                </div>
+                <div>
+                  <div class="font-bold text-[var(--text-high)]">{testimonial.author}</div>
+                  <div class="text-sm text-[var(--text-low)]">{testimonial.role}</div>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t border-[var(--color-border-subtle)]">
+                <div class="text-sm font-bold text-[var(--color-brand-secondary)]">{testimonial.revenue}</div>
+                <div class="text-xs text-[var(--text-low)]">Доход с канала</div>
+              </div>
+              <a href="/case-studies" class="inline-flex items-center gap-1 text-xs text-[var(--color-brand-primary)] font-medium hover:underline mt-2">
+                Читать кейс →
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-20 md:py-32">
+      <div class="container max-w-4xl">
+        <div class="text-center mb-16">
+          <h2 class="mb-6">Частые вопросы</h2>
+          <p class="text-xl text-[var(--text-medium)]">
+            Ответы на популярные вопросы о TG Paywall.
+          </p>
+        </div>
+        
+        <div class="space-y-4">
+          <details class="group border border-[var(--color-border-subtle)] rounded-xl" open>
+            <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+              <span class="font-semibold text-[var(--text-high)] pr-8">Как быстро я смогу запуститься?</span>
+              <svg class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+              <p>Первые настройки занимают 10-15 минут. Вы создадите бота, подключите платёжного провайдера и создадите первый тариф. После этого можно принимать оплаты.</p>
+            </div>
+          </details>
+          
+          <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+            <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+              <span class="font-semibold text-[var(--text-high)] pr-8">Какие платёжные системы поддерживаются?</span>
+              <svg class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+              <p>Мы поддерживаем 5+ платёжных провайдеров:</p>
+              <ul class="list-disc list-inside mt-3 space-y-1">
+                <li><strong>Stripe</strong> — международные платежи</li>
+                <li><strong>ЮKassa</strong> — Россия и СНГ</li>
+                <li><strong>Robokassa</strong> — альтернатива для России</li>
+                <li><strong>Prodamus</strong> — для самозанятых и ИП</li>
+                <li><strong>CryptoPay</strong> — криптовалюты (TON, USDT)</li>
+              </ul>
+            </div>
+          </details>
+          
+          <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+            <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+              <span class="font-semibold text-[var(--text-high)] pr-8">Что будет, если мне не понравится?</span>
+              <svg class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+              <p>Мы предлагаем 14 дней бесплатного тестирования без привязки карты. Если сервис не подойдёт — просто отмените подписку в любой момент. Никаких вопросов.</p>
+            </div>
+          </details>
+          
+          <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+            <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+              <span class="font-semibold text-[var(--text-high)] pr-8">Можно ли перенести существующих подписчиков?</span>
+              <svg class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+              <p>Да! Мы поможем импортировать вашу базу подписчиков из другого сервиса. Поддерживаем импорт из CSV, Excel и большинства популярных paywall-сервисов.</p>
+            </div>
+          </details>
+          
+          <details class="group border border-[var(--color-border-subtle)] rounded-xl">
+            <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+              <span class="font-semibold text-[var(--text-high)] pr-8">Нужно ли программирование?</span>
+              <svg class="w-5 h-5 text-[var(--text-medium)] transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-6 pb-6 text-[var(--text-medium)] leading-relaxed">
+              <p>Нет, TG Paywall — готовый SaaS-сервис. Всё настраивается через веб-интерфейс. Код нужен только для кастомных интеграций в тарифе Enterprise.</p>
+            </div>
+          </details>
+        </div>
+        
+        <div class="text-center mt-12">
+          <p class="text-[var(--text-medium)] mb-4">
+            Остался вопрос?
+          </p>
+          <a href="/faq" class="inline-flex items-center gap-2 text-[var(--color-brand-primary)] font-semibold hover:gap-3 transition-all">
+            Смотреть все FAQ
+            <ArrowRight class="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="py-20 md:py-32 bg-[var(--color-surface-dark)] text-white">
+      <div class="container max-w-4xl text-center">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+          Готовы запустить монетизацию?
+        </h2>
+        <p class="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
+          Начните бесплатно сегодня. Первые 14 дней — за наш счёт.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <a href="#pricing" class="btn btn-primary btn-large bg-white text-[var(--color-surface-dark)] hover:bg-white/90">
+            Начать бесплатно
+            <ArrowRight class="w-5 h-5" />
+          </a>
+          <a href="#demo" class="btn btn-secondary btn-large border-white/30 text-white hover:bg-white/10">
+            <MessageCircle class="w-5 h-5" />
+            Запросить демо
+          </a>
+        </div>
+        <p class="text-sm text-white/50">
+          Не требуется привязка карты • Отмена в любой момент
+        </p>
+      </div>
+    </section>
+  </main>
 </Layout>

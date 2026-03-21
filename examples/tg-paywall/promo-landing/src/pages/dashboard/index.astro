@@ -1,0 +1,359 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { 
+  BarChart3, 
+  Users, 
+  Wallet, 
+  TrendingUp, 
+  Layers, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  MoreVertical,
+  Search,
+  Bell,
+  Calendar,
+  LayoutDashboard,
+  MessageSquare,
+  Settings,
+  LogOut,
+  ChevronRight,
+  ShieldCheck,
+  Zap
+} from 'lucide-astro';
+
+const stats = [
+  { label: 'Общий MRR', value: '$42,850', change: '+12.5%', trending: 'up' },
+  { label: 'Всего резидентов', value: '1,248', change: '+84', trending: 'up' },
+  { label: 'Средний Churn Rate', value: '4.2%', change: '-1.1%', trending: 'down' },
+  { label: 'Экономия на комиссии', value: '$4,285', labelExtra: 'vs paywall.pw (10%)', trending: 'up' },
+];
+
+const channels = [
+  { name: 'Product Accelerator', residents: 342, mrr: '$17,100', health: '98%', status: 'active', color: 'bg-blue-500' },
+  { name: 'Crypto Insider Club', residents: 512, mrr: '$15,360', health: '92%', status: 'active', color: 'bg-emerald-500' },
+  { name: 'Design Leadership', residents: 186, mrr: '$5,580', health: '95%', status: 'warning', color: 'bg-purple-500' },
+  { name: 'BigTech Interview Prep', residents: 208, mrr: '$4,810', health: '99%', status: 'active', color: 'bg-amber-500' },
+];
+
+const recentEvents = [
+  { user: '@alex_pm', channel: 'Product Accelerator', amount: '$50', time: '2 мин назад', type: 'payment' },
+  { user: '@crypto_whale', channel: 'Crypto Insider Club', amount: '$30', time: '5 мин назад', type: 'payment' },
+  { user: '@jessica_ux', channel: 'Design Leadership', amount: '$30', time: '12 мин назад', type: 'payment' },
+  { user: '@tech_lead_77', channel: 'Product Accelerator', amount: 'N/A', time: '15 мин назад', type: 'join_request' },
+];
+---
+
+<Layout 
+  title="Analytics Dashboard | TG Paywall — Центр управления сообществами"
+  description="Профессиональная аналитика для владельцев сетей Telegram-каналов. Управляйте выручкой, оттоком и резидентами в едином интерфейсе."
+  noIndex={true}
+>
+  <div class="min-h-screen bg-[#F8FAFC] flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[var(--color-surface-dark)] text-white flex flex-col shrink-0 hidden lg:flex">
+      <div class="p-6">
+        <a href="/" class="font-display font-bold tracking-tight text-xl flex items-center gap-2">
+          <span>TG<span class="text-[var(--color-brand-primary)]">Paywall</span></span>
+        </a>
+      </div>
+      
+      <nav class="flex-1 px-4 space-y-1">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-xl text-white font-medium">
+          <LayoutDashboard class="w-5 h-5 opacity-70" />
+          Дашборд
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-xl transition-all">
+          <Layers class="w-5 h-5 opacity-70" />
+          Мои каналы
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-xl transition-all">
+          <Users class="w-5 h-5 opacity-70" />
+          Резиденты
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-xl transition-all">
+          <Wallet class="w-5 h-5 opacity-70" />
+          Транзакции
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-xl transition-all">
+          <MessageSquare class="w-5 h-5 opacity-70" />
+          Шаблоны
+        </a>
+      </nav>
+      
+      <div class="p-4 mt-auto border-t border-white/10 space-y-1">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-white/5 rounded-xl transition-all">
+          <Settings class="w-5 h-5 opacity-70" />
+          Настройки
+        </a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 rounded-xl transition-all">
+          <LogOut class="w-5 h-5 opacity-70" />
+          Выйти
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Top Bar -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+        <div class="flex items-center gap-4 flex-1">
+          <div class="relative w-full max-w-md hidden md:block">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Поиск резидента или транзакции..." 
+              class="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+            />
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+          <button class="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <Bell class="w-5 h-5" />
+            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
+          
+          <div class="flex items-center gap-3 pl-6 border-l border-slate-200">
+            <div class="text-right hidden sm:block">
+              <div class="text-sm font-bold text-slate-900 leading-none mb-1">Alex Petrov</div>
+              <div class="text-xs text-slate-500 font-medium">Network Owner</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 font-bold">
+              AP
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Area -->
+      <div class="flex-1 overflow-y-auto p-8 space-y-8">
+        <!-- Dashboard Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Обзор сети сообществ</h1>
+            <p class="text-sm text-slate-500 mt-1">Данные обновлены сегодня в 12:45 MSK</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
+              <Calendar class="w-4 h-4" />
+              Последние 30 дней
+            </button>
+            <button class="btn btn-primary py-2 text-sm">
+              <Zap class="w-4 h-4" />
+              Новая рассылка
+            </button>
+          </div>
+        </div>
+
+        <!-- Global Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat) => (
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+              <div class="flex items-start justify-between mb-4">
+                <div class="secondary-label text-[10px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors">
+                  {stat.label}
+                </div>
+                {stat.trending === 'up' ? (
+                  <div class="p-1.5 bg-green-50 text-green-600 rounded-lg">
+                    <ArrowUpRight class="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div class="p-1.5 bg-red-50 text-red-600 rounded-lg">
+                    <ArrowDownRight class="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+              <div class="flex items-baseline gap-2">
+                <div class="text-3xl font-display font-extrabold text-slate-900 tracking-tighter">{stat.value}</div>
+                <div class={`text-xs font-bold ${stat.trending === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+                  {stat.change}
+                </div>
+              </div>
+              {stat.labelExtra && (
+                <div class="text-[10px] font-medium text-slate-400 mt-2 uppercase tracking-wider">
+                  {stat.labelExtra}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Multi-Channel Management -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-slate-900">Аналитика по каналам</h2>
+                <button class="text-blue-600 text-sm font-bold hover:underline">Все каналы</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                    <tr>
+                      <th class="px-6 py-4">Канал</th>
+                      <th class="px-6 py-4">Резиденты</th>
+                      <th class="px-6 py-4">Выручка</th>
+                      <th class="px-6 py-4">Удержание</th>
+                      <th class="px-6 py-4 text-right">Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    {channels.map((channel) => (
+                      <tr class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-6 py-4">
+                          <div class="flex items-center gap-3">
+                            <div class={`w-2 h-10 rounded-full ${channel.color}`}></div>
+                            <div class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{channel.name}</div>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium text-slate-600">{channel.residents}</td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-900">{channel.mrr}</td>
+                        <td class="px-6 py-4">
+                          <div class="flex items-center gap-2">
+                            <div class="flex-1 h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
+                              <div class="h-full bg-blue-500" style={`width: ${channel.health}`}></div>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500">{channel.health}</span>
+                          </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                          <span class={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-tighter ${
+                            channel.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
+                          }`}>
+                            {channel.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- ROI Section -->
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white relative overflow-hidden group shadow-xl">
+              <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+              <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div class="max-w-md">
+                  <div class="flex items-center gap-2 mb-4">
+                    <ShieldCheck class="w-6 h-6 text-blue-200" />
+                    <span class="text-xs font-bold uppercase tracking-widest text-blue-100">Smart Infrastructure</span>
+                  </div>
+                  <h3 class="text-2xl font-bold mb-2">Ваша независимость — наш приоритет</h3>
+                  <p class="text-blue-100/80 leading-relaxed">
+                    Вы сэкономили <span class="font-bold text-white">$4,285</span> за этот месяц, используя фиксированный тариф вместо % от оборота. Ваши данные полностью зашифрованы и принадлежат только вам.
+                  </p>
+                </div>
+                <div class="shrink-0">
+                  <div class="p-6 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-center">
+                    <div class="text-sm font-medium opacity-70 mb-1">Чистая прибыль (Net)</div>
+                    <div class="text-4xl font-display font-extrabold">$38,565</div>
+                    <div class="mt-4 px-4 py-2 bg-white text-blue-600 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-blue-50 transition-colors cursor-pointer">
+                      Вывод средств
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feed / Sidebar widgets -->
+          <div class="space-y-8">
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-slate-900">Активность</h2>
+                <button class="p-1.5 hover:bg-slate-100 rounded-lg transition-all">
+                  <MoreVertical class="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+              <div class="p-6 space-y-6">
+                {recentEvents.map((event) => (
+                  <div class="flex gap-4 group">
+                    <div class={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${
+                      event.type === 'payment' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
+                    }`}>
+                      {event.type === 'payment' ? <Wallet class="w-5 h-5" /> : <Users class="w-5 h-5" />}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex justify-between items-start mb-1">
+                        <span class="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{event.user}</span>
+                        <span class="text-xs font-bold text-slate-900">{event.amount !== 'N/A' ? event.amount : ''}</span>
+                      </div>
+                      <div class="text-xs text-slate-500 truncate">{event.channel}</div>
+                      <div class="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-wider">{event.time}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button class="w-full py-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-100 transition-colors">
+                Смотреть всё
+              </button>
+            </div>
+
+            <!-- Health Widget -->
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+              <div class="flex items-center justify-between mb-6">
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-widest">Здоровье сети</h2>
+                <TrendingUp class="w-4 h-4 text-green-500" />
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-2">
+                    <span class="text-slate-500">Авто-удаления</span>
+                    <span class="text-slate-900">100% Успешно</span>
+                  </div>
+                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-green-500" style="width: 100%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-bold mb-2">
+                    <span class="text-slate-500">Uptime ботов</span>
+                    <span class="text-slate-900">99.98%</span>
+                  </div>
+                  <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500" style="width: 99.98%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 p-4 bg-blue-50 rounded-xl flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span class="text-[10px] font-bold text-blue-700 uppercase tracking-widest">Infrastructure: Enterprise</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  /* Специфичные стили для имитации реального приложения */
+  body {
+    background-color: #F8FAFC;
+  }
+  
+  .font-display {
+    font-family: var(--font-display);
+  }
+  
+  /* Кастомный скроллбар */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+  }
+</style>
