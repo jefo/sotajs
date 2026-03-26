@@ -1,0 +1,9 @@
+яндекс пг CVyfm?,$8xEqbh^
+супабэйз ycxAXHCa0dqs78VJ
+
+
+https://wfzarkephrmvcbomuuss.supabase.co
+pub key sb_publishable_GaH00N99P6N17mp3446TBw_vzGQUEBU
+con str postgresql://postgres:ycxAXHCa0dqs78VJ@db.wfzarkephrmvcbomuuss.supabase.co:5432/postgres
+
+postgresql://postgres:[YOUR-PASSWORD]@db.wfzarkephrmvcbomuuss.supabase.co:5432/postgres

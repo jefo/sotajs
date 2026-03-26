@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { usePort } from "../../../../lib";
 import { FunctionDto, getFunctionPort, loggerPort } from "../ports";
+import { getProfilePort } from "../../infrastructure/ports/identity.ports";
 
 /**
  * Query: Get a cloud function by ID
@@ -8,6 +9,7 @@ import { FunctionDto, getFunctionPort, loggerPort } from "../ports";
 
 const GetFunctionInputSchema = z.object({
   functionId: z.string().uuid(),
+  profileName: z.string().optional(),
 });
 
 type GetFunctionInput = z.infer<typeof GetFunctionInputSchema>;
@@ -23,13 +25,26 @@ export const getFunctionQuery = async (
 
   const getFunction = usePort(getFunctionPort);
   const logger = usePort(loggerPort);
+  const getProfile = usePort(getProfilePort);
+
+  let cloudConfig: { oauthToken: string; folderId: string } | undefined;
+
+  if (query.profileName) {
+    const profile = await getProfile(query.profileName);
+    if (profile) {
+      cloudConfig = { oauthToken: profile.oauthToken, folderId: profile.folderId };
+    }
+  }
 
   await logger({
     level: "info",
     message: `Fetching function: ${query.functionId}`,
   });
 
-  const func = await getFunction({ functionId: query.functionId });
+  const func = await getFunction({ 
+    functionId: query.functionId,
+    cloudConfig 
+  });
 
   if (!func) {
     await logger({

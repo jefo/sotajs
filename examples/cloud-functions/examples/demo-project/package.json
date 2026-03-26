@@ -1,0 +1,6 @@
+{
+  "name": "demo-cloud-function",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js"
+}

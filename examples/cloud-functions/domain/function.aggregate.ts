@@ -34,9 +34,9 @@ export class FunctionDeletedEvent implements IDomainEvent {
 // ============================================================================
 
 const CloudFunctionSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   name: z.string().min(1).max(64),
-  runtime: z.enum(["nodejs16", "nodejs18", "nodejs20", "python39", "python310", "go121"]),
+  runtime: z.string(),
   entrypoint: z.string(),
   memory: z.number().refine((m) => m >= 128 && m <= 4096, "Memory must be 128-4096 MB"),
   executionTimeout: z.number().refine((t) => t >= 1 && t <= 600, "Timeout must be 1-600 seconds"),
@@ -65,16 +65,9 @@ export const CloudFunction = createAggregate({
       }
     },
 
-    // Invariant: Code must not be empty
+    // Invariant: Version must follow semver-like pattern (optional - only for new deployments)
     (props) => {
-      if (!props.code.trim()) {
-        throw new Error("Function code cannot be empty");
-      }
-    },
-
-    // Invariant: Version must follow semver-like pattern
-    (props) => {
-      if (!props.version.match(/^\d+\.\d+\.\d+$/)) {
+      if (props.version && !props.version.match(/^\d+\.\d+\.\d+$/)) {
         throw new Error("Version must be in format X.Y.Z");
       }
     },

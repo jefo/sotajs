@@ -6,137 +6,193 @@ import {
 } from "@yandex-cloud/nodejs-sdk";
 import {
   Function,
-  Version
 } from "@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function";
 import {
   CreateFunctionRequest,
   CreateFunctionVersionRequest,
   GetFunctionRequest,
   ListFunctionsRequest,
-  DeleteFunctionRequest
+  DeleteFunctionRequest,
 } from "@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/serverless/functions/v1/function_service";
+import { 
+  SetAccessBindingsRequest 
+} from "@yandex-cloud/nodejs-sdk/dist/generated/yandex/cloud/access/access";
 import { FeaturePorts } from "../../../../lib";
 
 import { execSync } from "child_process";
+import { path } from "path";
 import { CloudFunctionFeature } from "../../application/ports/cloud-feature";
-import { DeleteFunctionInput, DeleteFunctionResult, DeployFunctionInput, DeployFunctionResult, GetFunctionInput, InvokeFunctionInput, InvokeFunctionResult, ListFunctionsInput, ListFunctionsResult } from "../../application";
+import { 
+  DeleteFunctionInput, 
+  DeleteFunctionResult, 
+  DeployFunctionInput, 
+  DeployFunctionResult, 
+  GetFunctionInput, 
+  InvokeFunctionInput, 
+  InvokeFunctionResult, 
+  ListFunctionsInput, 
+  ListFunctionsResult 
+} from "../../application";
 import { FunctionDto } from "../../application/ports";
 
 /**
- * Real Yandex Cloud Adapter (Node.js SDK v2)
+ * Yandex Cloud Adapter: Data Plane
  * 
- * Использует актуальную версию @yandex-cloud/nodejs-sdk.
+ * Handles real bundling, zipping and Yandex Cloud SDK communication.
  */
+ 
+// конфиг должен сохраняться в файл по известному местоположению нашгим приложением минуя CLI - то есть init мы сделаем сами
 export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeature> {
-  private session: Session;
-  private folderId: string;
+  private defaultSession: Session;
+  private defaultFolderId: string;
 
-  constructor(config: { folderId: string; oauthToken?: string; iamToken?: string }) {
-    this.folderId = config.folderId;
-    this.session = new Session({
-      oauthToken: config.oauthToken,
-      iamToken: config.iamToken,
-    });
+
+  constructor(config: { folderId: string; oauthToken?: string; authKeyJson?: string }) {
+     // TODO: this should be loaded from ~/.config/yandex-cloud/config.yaml (путь зависит от ОС)
+    this.defaultFolderId = config.folderId;
+    if (config.authKeyJson) {
+      this.defaultSession = new Session({ authKeyJson: JSON.parse(config.authKeyJson) });
+    } else {
+      this.defaultSession = new Session({ oauthToken: config.oauthToken });
+    }
   }
 
-  private get client() {
-    return this.session.client(serviceClients.FunctionServiceClient);
+  private getSession(cloudConfig?: { oauthToken?: string; serviceAccountKey?: string; folderId: string }) {
+    if (cloudConfig) {
+      if (cloudConfig.serviceAccountKey) {
+        return {
+          session: new Session({ authKeyJson: JSON.parse(cloudConfig.serviceAccountKey) }),
+          folderId: cloudConfig.folderId,
+        };
+      }
+      return {
+        session: new Session({ oauthToken: cloudConfig.oauthToken }),
+        folderId: cloudConfig.folderId,
+      };
+    }
+    return { session: this.defaultSession, folderId: this.defaultFolderId };
+  }
+
+  private getClient(session: Session) {
+    return session.client(serviceClients.FunctionServiceClient);
   }
 
   async deployFunction(input: DeployFunctionInput): Promise<DeployFunctionResult> {
+    const { session, folderId } = this.getSession(input.cloudConfig);
+    const client = this.getClient(session);
+
     try {
-      console.log(`☁️  [YC] Deploying function: ${input.name}...`);
+      console.log(`☁️  [SotaJS Cloud] Deploying function '${input.name}'...`);
 
       // 1. Поиск или создание функции
-      let functionId = await this.findFunctionIdByName(input.name);
+      let functionId = await this.findFunctionIdByName(input.name, session, folderId);
 
       if (!functionId) {
-        console.log(`🔨 [YC] Creating new function '${input.name}'...`);
-        const createOp = await this.client.create(CreateFunctionRequest.fromPartial({
-          folderId: this.folderId,
+        console.log(`🔨 [SotaJS Cloud] Creating function resource in folder ${folderId}...`);
+        const createOp = await client.create(CreateFunctionRequest.fromPartial({
+          folderId,
           name: input.name,
-          description: "Auto-deployed via SotaJS Cloud Functions DX",
-          labels: { "managed-by": "sotajs" }
+          labels: { "managed-by": "sotajs-cloud" }
         }));
-
-        const resultOp = await waitForOperation(createOp, this.session);
+        const resultOp = await waitForOperation(createOp, session);
         if (resultOp.error) throw new Error(resultOp.error.message);
-
-        const createdFunc = decodeMessage(resultOp.response!);
-        functionId = createdFunc.id;
-        console.log(`✅ [YC] Function created: ${functionId}`);
+        functionId = decodeMessage(resultOp.response!).id;
       }
 
-      // 2. Создание новой версии
-      console.log(`📦 [YC] Creating version for ${functionId}...`);
-      const zipBuffer = await this.createZipBuffer(input.code);
+      // 2. Установка публичного доступа
+      if (input.makePublic) {
+        console.log(`🔓 [SotaJS Cloud] Enabling public access...`);
+        await client.setAccessBindings(SetAccessBindingsRequest.fromPartial({
+          resourceId: functionId!,
+          accessBindings: [{
+            roleId: "functions.invoker",
+            subject: { id: "allUsers", type: "system" }
+          }]
+        }));
+      }
 
-      const versionOp = await this.client.createVersion(CreateFunctionVersionRequest.fromPartial({
+      // 3. Сборка проекта через Bun.build (DX Level: High)
+      console.log(`📦 [SotaJS Cloud] Bundling source: ${input.sourcePath}`);
+      const zipBuffer = await this.createZipBuffer(input.sourcePath);
+
+      // 4. Создание версии
+      console.log(`🚀 [SotaJS Cloud] Uploading version...`);
+      const versionOp = await client.createVersion(CreateFunctionVersionRequest.fromPartial({
         functionId: functionId!,
-        runtime: input.runtime, // Напр. "nodejs18"
+        runtime: input.runtime,
         entrypoint: input.entrypoint,
-        resources: {
-          memory: input.memory * 1024 * 1024, // Конвертируем MB в байты
-        },
+        resources: { memory: input.memory * 1024 * 1024 },
         executionTimeout: { seconds: input.executionTimeout, nanos: 0 },
+        serviceAccountId: input.serviceAccountId,
         content: zipBuffer,
         environment: input.environment || {},
       }));
 
-      const resultVersionOp = await waitForOperation(versionOp, this.session);
-
-      if (resultVersionOp.error) {
-        throw new Error(`Version deployment failed: ${resultVersionOp.error.message}`);
-      }
+      const resultVersionOp = await waitForOperation(versionOp, session);
+      if (resultVersionOp.error) throw new Error(resultVersionOp.error.message);
 
       const createdVersion = decodeMessage(resultVersionOp.response!);
-      console.log(`🚀 [YC] Version ${createdVersion.id} is LIVE!`);
+      const finalFunc = await client.get(GetFunctionRequest.fromPartial({ functionId: functionId! }));
 
       return {
         success: true,
         functionId: functionId!,
         version: createdVersion.id,
+        url: finalFunc.httpGatewayUrl
       };
     } catch (error: any) {
-      console.error(`❌ [YC] Deployment error: ${error.message}`);
-      return {
-        success: false,
-        error: error.message,
-      };
+      console.error(`❌ [SotaJS Cloud] Deployment failed: ${error.message}`);
+      return { success: false, error: error.message };
     }
   }
 
   async invokeFunction(input: InvokeFunctionInput): Promise<InvokeFunctionResult> {
-    return { success: false, error: "Direct invocation via SDK not implemented. Use public web-link." };
+    return { success: false, error: "Use public URL for invocation." };
   }
 
   async getFunction(input: GetFunctionInput): Promise<FunctionDto | null> {
+    const { session } = this.getSession(input.cloudConfig);
+    const client = this.getClient(session);
     try {
-      const func = await this.client.get(GetFunctionRequest.fromPartial({ functionId: input.functionId }));
-      return this.mapToDto(func);
-    } catch {
-      return null;
-    }
+      const func = await client.get(GetFunctionRequest.fromPartial({ functionId: input.functionId }));
+      
+      // Return basic DTO - we don't need version details for simple operations
+      return {
+        id: func.id,
+        name: func.name,
+        runtime: (func.runtime as any) || "nodejs18",
+        entrypoint: "",
+        memory: 128,
+        executionTimeout: 5,
+        code: "",
+        environment: {},
+        status: "active",
+        version: "",
+        createdAt: func.createdAt!,
+        updatedAt: func.createdAt!,
+        url: func.httpGatewayUrl
+      };
+    } catch { return null; }
   }
 
   async listFunctions(input: ListFunctionsInput): Promise<ListFunctionsResult> {
-    const response = await this.client.list(ListFunctionsRequest.fromPartial({ folderId: this.folderId }));
+    const { session, folderId } = this.getSession(input.cloudConfig);
+    const client = this.getClient(session);
+    const targetFolderId = input.folderId || folderId;
+    const response = await client.list(ListFunctionsRequest.fromPartial({ folderId: targetFolderId }));
     const functions = (response.functions || []).map(f => this.mapToDto(f));
-    return {
-      functions,
-      totalCount: functions.length,
-    };
+    return { functions, totalCount: functions.length };
   }
 
   async deleteFunction(input: DeleteFunctionInput): Promise<DeleteFunctionResult> {
+    const { session } = this.getSession(input.cloudConfig);
+    const client = this.getClient(session);
     try {
-      const op = await this.client.delete(DeleteFunctionRequest.fromPartial({ functionId: input.functionId }));
-      const result = await waitForOperation(op, this.session);
+      const op = await client.delete(DeleteFunctionRequest.fromPartial({ functionId: input.functionId }));
+      const result = await waitForOperation(op, session);
       if (result.error) throw new Error(result.error.message);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+    } catch (error: any) { return { success: false, error: error.message }; }
   }
 
   async logger(input: { level: string; message: string; context?: any }): Promise<void> {
@@ -144,12 +200,9 @@ export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeat
     console.log(`${emoji} [${input.level.toUpperCase()}] ${input.message}`, input.context || "");
   }
 
-  // ============================================================================
-  // Helpers
-  // ============================================================================
-
-  private async findFunctionIdByName(name: string): Promise<string | null> {
-    const response = await this.client.list(ListFunctionsRequest.fromPartial({ folderId: this.folderId }));
+  private async findFunctionIdByName(name: string, session: Session, folderId: string): Promise<string | null> {
+    const client = this.getClient(session);
+    const response = await client.list(ListFunctionsRequest.fromPartial({ folderId }));
     const found = (response.functions || []).find(f => f.name === name);
     return found ? found.id : null;
   }
@@ -168,21 +221,74 @@ export class YandexCloudAdapter implements FeaturePorts<typeof CloudFunctionFeat
       version: "",
       createdAt: f.createdAt!,
       updatedAt: f.createdAt!,
+      url: f.httpGatewayUrl
     };
   }
 
-  private async createZipBuffer(code: string): Promise<Uint8Array> {
+  private async mapToDtoWithVersion(f: Function, session: Session): Promise<FunctionDto> {
+    // Get the function versions to extract entrypoint, memory, timeout
+    const client = this.getClient(session);
+    
+    let entrypoint = "";
+    let memory = 128;
+    let executionTimeout = 5;
+    let version = "";
+    
+    try {
+      // List versions of this function
+      const response = await client.list(ListFunctionsRequest.fromPartial({ functionId: f.id }));
+      
+      if (response.functions && response.functions.length > 0) {
+        const latestVersion = response.functions[0];
+        entrypoint = latestVersion.entrypoint || "";
+        memory = latestVersion.resources?.memory ? latestVersion.resources.memory / (1024 * 1024) : 128;
+        executionTimeout = latestVersion.executionTimeout?.seconds || 5;
+        version = latestVersion.id || "";
+      }
+    } catch (e) {
+      console.log("Could not get function versions, using defaults");
+    }
+
+    return {
+      id: f.id,
+      name: f.name,
+      runtime: f.runtime as any,
+      entrypoint,
+      memory,
+      executionTimeout,
+      code: "", // Code is not retrievable from YC API
+      environment: {},
+      status: "active",
+      version,
+      createdAt: f.createdAt!,
+      updatedAt: f.createdAt!,
+      url: f.httpGatewayUrl
+    };
+  }
+
+  private async createZipBuffer(sourcePath: string): Promise<Uint8Array> {
     const tempDir = `/tmp/yc-deploy-${Date.now()}`;
     execSync(`mkdir -p ${tempDir}`);
-    await Bun.write(`${tempDir}/index.js`, code);
+    
+    // Бандлим все зависимости в один файл index.js
+    const buildResult = await Bun.build({
+      entrypoints: [sourcePath],
+      outdir: tempDir,
+      naming: "index.js",
+      target: "node",
+      minify: false,
+    });
 
-    execSync(`cd ${tempDir} && zip -q -r function.zip .`);
+    if (!buildResult.success) {
+      throw new Error(`Bundling failed: ${buildResult.logs.map(l => l.message).join(", ")}`);
+    }
+    
+    await Bun.write(`${tempDir}/package.json`, JSON.stringify({ type: "module" }));
+    execSync(`cd ${tempDir} && zip -q -r function.zip index.js package.json`);
 
     const zipFile = Bun.file(`${tempDir}/function.zip`);
     const arrayBuffer = await zipFile.arrayBuffer();
-
     execSync(`rm -rf ${tempDir}`);
-
     return new Uint8Array(arrayBuffer);
   }
 }

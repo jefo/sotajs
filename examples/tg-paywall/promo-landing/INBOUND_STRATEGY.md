@@ -1,341 +1,214 @@
-# TG Paywall SaaS: Inbound Marketing Strategy
+# TG Paywall: Developer Hub — Content & Distribution Strategy
 
-## 📋 Executive Summary
+## Модель
 
-**Цель:** Построить устойчивый поток квалифицированных лидов через органический трафик и контент-маркетинг.
+**OSS-продукт → разработчик деплоит клиенту за 15 минут → хостинг платит тебе.**
 
-**Timeline:** 90 дней до первых значимых результатов
+Разработчик не покупает «подписку на сервис» — он платит за инфраструктуру, которую всё равно пришлось бы арендовать. Психологически это другая категория расхода. Нет сопротивления «зачем мне платить чужому сервису».
 
-**Budget:** $0-500/мес (время на контент + инструменты)
-
-**Сайт:** [tg-paywall.sotajs.dev](https://tg-paywall.sotajs.dev)
+MRR растёт не от одного клиента — от каждого проекта каждого разработчика. Один фрилансер с 5 клиентами = 5× дохода.
 
 ---
 
-## 🎯 Target Audience (ICP - Ideal Customer Profile)
+## Целевая аудитория (ICP)
 
-### Primary: Expert Community Owners
+### Primary: Фрилансер / Малое агентство
 
-| Characteristic | Details |
-|----------------|---------|
-| **Role** | Владелец Telegram-канала, эксперт, блогер |
-| **Revenue** | $3K-50K/мес от сообщества |
-| **Pain Points** | Ручная проверка оплат, утечки доступа, время на администрирование |
-| **Goals** | Автоматизация, рост дохода, фокус на контенте |
-| **Channels** | Telegram, VC.ru, Habr, LinkedIn |
+| Характеристика | Детали |
+|---|---|
+| **Роль** | Разработчик-фрилансер, берущий заказы на ботов |
+| **Доход** | $2K-10K/мес от фриланса |
+| **Боль** | Каждый «бот для закрытого канала» — это 20-40 часов с нуля |
+| **Цель** | Готовое решение, которое можно деплоить клиентам за час и брать деньги |
+| **Каналы** | GitHub, Dev.to, Habr, Reddit, Telegram-чаты разработчиков |
 
-### Secondary: Digital Agencies
+### Secondary: Indie-разработчик
 
-| Characteristic | Details |
-|----------------|---------|
-| **Role** | Веб-студии, маркетинговые агентства |
-| **Revenue** | $10K-100K/мес |
-| **Pain Points** | Нужен готовый solution для клиентов |
-| **Goals** | White-label решение, пассивный доход |
-| **Channels** | LinkedIn, профильные сообщества, сарафан |
-
----
-
-## 🔍 Keyword Strategy
-
-### Tier 1: High Intent (Transactional)
-
-| Keyword | Volume | Difficulty | Priority |
-|---------|--------|------------|----------|
-| "платный доступ Telegram" | 2.5K | Medium | 🔴 High |
-| "монетизация Telegram канала" | 8K | Medium | 🔴 High |
-| "бот для приёма оплат" | 3K | Low | 🔴 High |
-| "Telegram paywall" | 500 | Low | 🟡 Medium |
-| "платная подписка Telegram" | 1.5K | Medium | 🔴 High |
-
-### Tier 2: Informational (Top of Funnel)
-
-| Keyword | Volume | Difficulty | Priority |
-|---------|--------|------------|----------|
-| "как создать платный канал в Telegram" | 12K | High | 🟡 Medium |
-| "автоматизация Telegram сообщества" | 800 | Low | 🟢 Low |
-| "рекуррентные платежи Telegram" | 400 | Low | 🟢 Low |
-| "закрытый Telegram канал оплата" | 600 | Low | 🟢 Low |
-
-### Tier 3: Competitor Comparison
-
-| Keyword | Volume | Difficulty | Priority |
-|---------|--------|------------|----------|
-| "paywall.pw альтернатива" | 200 | Low | 🟡 Medium |
-| "Telegram бот оплата сравнение" | 150 | Low | 🟢 Low |
-| "сервис платных подписок" | 1K | Medium | 🟡 Medium |
+| Характеристика | Детали |
+|---|---|
+| **Роль** | Строит собственные продукты, micro-SaaS |
+| **Доход** | Начинающий, ищет первый MRR |
+| **Боль** | Нужна архитектура которая масштабируется, не хочет изобретать велосипед |
+| **Цель** | Fork → customize → запустить свой сервис |
+| **Каналы** | GitHub, Reddit, Twitter/X |
 
 ---
 
-## 📅 Content Calendar (90 Days)
+## SEO-стратегия для разработчиков
 
-### Month 1: Foundation
+### Tier 1: Прямой поиск (High Intent)
 
-#### Week 1-2: Core Pages
-- [ ] **Blog Post 1:** "Как монетизировать Telegram канал в 2026: Полное руководство"
-  - Target: "монетизация Telegram канала"
-  - Length: 3000+ слов
-  - Format: Ultimate Guide
-  
-- [ ] **Blog Post 2:** "Платный доступ в Telegram: 5 способов + сравнение"
-  - Target: "платный доступ Telegram"
-  - Length: 2000 слов
-  - Format: Comparison
+| Keyword | Lang | Est. Volume | Difficulty |
+|---|---|---|---|
+| `telegram bot payment integration` | EN | 1.5K | Low |
+| `telegram paywall open source` | EN | 300 | Low |
+| `how to build telegram subscription bot` | EN | 2K | Medium |
+| `бот для закрытого канала github` | RU | 500 | Low |
+| `telegram paywall bot github` | EN | 200 | Low |
+| `open source telegram membership bot` | EN | 400 | Low |
 
-#### Week 3-4: Case Studies
-- [ ] **Case Study 1:** "Product Management Community: $12K/мес с автоматизацией"
-  - Format: Interview + metrics
-  - Distribution: VC.ru, Telegram channels
-  
-- [ ] **Blog Post 3:** "Бот для приёма оплат: пошаговая настройка за 15 минут"
-  - Target: "бот для приёма оплат"
-  - Format: Tutorial with screenshots
+### Tier 2: Гайды под задачи клиентов (Informational)
 
-### Month 2: Authority Building
+| Keyword | Lang | Est. Volume | Difficulty |
+|---|---|---|---|
+| `как подключить Stripe к Telegram боту` | RU | 800 | Low |
+| `telegram channel subscription bot stripe` | EN | 600 | Low |
+| `закрытый канал с автоматической оплатой` | RU | 1K | Medium |
+| `рекуррентные платежи в Telegram — готовое решение` | RU | 400 | Low |
+| `how to monetize telegram channel for clients` | EN | 1.5K | Medium |
+| `telegram bot auto-kick expired subscription` | EN | 300 | Low |
 
-#### Week 5-6: Guest Posting
-- [ ] **Habr Article:** "Hexagonal Architecture для Telegram ботов"
-  - Target: Technical audience, backlinks
-  - Cross-post: VC.ru
-  
-- [ ] **Blog Post 4:** "Рекуррентные платежи в Telegram: Stripe vs ЮKassa vs Robokassa"
-  - Target: "рекуррентные платежи Telegram"
-  - Format: Deep comparison
+### Tier 3: Для фрилансеров (Business Case)
 
-#### Week 7-8: Video Content
-- [ ] **YouTube Video:** "Обзор TG Paywall: настройка за 20 минут"
-  - Format: Screen recording + voiceover
-  - Length: 15-20 минут
-  
-- [ ] **Blog Post 5:** "5 ошибок при монетизации Telegram канала"
-  - Target: "монетизация Telegram канала"
-  - Format: Listicle with examples
-
-### Month 3: Scale & Optimize
-
-#### Week 9-10: Link Building
-- [ ] **Podcast Appearance:** 2-3 подкаста про Telegram/маркетинг
-- [ ] **Community Posts:** 5-10 постов в профильных Telegram-чатах
-- [ ] **Blog Post 6:** "Закрытый Telegram канал: как организовать доступ"
-  - Target: "закрытый Telegram канал оплата"
-
-#### Week 11-12: Optimization
-- [ ] **A/B Test:** Hero headlines на лендинге
-- [ ] **Update:** Top 3 performing posts with fresh data
-- [ ] **Blog Post 7:** "Сравнение paywall-сервисов 2026: TG Paywall vs Paywall.pw vs другие"
-  - Target: Competitor keywords
+| Keyword | Lang | Est. Volume | Difficulty |
+|---|---|---|---|
+| `как продать клиенту Telegram paywall` | RU | 100 | Low |
+| `брендированный бот для эксперта — деплой за 15 минут` | RU | 50 | Low |
+| `telegram bot white label for clients` | EN | 400 | Low |
+| `freelance telegram bot development` | EN | 800 | Medium |
 
 ---
 
-## 📝 Content Distribution Strategy
+## Ключевой контентный актив — гайд
 
-### Owned Channels
+Для разработчика главная единица контента — **пошаговый гайд с кодом**, а не блог-пост.
 
-| Channel | Frequency | Content Type | Goal |
-|---------|-----------|--------------|------|
-| **Blog** | 2x/week | Long-form articles | SEO traffic |
-| **Email** | 1x/week | Newsletter | Nurture leads |
-| **Telegram** | Daily | Quick tips, updates | Community building |
+### Структура каждого гайда:
 
-### Earned Channels
+```
+1. Задача клиента (на языке клиента)
+   "Мне нужен бот который принимает оплату и даёт доступ в закрытый канал"
 
-| Channel | Frequency | Content Type | Goal |
-|---------|-----------|--------------|------|
-| **VC.ru** | 2x/month | Case studies | Backlinks, awareness |
-| **Habr** | 1x/month | Technical articles | Authority, dev audience |
-| **LinkedIn** | 3x/week | Professional updates | B2B leads |
-| **Twitter/X** | Daily | Quick thoughts | Network building |
+2. Как это решается через TG Paywall OSS
+   Краткий обзор: что делает продукт, архитектура
 
-### Paid Channels (Optional)
+3. Деплой — команды, скриншоты, время
+   git clone → configure → deploy (15 min)
 
-| Channel | Budget | Content Type | Goal |
-|---------|--------|--------------|------|
-| **Telegram Ads** | $200-500/mo | Sponsored posts | Direct signups |
-| **Google Ads** | $300-800/mo | Search ads | High-intent traffic |
+4. Что получает клиент в итоге
+   Скриншоты работающего бота, flow оплаты
 
----
+5. Сколько ты на этом зарабатываешь ← КРИТИЧНО
+   Setup fee: $300. Monthly: $75. 5 клиентов = $375/мес MRR.
+```
 
-## 🎁 Lead Magnets
+Последний пункт превращает гайд в **бизнес-кейс для разработчика**.
 
-### Primary: Free Trial
-- **Offer:** 14 дней бесплатно без карты
-- **Placement:** Hero CTA, exit-intent popup
-- **Expected CR:** 5-8%
+### Запланированные гайды:
 
-### Secondary: Checklist
-- **Title:** "Чек-лист: Готов ли ваш канал к монетизации?"
-- **Format:** PDF, 10 вопросов
-- **Placement:** Blog sidebar, content upgrade
-- **Expected CR:** 15-20%
-
-### Tertiary: Calculator
-- **Title:** "Калькулятор: Сколько вы теряете без автоматизации?"
-- **Format:** Interactive web tool
-- **Placement:** Dedicated landing page
-- **Expected CR:** 10-15%
+| # | Название | Target Keyword | Платформа |
+|---|---|---|---|
+| 1 | Deploy a Telegram Paywall for Your Client in 15 Minutes | `telegram paywall open source` | Dev.to, GitHub |
+| 2 | Connecting Stripe to a Telegram Bot (Step by Step) | `telegram bot stripe integration` | Dev.to, Habr |
+| 3 | Автоматическая оплата за закрытый канал: готовое OSS-решение | `закрытый канал автоматическая оплата` | Habr, VC.ru |
+| 4 | How to White-Label a Telegram Bot for Client Projects | `telegram bot white label` | Dev.to, Reddit |
+| 5 | Recurring Payments in Telegram: Open Source Solution | `рекуррентные платежи telegram` | Habr |
 
 ---
 
-## 📧 Email Nurture Sequence
+## Каналы дистрибуции
 
-### Welcome Series (5 emails)
+### GitHub (Первичная точка входа)
 
-**Day 0:** Welcome + Quick Start Guide
-- Subject: "Добро пожаловать! Начните здесь 🚀"
-- Content: 3-step setup guide
-- CTA: Connect first payment provider
+README = лендинг. Звёзды = социальное доказательство.
 
-**Day 2:** Value Proposition
-- Subject: "Почему 500+ сообществ выбрали нас"
-- Content: Social proof, key benefits
-- CTA: View case studies
+**Тактика:**
+- README продаёт ценность за 30 секунд ✅ (переписан)
+- `QUICK_START.md` даёт результат за 15 минут ✅ (создан)
+- Good first issues привлекают контрибьюторов
+- GitHub Topics: `telegram-bot`, `paywall`, `subscription`, `open-source`, `ddd`
+- GitHub Discussions для вопросов и use cases
 
-**Day 5:** Objection Handling
-- Subject: "Частые вопросы перед стартом"
-- Content: FAQ, security, pricing
-- CTA: Schedule demo call
+### Dev.to / Habr (Контент → Звёзды)
 
-**Day 10:** Urgency
-- Subject: "Ваш trial заканчивается через 4 дня"
-- Content: What they'll miss
-- CTA: Upgrade now
+Одна хорошая техническая статья = сотни звёзд на GitHub.
 
-**Day 14:** Last Chance
-- Subject: "Последний день бесплатного доступа"
-- Content: Special offer (10% off first month)
-- CTA: Upgrade with discount
+**Формат:** Технический tutorial с кодом, скриншотами, бизнес-кейсом.
 
-### Educational Series (Ongoing)
+**Частота:** 2 статьи/месяц, чередуя EN (Dev.to) и RU (Habr).
 
-**Weekly Newsletter:**
-- Monday: Industry news + TG Paywall angle
-- Wednesday: Tips & tricks
-- Friday: Customer spotlight
+### Reddit
 
----
+| Subreddit | Тип контента | Частота |
+|---|---|---|
+| r/TelegramBots | Анонс + гайды | 1x/мес |
+| r/opensource | Анонс проекта, milestone posts | При релизах |
+| r/SaaS | Бизнес-модель (hosting monetization) | 1x/мес |
+| r/freelance | «Как я зарабатываю на деплое ботов» | 1x |
 
-## 📊 Success Metrics
+### Telegram-чаты разработчиков
 
-### Traffic Metrics (Monthly)
+**Не** чаты экспертов. А чаты где сидят те, кто **берёт заказы** на ботов:
 
-| Metric | Month 1 | Month 3 | Month 6 |
-|--------|---------|---------|---------|
-| Organic sessions | 500 | 2,000 | 5,000 |
-| Referral sessions | 200 | 800 | 2,000 |
-| Bounce rate | <50% | <45% | <40% |
-| Avg. session | >2min | >2.5min | >3min |
+- Чаты по grammY / Telegraf
+- Фриланс-чаты для разработчиков
+- Node.js / TypeScript сообщества
 
-### Conversion Metrics
-
-| Metric | Target |
-|--------|--------|
-| Visitor → Trial | 5-8% |
-| Trial → Paid | 20-30% |
-| Demo request rate | 2-3% |
-| Email signup rate | 10-15% |
-
-### Content Metrics
-
-| Metric | Month 3 Target |
-|--------|----------------|
-| Blog posts published | 12 |
-| Avg. words per post | 2,000+ |
-| Backlinks earned | 50+ |
-| Social shares | 500+ |
-
-### Revenue Metrics
-
-| Metric | Month 6 Target |
-|--------|----------------|
-| MRR | $10,000 |
-| CAC (organic) | <$50 |
-| CAC (paid) | <$150 |
-| LTV | >$600 |
-| Churn | <5%/month |
+**Формат:** Не реклама, а полезный ответ на вопрос + ссылка на GitHub.
 
 ---
 
-## 🛠 Tools & Resources
+## Монетизация через хостинг
 
-### Essential (Free)
+### Позиционирование
 
-- **Google Analytics 4:** Traffic analytics
-- **Google Search Console:** SEO performance
-- **Google Trends:** Keyword research
-- **Canva:** Graphics for blog/social
-- **Grammarly:** Content editing
+> ❌ «Плати нам за хостинг»
+>
+> ✅ «Деплои на нашей инфраструктуре — $X/мес за инстанс. Своя инфраструктура — бесплатно, но сам поднимаешь Cloud Functions, базу, мониторинг.»
 
-### Paid (Month 2+)
+Большинство выберет managed hosting — потому что для разовых проектов поднимать инфраструктуру невыгодно.
 
-- **Ahrefs/SEMrush:** $99-199/mo (keyword research, backlinks)
-- **ConvertKit:** $29/mo (email marketing)
-- **Hotjar:** $39/mo (heatmaps, user behavior)
-- **Buffer:** $15/mo (social media scheduling)
+### Ценообразование (ориентир)
 
-### One-Time
-
-- **Logo/Branding:** $200-500 (Fiverr/Upwork)
-- **Website Copy:** $500-1000 (if outsourcing)
+| Tier | Включено | Цена |
+|---|---|---|
+| **Starter** | 1 бот, SQLite, shared infra | $9/мес |
+| **Pro** | 1 бот, PostgreSQL, dedicated, backups | $29/мес |
+| **Agency** | До 10 ботов, priority support | $99/мес |
 
 ---
 
-## 🚀 Launch Checklist
+## Метрики успеха
 
-### Pre-Launch (Week 0)
+### Primary (30 дней)
 
-- [ ] Analytics installed (GA4, Yandex Metrica)
-- [ ] Search Console submitted
-- [ ] Social profiles created
-- [ ] Email sequences written
-- [ ] First 3 blog posts published
+| Метрика | Target |
+|---|---|
+| GitHub stars | 100+ |
+| README → Quick Start click-through | 20%+ |
+| First external deploy | 1+ (proof of concept) |
 
-### Launch Week (Week 1)
+### Secondary (90 дней)
 
-- [ ] Product Hunt launch
-- [ ] VC.ru article published
-- [ ] Telegram channel announcements (10+)
-- [ ] Personal network outreach (50+ DMs)
-- [ ] LinkedIn announcement
+| Метрика | Target |
+|---|---|
+| GitHub stars | 500+ |
+| Dev.to/Habr views (total) | 10K+ |
+| Managed hosting signups | 10+ |
+| MRR (hosting) | $200+ |
+| Community contributors | 3+ |
 
-### Post-Launch (Week 2-4)
+### Long-term (6 мес)
 
-- [ ] Guest post pitches (20+ outlets)
-- [ ] Podcast outreach (10+ shows)
-- [ ] Community engagement (daily)
-- [ ] Content calendar execution
-
----
-
-## 📈 Weekly Routine
-
-### Monday: Planning & Analysis
-- Review last week's metrics (30 min)
-- Plan content for the week (30 min)
-- Respond to weekend inquiries (30 min)
-
-### Tuesday: Content Creation
-- Write blog post (2-3 hours)
-- Create social media graphics (1 hour)
-
-### Wednesday: Distribution
-- Share blog post on all channels (1 hour)
-- Engage with comments/messages (1 hour)
-- Outreach for guest posts (1 hour)
-
-### Thursday: Content Creation
-- Write second blog post or case study (2-3 hours)
-- Record video content if planned (1 hour)
-
-### Friday: Community & Optimization
-- Engage in Telegram communities (1 hour)
-- A/B test landing page elements (30 min)
-- Plan next week (30 min)
-
-### Weekend: Passive
-- Auto-schedule social posts
-- Monitor for urgent issues
+| Метрика | Target |
+|---|---|
+| GitHub stars | 2K+ |
+| Active deployed instances | 50+ |
+| MRR (hosting) | $2K+ |
+| Developer community size | 100+ |
 
 ---
 
-*Created: March 21, 2026*
-*Review Date: June 21, 2026*
+## Что делаем прямо сейчас (Phase 1)
+
+- [x] README на GitHub — ценность за 30 секунд
+- [x] Quick Start — разработчик запускает инстанс за 15 минут
+- [x] Контентная стратегия (этот документ)
+- [ ] Первый гайд на Dev.to: «Deploy a Telegram Paywall in 15 Minutes»
+- [ ] Скрипт деплоя который реально работает в один клик
+- [ ] GitHub Topics + Description + Social preview image
+
+---
+
+*Обновлено: 21 марта 2026*
+*Ревизия: v2.0 — Developer Hub Pivot*

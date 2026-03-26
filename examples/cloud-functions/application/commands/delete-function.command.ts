@@ -2,13 +2,15 @@ import { z } from "zod";
 import { usePort } from "../../../../lib";
 import { CloudFunction } from "../../domain/function.aggregate";
 import { deleteFunctionPort, getFunctionPort, loggerPort } from "../ports";
+import { getProfilePort } from "../../infrastructure/ports/identity.ports";
 
 /**
  * Command: Delete a cloud function
  */
 
 const DeleteFunctionInputSchema = z.object({
-  functionId: z.string().uuid(),
+  functionId: z.string().min(1),
+  profileName: z.string().optional(),
 });
 
 type DeleteFunctionInput = z.infer<typeof DeleteFunctionInputSchema>;
@@ -25,9 +27,22 @@ export const deleteFunctionCommand = async (
   const deleteFunction = usePort(deleteFunctionPort);
   const getFunction = usePort(getFunctionPort);
   const logger = usePort(loggerPort);
+  const getProfile = usePort(getProfilePort);
+
+  let cloudConfig: { oauthToken: string; folderId: string } | undefined;
+
+  if (command.profileName) {
+    const profile = await getProfile(command.profileName);
+    if (profile) {
+      cloudConfig = { oauthToken: profile.oauthToken, folderId: profile.folderId };
+    }
+  }
 
   // Get function metadata
-  const funcData = await getFunction({ functionId: command.functionId });
+  const funcData = await getFunction({ 
+    functionId: command.functionId,
+    cloudConfig 
+  });
 
   if (!funcData) {
     await logger({
@@ -70,7 +85,10 @@ export const deleteFunctionCommand = async (
   func.actions.markForDeletion();
 
   // Delete function
-  const result = await deleteFunction({ functionId: command.functionId });
+  const result = await deleteFunction({ 
+    functionId: command.functionId,
+    cloudConfig
+  });
 
   if (result.success) {
     await logger({

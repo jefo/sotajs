@@ -9,5 +9,11 @@ export * from './adapters/prodamus-payment.adapter';
 export * from './adapters/yookassa-payment.adapter';
 export * from './adapters/stripe-payment.adapter';
 export * from './adapters/robokassa-payment.adapter';
+export * from './adapters/cloud-deployment.adapter';
 export * from './network-interceptor';
+
+// Yandex Cloud PostgreSQL адаптеры
+export * from "./adapters/yandex-postgres-plan.adapter";
+export * from "./adapters/yandex-postgres-subscription.adapter";
+export * from "./adapters/yandex-postgres-template.adapter";
 

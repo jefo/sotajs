@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { usePort } from "../../../../lib";
 import { FunctionDto, listFunctionsPort, loggerPort } from "../ports";
+import { getProfilePort } from "../../infrastructure/ports/identity.ports";
 
 /**
  * Query: List cloud functions with optional filtering
@@ -9,6 +10,7 @@ import { FunctionDto, listFunctionsPort, loggerPort } from "../ports";
 const ListFunctionsInputSchema = z.object({
   folderId: z.string().optional(),
   status: z.enum(["creating", "active", "error", "deleting"]).optional(),
+  profileName: z.string().optional(),
 });
 
 type ListFunctionsInput = z.infer<typeof ListFunctionsInputSchema>;
@@ -25,6 +27,16 @@ export const listFunctionsQuery = async (
 
   const listFunctions = usePort(listFunctionsPort);
   const logger = usePort(loggerPort);
+  const getProfile = usePort(getProfilePort);
+
+  let cloudConfig: { oauthToken: string; folderId: string } | undefined;
+
+  if (query.profileName) {
+    const profile = await getProfile(query.profileName);
+    if (profile) {
+      cloudConfig = { oauthToken: profile.oauthToken, folderId: profile.folderId };
+    }
+  }
 
   await logger({
     level: "info",
@@ -38,6 +50,7 @@ export const listFunctionsQuery = async (
   const result = await listFunctions({
     folderId: query.folderId,
     status: query.status,
+    cloudConfig
   });
 
   await logger({

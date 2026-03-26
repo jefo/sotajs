@@ -2,9 +2,10 @@ import { z } from "zod";
 import { usePort } from "../../../../lib";
 import { CloudFunction } from "../../domain/function.aggregate";
 import { deployFunctionPort, loggerPort } from "../ports";
+import { getProfilePort } from "../../infrastructure/ports/identity.ports";
 
 /**
- * Command: Deploy a cloud function
+ * Command: Deploy a cloud function using a profile (Control Plane Logic)
  */
 
 const DeployFunctionInputSchema = z.object({
@@ -13,14 +14,18 @@ const DeployFunctionInputSchema = z.object({
   entrypoint: z.string().min(1),
   memory: z.number().refine((m) => m >= 128 && m <= 4096, "Memory must be 128-4096 MB"),
   executionTimeout: z.number().refine((t) => t >= 1 && t <= 600, "Timeout must be 1-600 seconds"),
-  code: z.string().min(1, "Code cannot be empty"),
+  sourcePath: z.string().min(1, "Source path cannot be empty"),
+  code: z.string().optional(), // Optional - for inline code (future feature)
   environment: z.record(z.string()).optional(),
+  serviceAccountId: z.string().optional(),
+  makePublic: z.boolean().optional(),
+  profileName: z.string().optional(),
 });
 
 type DeployFunctionInput = z.infer<typeof DeployFunctionInputSchema>;
 
 type DeployFunctionResult =
-  | { success: true; functionId: string; version: string }
+  | { success: true; functionId: string; version: string; url?: string }
   | { success: false; error: string };
 
 export const deployFunctionCommand = async (
@@ -30,69 +35,38 @@ export const deployFunctionCommand = async (
 
   const deployFunction = usePort(deployFunctionPort);
   const logger = usePort(loggerPort);
+  const getProfile = usePort(getProfilePort);
 
-  await logger({
-    level: "info",
-    message: `Deploying function '${command.name}'`,
-    context: {
-      runtime: command.runtime,
-      memory: command.memory,
-      timeout: command.executionTimeout,
-    },
-  });
+  let cloudConfig: { oauthToken?: string; serviceAccountKey?: string; folderId: string } | undefined;
 
-  // Deploy function via infrastructure
+  if (command.profileName) {
+    const profile = await getProfile(command.profileName);
+    if (profile) {
+      cloudConfig = {
+        oauthToken: profile.oauthToken,
+        serviceAccountKey: profile.serviceAccountKey,
+        folderId: profile.folderId,
+      };
+    }
+  }
+
+  // Деплой через инфраструктуру
   const result = await deployFunction({
-    name: command.name,
-    runtime: command.runtime,
-    entrypoint: command.entrypoint,
-    memory: command.memory,
-    executionTimeout: command.executionTimeout,
-    code: command.code,
-    environment: command.environment,
+    ...command,
+    cloudConfig,
   });
 
   if (result.success) {
-    // Create domain aggregate for tracking
-    const func = CloudFunction.create({
-      id: result.functionId,
-      name: command.name,
-      runtime: command.runtime,
-      entrypoint: command.entrypoint,
-      memory: command.memory,
-      executionTimeout: command.executionTimeout,
-      code: command.code,
-      status: "active",
-      version: result.version,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Emit deployment event
-    func.actions.deploy(command.code, result.version);
-    const events = func.getPendingEvents();
-
-    for (const event of events) {
-      await logger({
-        level: "info",
-        message: `Domain event: ${event.constructor.name}`,
-        context: { aggregateId: event.aggregateId },
-      });
-    }
-
+    // В будущем здесь можно добавить сохранение метаданных деплоя в локальную БД SotaJS
     await logger({
       level: "info",
-      message: `Function deployed successfully`,
-      context: {
-        functionId: result.functionId,
-        version: result.version,
-      },
+      message: `Function '${command.name}' is LIVE!`,
+      context: { url: result.url },
     });
   } else {
     await logger({
       level: "error",
-      message: `Function deployment failed: ${result.error}`,
-      context: { functionName: command.name },
+      message: `Deployment failed: ${result.error}`,
     });
   }
 

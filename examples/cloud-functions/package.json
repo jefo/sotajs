@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@yandex-cloud/nodejs-sdk": "^2.9.1",
+    "grammy": "^1.21.1",
     "zod": "^4.1.9"
   },
   "devDependencies": {

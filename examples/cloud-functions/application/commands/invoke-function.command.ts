@@ -6,6 +6,7 @@ import {
   invokeFunctionPort,
   loggerPort,
 } from "../ports";
+import { getProfilePort } from "../../infrastructure/ports/identity.ports";
 
 /**
  * Command: Invoke a cloud function
@@ -14,6 +15,7 @@ import {
 const InvokeFunctionInputSchema = z.object({
   functionId: z.string().uuid(),
   payload: z.object({}).passthrough().optional(),
+  profileName: z.string().optional(),
 });
 
 type InvokeFunctionInput = z.infer<typeof InvokeFunctionInputSchema>;
@@ -30,9 +32,22 @@ export const invokeFunctionCommand = async (
   const invokeFunction = usePort(invokeFunctionPort);
   const getFunction = usePort(getFunctionPort);
   const logger = usePort(loggerPort);
+  const getProfile = usePort(getProfilePort);
+
+  let cloudConfig: { oauthToken: string; folderId: string } | undefined;
+
+  if (command.profileName) {
+    const profile = await getProfile(command.profileName);
+    if (profile) {
+      cloudConfig = { oauthToken: profile.oauthToken, folderId: profile.folderId };
+    }
+  }
 
   // Get function metadata
-  const funcData = await getFunction({ functionId: command.functionId });
+  const funcData = await getFunction({ 
+    functionId: command.functionId,
+    cloudConfig 
+  });
 
   if (!funcData) {
     await logger({
@@ -59,6 +74,7 @@ export const invokeFunctionCommand = async (
   const result = await invokeFunction({
     functionId: command.functionId,
     payload: command.payload,
+    cloudConfig,
   });
 
   if (result.success) {

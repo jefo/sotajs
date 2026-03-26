@@ -1,71 +1,5 @@
 import { createPort } from "../../../../lib";
 
-/**
- * Ports: Contracts for cloud functions infrastructure
- */
-
-// ============================================================================
-// Command Ports
-// ============================================================================
-
-/**
- * Deploy a function to Yandex Cloud
- */
-export const deployFunctionPort = createPort<
-  (input: DeployFunctionInput) => DeployFunctionResult
->();
-
-/**
- * Invoke a function
- */
-export const invokeFunctionPort = createPort<
-  (input: InvokeFunctionInput) => InvokeFunctionResult
->();
-
-/**
- * Delete a function
- */
-export const deleteFunctionPort = createPort<
-  (input: DeleteFunctionInput) => DeleteFunctionResult
->();
-
-// ============================================================================
-// Query Ports
-// ============================================================================
-
-/**
- * Get function metadata
- */
-export const getFunctionPort = createPort<
-  (input: GetFunctionInput) => FunctionDto | null
->();
-
-/**
- * List functions with optional filtering
- */
-export const listFunctionsPort = createPort<
-  (input: ListFunctionsInput) => ListFunctionsResult
->();
-
-// ============================================================================
-// Utility Ports
-// ============================================================================
-
-/**
- * Logger port
- */
-export const loggerPort = createPort<
-  (input: {
-    level: "info" | "warn" | "error";
-    message: string;
-    context?: Record<string, any>;
-  }) => void
->();
-
-// ============================================================================
-// Types
-// ============================================================================
-
 export type FunctionDto = {
   id: string;
   name: string;
@@ -79,48 +13,107 @@ export type FunctionDto = {
   version: string;
   createdAt: Date;
   updatedAt: Date;
+  url?: string; // Публичный URL функции
 };
+
+/**
+ * Port: Deploy a cloud function
+ */
+
 export type DeployFunctionInput = {
   name: string;
   runtime: FunctionDto["runtime"];
-  entrypoint: string;
-  memory: number;
-  executionTimeout: number;
-  code: string;
+  entrypoint: string; // e.g. "index.handler"
+  sourcePath: string; // Путь к исходному файлу (например, "./index.ts")
+  memory: number; // in MB
+  executionTimeout: number; // in seconds
   environment?: Record<string, string>;
+  serviceAccountId?: string;
+  makePublic?: boolean;
+  cloudConfig?: {
+    oauthToken: string;
+    folderId: string;
+  };
 };
 
 export type DeployFunctionResult =
-  | { success: true; functionId: string; version: string }
+  | { success: true; functionId: string; version: string; url?: string }
   | { success: false; error: string };
+
+export const deployFunctionPort = createPort<(input: DeployFunctionInput) => DeployFunctionResult>();
+
+/**
+ * Port: Invoke a cloud function
+ */
 
 export type InvokeFunctionInput = {
   functionId: string;
   payload?: Record<string, any>;
+  cloudConfig?: {
+    oauthToken: string;
+    folderId: string;
+  };
 };
 
 export type InvokeFunctionResult =
   | { success: true; response: any; executionTime: number }
   | { success: false; error: string };
 
+export const invokeFunctionPort = createPort<(input: InvokeFunctionInput) => InvokeFunctionResult>();
+
+/**
+ * Port: Delete a cloud function
+ */
+
 export type DeleteFunctionInput = {
   functionId: string;
+  cloudConfig?: {
+    oauthToken: string;
+    folderId: string;
+  };
 };
 
 export type DeleteFunctionResult =
   | { success: true }
   | { success: false; error: string };
 
+export const deleteFunctionPort = createPort<(input: DeleteFunctionInput) => DeleteFunctionResult>();
+
+/**
+ * Port: Get function details
+ */
+
 export type GetFunctionInput = {
   functionId: string;
+  cloudConfig?: {
+    oauthToken: string;
+    folderId: string;
+  };
 };
+
+export const getFunctionPort = createPort<(input: GetFunctionInput) => FunctionDto | null>();
+
+/**
+ * Port: List functions
+ */
 
 export type ListFunctionsInput = {
   folderId?: string;
   status?: FunctionDto["status"];
+  cloudConfig?: {
+    oauthToken: string;
+    folderId: string;
+  };
 };
 
 export type ListFunctionsResult = {
   functions: FunctionDto[];
   totalCount: number;
 };
+
+export const listFunctionsPort = createPort<(input: ListFunctionsInput) => ListFunctionsResult>();
+
+/**
+ * Port: Logging
+ */
+export const loggerPort = createPort<(input: { level: 'info' | 'error' | 'warn'; message: string; context?: any }) => void>();

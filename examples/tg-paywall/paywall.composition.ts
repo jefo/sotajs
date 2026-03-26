@@ -22,6 +22,10 @@ import {
 	ConsoleLoggerAdapter,
 	CloudDeploymentAdapter,
 	setupNetworkInterceptor,
+	// PostgreSQL адаптеры для Yandex Cloud
+	YandexPostgresPlanAdapter,
+	YandexPostgresSubscriptionAdapter,
+	YandexPostgresTemplateAdapter,
 } from "./infrastructure";
 
 // Если включена симуляция сети - перехватываем fetch
@@ -41,20 +45,41 @@ export const core = defineCore({
 
 // ... (remaining code updated in next turns if needed)
 
-// Единая база данных для всего приложения
-const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
-console.log(`[STORAGE] Using database at: ${sqliteDbPath}`);
-const sharedDb = new Database(sqliteDbPath);
+/**
+ * Выбор типа базы данных: SQLite или PostgreSQL (Yandex Cloud).
+ * 
+ * Переключатель через переменную окружения DATABASE_TYPE:
+ * - "sqlite" (по умолчанию) - локальная SQLite БД
+ * - "postgres" - Yandex Managed PostgreSQL
+ */
+const databaseType = process.env.DATABASE_TYPE || "sqlite";
+
+if (databaseType === "postgres") {
+	console.log("[STORAGE] Using Yandex Managed PostgreSQL");
+	if (!process.env.DATABASE_URL) {
+		throw new Error(
+			"DATABASE_URL is required for PostgreSQL. Set it in environment variables."
+		);
+	}
+} else {
+	const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
+	console.log(`[STORAGE] Using SQLite database at: ${sqliteDbPath}`);
+}
 
 /**
- * Обертки адаптеров гарантируют использование единого экземпляра БД 
+ * Обертки адаптеров гарантируют использование единого экземпляра БД
  * и корректное связывание портов фичи с методами реализации.
  */
 
 class PlanAdapterWrapper {
-	private adapter: SqlitePlanAdapter;
+	private adapter: SqlitePlanAdapter | YandexPostgresPlanAdapter;
 	constructor() {
-		this.adapter = new SqlitePlanAdapter(sharedDb);
+		if (databaseType === "postgres") {
+			this.adapter = new YandexPostgresPlanAdapter();
+		} else {
+			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
+			this.adapter = new SqlitePlanAdapter(sharedDb);
+		}
 	}
 
 	async savePlan(input: { plan: any }): Promise<void> {
@@ -75,9 +100,14 @@ class PlanAdapterWrapper {
 }
 
 class SubscriptionAdapterWrapper {
-	private adapter: SqliteSubscriptionAdapter;
+	private adapter: SqliteSubscriptionAdapter | YandexPostgresSubscriptionAdapter;
 	constructor() {
-		this.adapter = new SqliteSubscriptionAdapter(sharedDb);
+		if (databaseType === "postgres") {
+			this.adapter = new YandexPostgresSubscriptionAdapter();
+		} else {
+			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
+			this.adapter = new SqliteSubscriptionAdapter(sharedDb);
+		}
 	}
 
 	async saveSubscription(input: { subscription: any }): Promise<void> {
@@ -211,9 +241,14 @@ class LoggerAdapterWrapper {
 }
 
 class TemplateAdapterWrapper {
-	private adapter: SqliteTemplateAdapter;
+	private adapter: SqliteTemplateAdapter | YandexPostgresTemplateAdapter;
 	constructor() {
-		this.adapter = new SqliteTemplateAdapter(sharedDb);
+		if (databaseType === "postgres") {
+			this.adapter = new YandexPostgresTemplateAdapter();
+		} else {
+			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
+			this.adapter = new SqliteTemplateAdapter(sharedDb);
+		}
 	}
 
 	async getTemplate(input: { key: string }): Promise<any> {

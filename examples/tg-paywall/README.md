@@ -1,106 +1,188 @@
-# 🚀 Telegram Paywall Service: The Professional Way to Monetize Communities
-
-**Infrastructure for expert-led recurring revenue, built with SotaJS & Hexagonal Architecture.**
-
-Этот проект — не просто пример бота. Это готовый архитектурный шаблон (Blueprints) для создания масштабируемых сервисов подписки в Telegram. Он создан для разработчиков, которые ценят чистоту кода, предсказуемость бизнес-логики и хотят предоставлять своим клиентам (экспертам и блогерам) решение уровня Enterprise.
-
----
-
-## 💎 Почему это соблазнительно для разработчика?
-
-### 1. "Write Once, Run Everywhere" (SotaJS Power)
-Ваша бизнес-логика (Use Cases) полностью изолирована. Сегодня это Telegram-бот на **grammY**, завтра — веб-интерфейс или Discord-бот. Вы меняете адаптеры, но не трогаете ядро.
-
-### 2. Богатая доменная модель (Rich Domain Model)
-Забудьте об "анемичных" базах данных. Агрегаты `Plan`, `Subscription` и `AccessGrant` сами следят за своими инвариантами. Нельзя активировать просроченную подписку. Нельзя выдать доступ без оплаты. Логика защищена на уровне кода, а не только тестами.
-
-### 3. CQRS — Чистое разделение
-Мы четко разделяем **Команды** (изменение состояния: `confirmPayment`) и **Запросы** (чтение: `listActiveSubscriptions`). Это делает систему невероятно легкой в отладке и масштабировании.
-
-### 4. VIP-Брендинг для ваших клиентов
-В отличие от дешевых конструкторов, эта архитектура позволяет каждому вашему клиенту иметь **собственного брендированного бота**, сохраняя при этом централизованное управление.
+<p align="center">
+  <h1 align="center">🔐 TG Paywall</h1>
+  <p align="center">
+    <strong>Open-source Telegram subscription bot. Deploy for your client in 15 minutes.</strong>
+  </p>
+  <p align="center">
+    <a href="#quick-start">Quick Start</a> •
+    <a href="docs/QUICK_START.md">Full Deploy Guide</a> •
+    <a href="#self-host-vs-managed">Hosting</a> •
+    <a href="#architecture">Architecture</a>
+  </p>
+</p>
 
 ---
 
-## 📢 Манифест дистрибуции: "Золотая Середина" (SaaS с кастомными токенами)
+**TG Paywall** handles the entire subscription lifecycle for private Telegram channels: payment → access → expiration → revoke. You deploy it, your client's audience pays, the bot does the rest.
 
-Мы официально выбираем модель **Variant C: SaaS with Custom Tokens**. Это стратегическое решение, которое дает лучшее из двух миров:
+```
+Expert posts in their channel → Subscriber clicks "Pay" → Bot confirms payment
+→ Bot grants access via invite link → Subscription expires → Bot revokes access
+```
 
-1.  **Централизованное Ядро**: Вся мощная бизнес-логика SotaJS крутится на одном сервере. Вам не нужно обновлять 100 разных инстансов кода.
-2.  **Индивидуальность (Whitelabel)**: Каждый эксперт подключает свой `BOT_TOKEN`. Пользователи видят бота именно этого эксперта (напр. `@IvanVIP_Bot`), а не безликий сервис.
-3.  **Единый Access Control**: Один воркер следит за всеми подписками во всех каналах, используя единые порты и адаптеры.
+## Why TG Paywall
 
-**Это идеальная модель для продажи**: Вы продаете эксперту не "код", а "сервис", где он остается владельцем своего бренда в Telegram.
+| For You (Developer) | For Your Client (Expert/Blogger) |
+|---|---|
+| Open source — inspect every line, fork, extend | Own branded bot (`@TheirName_Bot`) |
+| One codebase, unlimited client projects | Zero admin work — everything automated |
+| Charge setup fee + monthly support | Professional paywall in minutes, not weeks |
+| Self-host free or use managed hosting | Supports Stripe, YooKassa, Robokassa, Prodamus |
 
----
+### The Business Case
 
-## 📁 Структура проекта
+You're a freelancer or agency. A client asks: *"I need a paid subscription bot for my Telegram channel."*
+
+Without TG Paywall: you build from scratch (20-40 hours), handle edge cases, maintain it forever.
+
+With TG Paywall: clone → configure → deploy. **Bill your client $300-500 for setup, $50-100/mo for support.** Your cost: 15 minutes + hosting.
+
+## Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/jefo/sotajs.git
+cd sotajs/examples/tg-paywall
+
+# 2. Install
+bun install
+
+# 3. Run simulation (no token needed)
+bun run index.ts
+
+# 4. Run real bot
+BOT_TOKEN=your_token ADMIN_ID=your_telegram_id bun run index.ts
+```
+
+That's it. The bot is running. [Full 15-minute deploy guide →](docs/QUICK_START.md)
+
+## Features
+
+- **🔒 Subscription Management** — Plans with configurable pricing, duration, and channel binding
+- **💳 Multi-Provider Payments** — Stripe, YooKassa, Robokassa, Prodamus (webhook-based)
+- **🔗 Secure Access** — One-time invite links via Join Requests (no link sharing exploits)
+- **⏰ Auto-Expiration** — Background worker finds expired subscriptions and revokes access
+- **🎨 White-Label** — Each client gets their own branded bot with customizable messages
+- **📝 Template Engine** — Admin customizes all bot messages (welcome, payment, expiration) in real-time
+- **📢 Marketing Kit** — Bot generates ready-to-post promotional messages with deep links
+- **🛡️ Admin Controls** — Manual revoke, ban, subscription management from the bot
+
+## Self-Host vs Managed
+
+| | Self-Host (Free) | Managed Hosting |
+|---|---|---|
+| **Cost** | $0 | $X/mo per instance |
+| **Setup** | You handle server, DB, monitoring | One-command deploy |
+| **Updates** | `git pull` | Automatic |
+| **Support** | Community (GitHub Issues) | Priority support |
+| **Best for** | Technical clients, cost-sensitive | Most client projects |
+
+> **Self-host** if you already have infrastructure or your client is technical.
+> **Managed** if you want to deploy and forget — most freelancers choose this because spinning up Cloud Functions + DB + monitoring for a single project isn't worth the overhead.
+
+## Architecture
+
+Built on **Hexagonal Architecture** (Ports & Adapters) with **DDD** and **CQRS**:
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Driving Adapters                  │
+│         grammY Bot  ·  Webhook Server               │
+├─────────────────────────────────────────────────────┤
+│                   Application Layer                 │
+│                                                     │
+│  Commands:                  Queries:                │
+│  · confirmPayment           · listPlans             │
+│  · createPlan               · findSubscription      │
+│  · subscribeUser            · checkAccess           │
+│  · revokeAccess             · listActive            │
+│  · revokeExpired            · getFormattedMessage    │
+├─────────────────────────────────────────────────────┤
+│                    Domain Layer                     │
+│                                                     │
+│  Aggregates:                                        │
+│  · Plan (pricing, duration, channel binding)        │
+│  · Subscription (lifecycle: pending→active→expired) │
+│  · AccessGrant (who has access to what)             │
+├─────────────────────────────────────────────────────┤
+│                   Driven Adapters                   │
+│       SQLite  ·  In-Memory  ·  Telegram API         │
+└─────────────────────────────────────────────────────┘
+```
+
+**Why this matters:**
+- Swap payment providers without touching business logic
+- Test everything with in-memory adapters (no DB, no API calls)
+- Add Discord/Slack access grants by implementing one adapter
 
 ```
 examples/tg-paywall/
-├── domain/                   # Rich Domain Models (Aggregates, Invariants)
-│   ├── plan.aggregate.ts     # Тарифные планы (мультиканальность)
-│   ├── subscription.ts       # Жизненный цикл оплаты
-│   └── access-grant.ts       # Access Control as a Domain Model
-│
-├── application/              # Pure Business Logic (CQRS)
-│   ├── commands/             # Запись (createPlan, confirmPayment, revoke)
-│   └── queries/              # Чтение (listPlans, findUserSubscription)
-│
-├── infrastructure/           # Ports & Adapters (The "Outer" Layer)
-│   ├── ports/                # Контракты (DB, Payment, Telegram API)
-│   └── adapters/
-│       ├── in-memory.ts      # Быстрый старт и тесты
-│       ├── grammy-bot.ts     # Реальный Driving Adapter на grammY
-│       └── telegram-bot.ts   # Виртуальная симуляция для демо
-│
-├── paywall.composition.ts    # Composition Root (Dependency Injection)
-├── paywall.test.ts           # 100% покрытие бизнес-правил
-└── index.ts                  # Точка входа (Real Bot vs Simulation)
+├── domain/                 # Rich Domain Models (Aggregates with invariants)
+├── application/
+│   ├── commands/           # Write operations (CQRS)
+│   ├── queries/            # Read operations (CQRS)
+│   ├── ports/              # Abstract contracts
+│   └── features/           # Feature groupings (DI)
+├── infrastructure/
+│   └── adapters/           # Concrete implementations
+├── paywall.composition.ts  # Composition Root (DI wiring)
+├── paywall.test.ts         # Black-box domain tests
+└── index.ts                # Entry point
 ```
 
----
+## Deployment Options
 
-## 🚀 Быстрый старт для профи
-
-### 1. Запуск реального бота
-Хотите проверить в деле? Создайте закрытый канал, добавьте туда бота админом с правами на управление ссылками и блокировку пользователей, затем запустите:
+### Option A: Long Polling (Development & Small Scale)
 ```bash
-BOT_TOKEN=your_token ADMIN_ID=your_id bun run examples/tg-paywall/index.ts
+BOT_TOKEN=xxx ADMIN_ID=123 bun run index.ts
 ```
 
-### 2. Запуск симуляции (без токена)
-Просто посмотрите, как работает архитектура в консоли:
+### Option B: Cloud Functions (Production)
+Use `handler.ts` as the entrypoint for serverless deployment (Yandex Cloud, AWS Lambda, Google Cloud Functions). Pay only for actual messages.
+
 ```bash
-bun run examples/tg-paywall/index.ts
+# Set webhook after deploy
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=<YOUR_FUNCTION_URL>"
 ```
 
+### Option C: Docker (Self-Host)
+```bash
+docker compose up -d  # Coming soon
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Runtime | [Bun](https://bun.sh) / Node.js 18+ |
+| Framework | [SotaJS](https://github.com/jefo/sotajs) (Hexagonal Architecture) |
+| Telegram | [grammY](https://grammy.dev) |
+| Database | SQLite (default) / PostgreSQL (production) |
+| Validation | [Zod](https://zod.dev) |
+| Architecture | DDD, CQRS, Ports & Adapters |
+
+## Contributing
+
+TG Paywall is open source under the MIT license. Contributions welcome:
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/stripe-adapter`)
+3. Write tests (`bun test`)
+4. Submit a PR
+
+**Good first issues:**
+- [ ] Docker Compose setup
+- [ ] PostgreSQL adapter
+- [ ] Stripe payment adapter (real, not mock)
+- [ ] Discord access grant adapter
+- [ ] i18n support
+
+## License
+
+MIT — use it for free, commercially, forever. No strings attached.
+
 ---
 
-## ☁️ Serverless Deployment (Cloud Functions)
-
-Этот проект идеально подходит для деплоя в облако как Cloud Function (Webhooks). Это позволяет не держать сервер запущенным 24/7 и платить только за реальные сообщения.
-
-### Как задеплоить:
-1.  **Точка входа**: Используйте файл `examples/tg-paywall/handler.ts`.
-2.  **Среда**: Выберите Node.js 18+.
-3.  **Переменные**: Установите `BOT_TOKEN` и `ADMIN_ID` в настройках функции.
-4.  **Webhook**: После деплоя вы получите URL. Зарегистрируйте его в Telegram:
-    `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<YOUR_FUNCTION_URL>`
-
-> **Важно для Prod**: Cloud Functions не имеют постоянной памяти. Чтобы данные не пропадали, замените `InMemoryPaywallAdapter` в `paywall.composition.ts` на реальный адаптер базы данных (PostgreSQL/MongoDB).
-
----
-
-## ✅ Реализованные сценарии (Use Cases)
-
-- [x] **Мультиканальность**: Один план = один конкретный канал (через `channelId`).
-- [x] **Smart Access**: Бот генерирует уникальные одноразовые ссылки через `confirmPaymentCommand`.
-- [x] **Admin Force**: Эксперт может вручную отозвать доступ и забанить нарушителя прямо из бота.
-- [x] **Auto-Expiration**: Воркер находит просроченные подписки и автоматически очищает каналы.
-
----
-
-**TG Paywall Service** — это ваш фундамент для создания прибыльного SaaS-бизнеса в экосистеме Telegram. Начните с архитектуры, которая не подведет.
-
-*Powered by [SotaJS](https://github.com/maxdev1/sotajs)*
+<p align="center">
+  <sub>Built with <a href="https://github.com/jefo/sotajs">SotaJS</a> · Hexagonal Architecture · DDD · CQRS</sub>
+</p>
