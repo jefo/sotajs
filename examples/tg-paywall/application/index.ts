@@ -4,6 +4,7 @@ export * from "./commands/confirm-payment.command";
 export * from "./commands/revoke-expired-subscriptions.command";
 export * from "./commands/revoke-access.command";
 export * from "./commands/update-template.command";
+export * from "./commands/reset-template.command";
 
 export * from "./queries/list-plans.query";
 export * from "./queries/find-subscription-by-user-id.query";
@@ -18,8 +19,8 @@ export * from "./features/payment.feature";
 export * from "./features/telegram.feature";
 export * from "./features/logging.feature";
 export * from "./features/messaging.feature";
-export * from "./features/deployment.feature"; // NEW
+export * from "./features/deployment.feature";
 
 // Export ports
 export * from "./ports/paywall.ports";
-export * from "./ports/deployment.port"; // NEW
+export * from "./ports/deployment.port";

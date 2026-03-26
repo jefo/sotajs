@@ -5,15 +5,16 @@ service: tg-paywall
 provider:
   name: yandex
   runtime: nodejs18
-  memorySize: 128
+  memorySize: 256
   timeout: 10s
   folderId: b1gg3n3v1rr41aqh30o9
   oauthToken: ${env:YC_OAUTH_TOKEN}
 
 functions:
   bot:
-    handler: dist/minimal-bot.js
+    handler: dist/primary-bot.js
     name: tg-paywall-bot
     entrypoint: index.handler
     environment:
       BOT_TOKEN: ${env:BOT_TOKEN}
+      ADMIN_ID: ${env:ADMIN_ID}

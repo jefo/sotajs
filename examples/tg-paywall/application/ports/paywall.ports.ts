@@ -99,4 +99,5 @@ export type MessageTemplateDto = {
 
 export const getTemplatePort = createPort<(input: { key: string }) => MessageTemplateDto | null>();
 export const saveTemplatePort = createPort<(input: { key: string; content: string }) => void>();
+export const updateTemplatePort = createPort<(input: { key: string; content: string }) => void>();
 export const deleteTemplatePort = createPort<(input: { key: string }) => void>(); // Для сброса к дефолту
