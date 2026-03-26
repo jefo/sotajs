@@ -15,7 +15,7 @@ const DeployFunctionInputSchema = z.object({
   memory: z.number().refine((m) => m >= 128 && m <= 4096, "Memory must be 128-4096 MB"),
   executionTimeout: z.number().refine((t) => t >= 1 && t <= 600, "Timeout must be 1-600 seconds"),
   sourcePath: z.string().min(1, "Source path cannot be empty"),
-  environment: z.record(z.string()).optional(),
+  environment: z.record(z.string(), z.string()).optional(),
   serviceAccountId: z.string().optional(),
   makePublic: z.boolean().optional(),
   profileName: z.string().optional(),

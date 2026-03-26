@@ -4,7 +4,6 @@ export * from "./commands/confirm-payment.command";
 export * from "./commands/revoke-expired-subscriptions.command";
 export * from "./commands/revoke-access.command";
 export * from "./commands/update-template.command";
-export * from "./commands/deploy-cloud-function.command"; // NEW
 
 export * from "./queries/list-plans.query";
 export * from "./queries/find-subscription-by-user-id.query";

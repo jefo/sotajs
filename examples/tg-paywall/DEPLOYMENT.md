@@ -27,54 +27,129 @@ https://oauth.yandex.ru/authorize?response_type=token&client_id=1a699f511260fe65
 ### 3. Payment Provider (опционально)
 
 Для демонстрационной платежки:
-- `PAYMENT_SIGNING_SECRET` - Секрет для подписи webhook'ов (по умолчанию: `demo_secret_123`)
+- `PAYMENT_SIGNING_SECRET` - Секрет для подписи webhook'ов
 
-## 🚀 Deployment Options
+## 🚀 Deployment (Configuration-Driven)
 
-### Option 1: Simple Deploy (sota-deploy)
+### Step 1: Configuration
 
-**Quick deployment using built-in CLI:**
+Файл `sota.yml` уже создан в корне проекта:
 
-```bash
-# 1. Build bot
-bun build examples/tg-paywall/handler.ts --target node --minify --outfile dist/bot.js
+```yaml
+service: tg-paywall
 
-# 2. Deploy bot
-bun run examples/cloud-functions/sota-deploy.ts dist/bot.js \
-  --name=tg-paywall-bot \
-  --folder=$YC_FOLDER_ID \
-  --token=$YC_OAUTH_TOKEN \
-  --env=BOT_TOKEN=$BOT_TOKEN \
-  --env=ADMIN_ID=$ADMIN_ID \
-  --memory=256
+provider:
+  name: yandex
+  runtime: nodejs18
+  memorySize: 256
+  timeout: 10s
+  folderId: ${env:YC_FOLDER_ID}
+  oauthToken: ${env:YC_OAUTH_TOKEN}
 
-# 3. Build payment handler
-bun build examples/tg-paywall/payment-handler.ts --target node --minify --outfile dist/payment.js
+functions:
+  bot:
+    handler: dist/bot.js
+    name: tg-paywall-bot
+    environment:
+      BOT_TOKEN: ${env:BOT_TOKEN}
+      ADMIN_ID: ${env:ADMIN_ID}
 
-# 4. Deploy payment handler
-bun run examples/cloud-functions/sota-deploy.ts dist/payment.js \
-  --name=tg-paywall-payments \
-  --folder=$YC_FOLDER_ID \
-  --token=$YC_OAUTH_TOKEN \
-  --env=PAYMENT_SIGNING_SECRET=$PAYMENT_SECRET
+  payments:
+    handler: dist/payment.js
+    name: tg-paywall-payments
+    environment:
+      PAYMENT_SIGNING_SECRET: ${env:PAYMENT_SIGNING_SECRET}
 ```
 
-### Option 2: Full Deploy Script
-
-**Automated deployment with webhook setup:**
+### Step 2: Build
 
 ```bash
-BOT_TOKEN=xxx YC_OAUTH_TOKEN=yyy YC_FOLDER_ID=zzz ADMIN_ID=123 bun run examples/tg-paywall/scripts/deploy.ts
+cd examples/tg-paywall
+
+# Build bot handler
+bun build handler.ts --target node --minify --outfile dist/bot.js
+
+# Build payment handler
+bun build payment-handler.ts --target node --minify --outfile dist/payment.js
 ```
 
-Этот скрипт:
-- Инициализирует облачное окружение (Step 0)
-- Деплоит обе функции
-- Автоматически настраивает Telegram webhook
+### Step 3: Deploy
+
+```bash
+# Set environment variables
+export BOT_TOKEN=123456:ABC-DEF1234
+export ADMIN_ID=789012
+export YC_OAUTH_TOKEN=y0_AgA...
+export YC_FOLDER_ID=b1g...
+export PAYMENT_SIGNING_SECRET=my_secret
+
+# Deploy all functions
+bun run ../cloud-functions/sota-deploy.ts
+```
+
+### Output
+
+```
+🚀 SotaJS Deploy
+
+==================================================
+📄 Config: sota.yml
+📦 Service: tg-paywall
+☁️  Provider: yandex
+
+──────────────────────────────────────────────────
+📦 Deploying: bot
+   Name: tg-paywall-bot
+   Handler: dist/bot.js
+   Runtime: nodejs18
+   Memory: 256 MB
+   Timeout: 10s
+   Environment:
+     BOT_TOKEN: 123456:...
+     ADMIN_ID: 789012
+✅ bot deployed successfully
+   Function ID: d4e...
+   Version: d4e...
+
+──────────────────────────────────────────────────
+📦 Deploying: payments
+✅ payments deployed successfully
+   Function ID: d4e...
+
+==================================================
+🎉 All 2 function(s) deployed successfully!
+```
+
+## 🔗 Webhook Setup
+
+### Telegram Webhook
+
+После деплоя настройте Telegram webhook:
+
+```bash
+# Get function URL from deployment output or Yandex Cloud Console
+FUNCTION_URL=https://d4e...functions.yandexcloud.net
+
+# Set webhook
+curl -X POST "https://api.telegram.org/bot$BOT_TOKEN/setWebhook?url=$FUNCTION_URL"
+```
+
+### Payment Webhook
+
+Настройте webhook в личном кабинете платежной системы:
+
+```
+URL: <PAYMENT_FUNCTION_URL>
+```
+
+Где `PAYMENT_FUNCTION_URL` - URL функции `tg-paywall-payments` из Yandex Cloud Console.
 
 ## 📦 Deployed Functions
 
-После деплоя вы получите:
+| Функция | Назначение | Webhook |
+|---------|-----------|---------|
+| `tg-paywall-bot` | Обработка сообщений Telegram | Автоматически (curl) |
+| `tg-paywall-payments` | Обработка платежей | Вручную (в кабинете) |
 
 | Функция | Назначение | Webhook |
 |---------|-----------|---------|

@@ -2,20 +2,12 @@
 /**
  * SotaJS CLI: Deploy Command
  *
- * Simple deployment tool for Yandex Cloud Functions
+ * Deploy functions to Yandex Cloud with sota.yml configuration
  *
  * Usage:
- *   sota deploy <function.js> --name=my-function --folder=<FOLDER_ID> --token=<YC_OAUTH_TOKEN>
- *
- * Options:
- *   --name        Function name (required)
- *   --folder      Yandex Cloud Folder ID (required)
- *   --token       Yandex OAuth Token (required, or set YC_OAUTH_TOKEN env)
- *   --runtime     Runtime version (default: nodejs18)
- *   --memory      Memory limit in MB (default: 128)
- *   --timeout     Execution timeout in seconds (default: 10)
- *   --env         Environment variables (format: KEY=value, can be repeated)
- *   --public      Make function public (default: true)
+ *   bun run sota-deploy.ts [options]
+ *   bun run sota-deploy.ts --function=bot
+ *   bun run sota-deploy.ts --config=./custom.yml
  */
 
 import { resetDI } from "../../lib";
@@ -24,7 +16,31 @@ import { deployFunctionCommand } from "./application/commands";
 import { YandexIdentityAdapter } from "./infrastructure/adapters/yandex-identity.adapter";
 import { YandexCloudAdapter } from "./infrastructure/adapters/yandex-cloud.adapter";
 import { YandexCloudCliAdapter } from "./infrastructure/adapters/yandex-cloud-cli.adapter";
-import { resolve } from "path";
+import { readFileSync, existsSync } from "fs";
+import { resolve, dirname, join } from "path";
+import YAML from "js-yaml";
+
+// Type definitions
+type SotaConfig = {
+  service: string;
+  provider: {
+    name: string;
+    runtime: string;
+    memorySize: number;
+    timeout: string | number;
+    folderId?: string;
+    oauthToken?: string;
+  };
+  functions: Record<string, {
+    handler?: string;
+    name: string;
+    entrypoint?: string;
+    environment?: Record<string, string>;
+    memory?: number;
+    timeout?: string | number;
+    runtime?: string;
+  }>;
+};
 
 function parseArgs(args: string[]): Record<string, string | boolean> {
   const result: Record<string, string | boolean> = {};
@@ -33,83 +49,148 @@ function parseArgs(args: string[]): Record<string, string | boolean> {
     if (arg.startsWith("--")) {
       const [key, value] = arg.slice(2).split("=");
       result[key] = value !== undefined ? value : true;
-    } else if (!arg.startsWith("-")) {
-      result["_"] = arg;
     }
   }
   
   return result;
 }
 
-function parseEnvVars(envStrings: string[]): Record<string, string> {
-  const env: Record<string, string> = {};
+function resolveEnvValue(value: string): string {
+  if (value.startsWith("${env:")) {
+    const envVar = value.match(/\$\{env:(\w+)\}/)?.[1];
+    if (envVar) {
+      return process.env[envVar] || "";
+    }
+  }
+  return value;
+}
+
+function loadConfig(configPath: string): SotaConfig {
+  const absolutePath = resolve(configPath);
   
-  for (const envStr of envStrings) {
-    const [key, ...valueParts] = envStr.split("=");
-    if (key && valueParts.length > 0) {
-      env[key] = valueParts.join("=");
+  if (!existsSync(absolutePath)) {
+    throw new Error(`Configuration file not found: ${absolutePath}`);
+  }
+  
+  const content = readFileSync(absolutePath, "utf-8");
+  const config = YAML.load(content) as SotaConfig;
+  
+  // Resolve environment variables
+  if (config.provider.oauthToken) {
+    config.provider.oauthToken = resolveEnvValue(config.provider.oauthToken);
+  }
+  if (config.provider.folderId) {
+    config.provider.folderId = resolveEnvValue(config.provider.folderId);
+  }
+  
+  for (const fn of Object.values(config.functions)) {
+    if (fn.environment) {
+      for (const [key, value] of Object.entries(fn.environment)) {
+        fn.environment[key] = resolveEnvValue(value);
+      }
     }
   }
   
-  return env;
+  return config;
+}
+
+function parseTimeout(timeout: string | number): number {
+  if (typeof timeout === "number") return timeout;
+  if (typeof timeout === "string") {
+    if (timeout.endsWith("s")) return parseInt(timeout.slice(0, -1));
+    return parseInt(timeout);
+  }
+  return 10;
+}
+
+async function deployFunctionFromConfig(
+  config: SotaConfig,
+  functionName: string,
+  baseDir: string
+) {
+  const fnConfig = config.functions[functionName];
+  if (!fnConfig) {
+    throw new Error(`Function '${functionName}' not found in config`);
+  }
+  
+  const provider = config.provider;
+  const sourcePath = fnConfig.handler 
+    ? resolve(baseDir, fnConfig.handler)
+    : resolve(baseDir, `${functionName}.js`);
+  
+  console.log(`📦 Deploying: ${functionName}`);
+  console.log(`   Name: ${fnConfig.name}`);
+  console.log(`   Handler: ${fnConfig.handler || "N/A"}`);
+  console.log(`   Runtime: ${fnConfig.runtime || provider.runtime}`);
+  console.log(`   Memory: ${fnConfig.memory || provider.memorySize} MB`);
+  console.log(`   Timeout: ${parseTimeout(fnConfig.timeout || provider.timeout)}s`);
+  
+  const environment = fnConfig.environment || {};
+  if (Object.keys(environment).length > 0) {
+    console.log(`   Environment:`);
+    for (const [key, value] of Object.entries(environment)) {
+      console.log(`     ${key}: ${value.slice(0, 10)}${value.length > 10 ? "..." : ""}`);
+    }
+  }
+  
+  try {
+    const runtimeValue = (fnConfig.runtime || provider.runtime) as "nodejs16" | "nodejs18" | "nodejs20" | "python39" | "python310" | "go121";
+    
+    const result = await deployFunctionCommand({
+      name: fnConfig.name,
+      profileName: "default",
+      runtime: runtimeValue,
+      entrypoint: fnConfig.entrypoint || "index.handler",
+      memory: fnConfig.memory || provider.memorySize,
+      executionTimeout: parseTimeout(fnConfig.timeout || provider.timeout),
+      makePublic: true,
+      sourcePath,
+      environment,
+    });
+    
+    return result;
+  } catch (error: any) {
+    throw error;
+  }
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  const parsed = parseArgs(args);
+  const args = parseArgs(process.argv.slice(2));
   
-  // Positional argument: function file
-  const functionFile = parsed["_"] as string;
+  // Config path
+  const configPath = (args["config"] as string) || "sota.yml";
+  const absoluteConfigPath = resolve(configPath);
+  const baseDir = dirname(absoluteConfigPath);
   
-  // Required options
-  const name = parsed["name"] as string;
-  const folderId = (parsed["folder"] as string) || process.env.YC_FOLDER_ID;
-  const oauthToken = (parsed["token"] as string) || process.env.YC_OAUTH_TOKEN;
-  
-  // Optional parameters
-  const runtime = (parsed["runtime"] as string) || "nodejs18";
-  const memory = parseInt(parsed["memory"] as string || "128");
-  const timeout = parseInt(parsed["timeout"] as string || "10");
-  const makePublic = parsed["public"] !== "false";
-  
-  // Environment variables
-  const envArgs = Array.isArray(parsed["env"]) 
-    ? parsed["env"] as string[]
-    : parsed["env"] 
-      ? [parsed["env"] as string]
-      : [];
-  const environment = parseEnvVars(envArgs);
-  
-  // Validation
-  if (!functionFile) {
-    console.error("❌ Error: Function file is required");
-    console.error("\nUsage: sota deploy <function.js> --name=my-function --folder=<FOLDER_ID> --token=<TOKEN>");
+  // Load configuration
+  let config: SotaConfig;
+  try {
+    config = loadConfig(configPath);
+    console.log("🚀 SotaJS Deploy\n");
+    console.log("=".repeat(50));
+    console.log(`📄 Config: ${configPath}`);
+    console.log(`📦 Service: ${config.service}`);
+    console.log(`☁️  Provider: ${config.provider.name}`);
+    console.log();
+  } catch (error: any) {
+    console.error(`❌ Error loading config: ${error.message}`);
     process.exit(1);
   }
   
-  if (!name) {
-    console.error("❌ Error: --name is required");
-    console.error("\nUsage: sota deploy <function.js> --name=my-function --folder=<FOLDER_ID> --token=<TOKEN>");
+  // Validate provider config
+  const provider = config.provider;
+  if (!provider.oauthToken && !process.env.YC_OAUTH_TOKEN) {
+    console.error("❌ Error: oauthToken required in provider or YC_OAUTH_TOKEN env");
+    process.exit(1);
+  }
+  if (!provider.folderId && !process.env.YC_FOLDER_ID) {
+    console.error("❌ Error: folderId required in provider or YC_FOLDER_ID env");
     process.exit(1);
   }
   
-  if (!folderId) {
-    console.error("❌ Error: --folder or YC_FOLDER_ID env is required");
-    console.error("\nUsage: sota deploy <function.js> --name=my-function --folder=<FOLDER_ID> --token=<TOKEN>");
-    process.exit(1);
-  }
-  
-  if (!oauthToken) {
-    console.error("❌ Error: --token or YC_OAUTH_TOKEN env is required");
-    console.error("\nUsage: sota deploy <function.js> --name=my-function --folder=<FOLDER_ID> --token=<TOKEN>");
-    process.exit(1);
-  }
-
-  // Resolve function file path
-  const sourcePath = resolve(functionFile);
-
-  console.log("🚀 SotaJS Deploy\n");
-  console.log("=".repeat(50));
+  // Use env vars as fallback
+  const oauthToken = provider.oauthToken || process.env.YC_OAUTH_TOKEN!;
+  const folderId = provider.folderId || process.env.YC_FOLDER_ID!;
   
   // Initialize core with adapters
   resetDI();
@@ -137,54 +218,94 @@ async function main() {
   });
   
   try {
-    // Deploy
-    console.log(`📦 Deploying: ${functionFile}`);
-    console.log(`   Name: ${name}`);
-    console.log(`   Runtime: ${runtime}`);
-    console.log(`   Memory: ${memory} MB`);
-    console.log(`   Timeout: ${timeout}s`);
-    console.log(`   Public: ${makePublic ? "yes" : "no"}`);
+    const startTime = Date.now();
+    const functionNames = args["function"] 
+      ? [(args["function"] as string)]
+      : Object.keys(config.functions);
     
-    if (Object.keys(environment).length > 0) {
-      console.log(`   Environment:`);
-      for (const [key, value] of Object.entries(environment)) {
-        console.log(`     ${key}: ${value.slice(0, 10)}${value.length > 10 ? "..." : ""}`);
+    const results: Array<{ name: string; success: boolean; functionId?: string; url?: string }> = [];
+    
+    for (const fnName of functionNames) {
+      console.log("─".repeat(50));
+      
+      try {
+        const result = await deployFunctionFromConfig(config, fnName, baseDir);
+        
+        if (result.success) {
+          console.log(`✅ ${fnName} deployed successfully`);
+          console.log(`   Function ID: ${result.functionId}`);
+          console.log(`   Version: ${result.version}`);
+          if (result.url) {
+            console.log(`   URL: ${result.url}`);
+          }
+          results.push({ name: fnName, success: true, functionId: result.functionId, url: result.url });
+        } else {
+          console.error(`❌ ${fnName} deployment failed: ${result.error}`);
+          results.push({ name: fnName, success: false });
+        }
+      } catch (error: any) {
+        console.error(`❌ ${fnName} deployment failed: ${error.message}`);
+        results.push({ name: fnName, success: false });
+      }
+      
+      console.log();
+    }
+    
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    
+    // Summary
+    console.log("=".repeat(50));
+    const successCount = results.filter(r => r.success).length;
+    const totalCount = results.length;
+    
+    if (successCount === totalCount) {
+      console.log(`🎉 All ${totalCount} function(s) deployed successfully in ${duration}s!`);
+    } else {
+      console.log(`⚠️  ${successCount}/${totalCount} functions deployed successfully`);
+    }
+    
+    console.log("\nDeployed functions:");
+    for (const result of results) {
+      if (result.success) {
+        console.log(`  ✅ ${result.name}: ${result.url || result.functionId}`);
+      } else {
+        console.log(`  ❌ ${result.name}: FAILED`);
+      }
+    }
+    
+    // Setup Telegram webhook if bot was deployed
+    const botResult = results.find(r => r.name === "bot" || r.name.includes("bot"));
+    if (botResult?.success && botResult.url) {
+      console.log("\n" + "=".repeat(50));
+      console.log("🔗 Setting up Telegram webhook...");
+      
+      const botToken = process.env.BOT_TOKEN;
+      if (botToken) {
+        try {
+          const webhookUrl = `https://api.telegram.org/bot${botToken}/setWebhook?url=${botResult.url}`;
+          const response = await fetch(webhookUrl);
+          const tgResult: any = await response.json();
+          
+          if (tgResult.ok) {
+            console.log("✅ Telegram webhook configured successfully!");
+            console.log(`   Webhook URL: ${botResult.url}`);
+          } else {
+            console.log(`⚠️  Failed to set webhook: ${tgResult.description}`);
+          }
+        } catch (error: any) {
+          console.log(`⚠️  Error setting webhook: ${error.message}`);
+        }
+      } else {
+        console.log("⚠️  BOT_TOKEN not set. Skipping webhook setup.");
+        console.log("   Set BOT_TOKEN env var to auto-configure webhook.");
       }
     }
     
     console.log();
     
-    const startTime = Date.now();
-    const result = await deployFunctionCommand({
-      name,
-      profileName: "default",
-      runtime,
-      entrypoint: "index.handler",
-      memory,
-      executionTimeout: timeout,
-      makePublic: makePublic,
-      sourcePath,
-      environment,
-    });
-    
-    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-    
-    if (!result.success) {
-      console.error(`❌ Deployment failed: ${result.error}`);
+    if (successCount < totalCount) {
       process.exit(1);
     }
-    
-    console.log("✅ Deployment successful!");
-    console.log(`   Duration: ${duration}s`);
-    console.log(`   Function ID: ${result.functionId}`);
-    console.log(`   Version: ${result.version}`);
-    
-    if (result.url) {
-      console.log(`   Public URL: ${result.url}`);
-    }
-    
-    console.log("\n" + "=".repeat(50));
-    console.log("🎉 Done!\n");
   } catch (error: any) {
     console.error("\n❌ Deployment failed");
     console.error(`Error: ${error.message}`);

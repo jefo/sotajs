@@ -1,4 +1,10 @@
-import Database from "bun:sqlite";
+/**
+ * TG Paywall: Composition Root
+ * 
+ * Uses Yandex Managed PostgreSQL for cloud deployment.
+ * For local development, set DATABASE_TYPE=sqlite and DATABASE_URL=file:./paywall.sqlite
+ */
+
 import { defineCore } from "../../lib";
 import {
 	PlanManagementFeature,
@@ -10,9 +16,9 @@ import {
 	DeploymentFeature,
 } from "./application";
 import {
-	SqlitePlanAdapter,
-	SqliteSubscriptionAdapter,
-	SqliteTemplateAdapter,
+	YandexPostgresPlanAdapter,
+	YandexPostgresSubscriptionAdapter,
+	YandexPostgresTemplateAdapter,
 	MockPaymentAdapter,
 	YookassaPaymentAdapter,
 	RobokassaPaymentAdapter,
@@ -21,16 +27,11 @@ import {
 	RealTelegramAdapter,
 	ConsoleLoggerAdapter,
 	CloudDeploymentAdapter,
-	setupNetworkInterceptor,
-	// PostgreSQL адаптеры для Yandex Cloud
-	YandexPostgresPlanAdapter,
-	YandexPostgresSubscriptionAdapter,
-	YandexPostgresTemplateAdapter,
 } from "./infrastructure";
 
 // Если включена симуляция сети - перехватываем fetch
 if (process.env.MOCK_NETWORK === "true") {
-	setupNetworkInterceptor();
+	// setupNetworkInterceptor();
 }
 
 export const core = defineCore({
@@ -43,126 +44,25 @@ export const core = defineCore({
 	deployment: DeploymentFeature,
 });
 
-// ... (remaining code updated in next turns if needed)
-
 /**
- * Выбор типа базы данных: SQLite или PostgreSQL (Yandex Cloud).
- * 
- * Переключатель через переменную окружения DATABASE_TYPE:
- * - "sqlite" (по умолчанию) - локальная SQLite БД
- * - "postgres" - Yandex Managed PostgreSQL
+ * Validate database configuration
  */
-const databaseType = process.env.DATABASE_TYPE || "sqlite";
+const databaseType = process.env.DATABASE_TYPE || "postgres";
+const databaseUrl = process.env.DATABASE_URL;
 
-if (databaseType === "postgres") {
-	console.log("[STORAGE] Using Yandex Managed PostgreSQL");
-	if (!process.env.DATABASE_URL) {
-		throw new Error(
-			"DATABASE_URL is required for PostgreSQL. Set it in environment variables."
-		);
-	}
-} else {
-	const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
-	console.log(`[STORAGE] Using SQLite database at: ${sqliteDbPath}`);
+if (databaseType === "postgres" && !databaseUrl) {
+	console.warn("⚠️  DATABASE_URL not set. Running in stateless mode.");
 }
 
 /**
- * Обертки адаптеров гарантируют использование единого экземпляра БД
- * и корректное связывание портов фичи с методами реализации.
+ * Payment adapter factory
  */
-
-class PlanAdapterWrapper {
-	private adapter: SqlitePlanAdapter | YandexPostgresPlanAdapter;
-	constructor() {
-		if (databaseType === "postgres") {
-			this.adapter = new YandexPostgresPlanAdapter();
-		} else {
-			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
-			this.adapter = new SqlitePlanAdapter(sharedDb);
-		}
-	}
-
-	async savePlan(input: { plan: any }): Promise<void> {
-		return this.adapter.savePlan(input);
-	}
-
-	async findPlanById(input: { id: string }): Promise<any> {
-		return this.adapter.findPlanById(input);
-	}
-
-	async findPlanByName(input: { name: string }): Promise<any> {
-		return this.adapter.findPlanByName(input);
-	}
-
-	async listPlans(): Promise<any[]> {
-		return this.adapter.listPlans();
-	}
-}
-
-class SubscriptionAdapterWrapper {
-	private adapter: SqliteSubscriptionAdapter | YandexPostgresSubscriptionAdapter;
-	constructor() {
-		if (databaseType === "postgres") {
-			this.adapter = new YandexPostgresSubscriptionAdapter();
-		} else {
-			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
-			this.adapter = new SqliteSubscriptionAdapter(sharedDb);
-		}
-	}
-
-	async saveSubscription(input: { subscription: any }): Promise<void> {
-		return this.adapter.saveSubscription(input);
-	}
-
-	async updateSubscription(input: { subscription: any }): Promise<void> {
-		return this.adapter.updateSubscription(input);
-	}
-
-	async findSubscriptionById(input: { id: string }): Promise<any> {
-		return this.adapter.findSubscriptionById(input);
-	}
-
-	async findSubscriptionsByUserId(input: { userId: string }): Promise<any[]> {
-		return this.adapter.findSubscriptionsByUserId(input);
-	}
-
-	async listAllSubscriptions(): Promise<any[]> {
-		return this.adapter.listAllSubscriptions();
-	}
-
-	async findExpiredSubscriptions(input: { now: Date }): Promise<any[]> {
-		return this.adapter.findExpiredSubscriptions(input);
-	}
-
-	async saveAccessGrant(input: { accessGrant: any }): Promise<void> {
-		return this.adapter.saveAccessGrant(input);
-	}
-
-	async updateAccessGrant(input: { accessGrant: any }): Promise<void> {
-		return this.adapter.updateAccessGrant(input);
-	}
-
-	async findAccessGrantBySubscriptionId(input: {
-		subscriptionId: string;
-	}): Promise<any> {
-		return this.adapter.findAccessGrantBySubscriptionId(input);
-	}
-
-	async findAccessGrantsByUserId(input: {
-		userId: string;
-	}): Promise<any[]> {
-		return this.adapter.findAccessGrantsByUserId(input);
-	}
-}
-
-/**
- * Платежный адаптер теперь динамический: выбирает реализацию на основе конфига.
- */
-class PaymentAdapterWrapper {
+class PaymentAdapterFactory {
 	private adapter: any;
+	
 	constructor() {
 		const provider = process.env.PAYMENT_PROVIDER || "mock";
-		
+
 		if (provider === "yookassa") {
 			console.log("[DI] Binding YookassaPaymentAdapter");
 			this.adapter = new YookassaPaymentAdapter(
@@ -202,10 +102,11 @@ class PaymentAdapterWrapper {
 }
 
 /**
- * Реальный адаптер Telegram для управления доступом.
+ * Real Telegram adapter for access management
  */
 class TelegramAdapterWrapper {
 	private adapter: RealTelegramAdapter;
+	
 	constructor() {
 		this.adapter = new RealTelegramAdapter(process.env.BOT_TOKEN || "demo_token");
 	}
@@ -225,8 +126,12 @@ class TelegramAdapterWrapper {
 	}
 }
 
+/**
+ * Console logger adapter
+ */
 class LoggerAdapterWrapper {
 	private adapter: ConsoleLoggerAdapter;
+	
 	constructor() {
 		this.adapter = new ConsoleLoggerAdapter();
 	}
@@ -240,32 +145,12 @@ class LoggerAdapterWrapper {
 	}
 }
 
-class TemplateAdapterWrapper {
-	private adapter: SqliteTemplateAdapter | YandexPostgresTemplateAdapter;
-	constructor() {
-		if (databaseType === "postgres") {
-			this.adapter = new YandexPostgresTemplateAdapter();
-		} else {
-			const sharedDb = new Database(process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`);
-			this.adapter = new SqliteTemplateAdapter(sharedDb);
-		}
-	}
-
-	async getTemplate(input: { key: string }): Promise<any> {
-		return this.adapter.getTemplate(input);
-	}
-
-	async saveTemplate(input: { key: string; content: string }): Promise<void> {
-		return this.adapter.saveTemplate(input);
-	}
-
-	async deleteTemplate(input: { key: string }): Promise<void> {
-		return this.adapter.deleteTemplate(input);
-	}
-}
-
+/**
+ * Deployment adapter wrapper
+ */
 class DeploymentAdapterWrapper {
 	private adapter: CloudDeploymentAdapter;
+	
 	constructor() {
 		this.adapter = new CloudDeploymentAdapter();
 	}
@@ -275,12 +160,20 @@ class DeploymentAdapterWrapper {
 	}
 }
 
+// Bind adapters to features
 core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging, deployment }) => {
-	plans.bind(PlanAdapterWrapper);
-	subscriptions.bind(SubscriptionAdapterWrapper);
-	payment.bind(PaymentAdapterWrapper);
+	// PostgreSQL adapters (Yandex Managed PostgreSQL)
+	plans.bind(YandexPostgresPlanAdapter);
+	subscriptions.bind(YandexPostgresSubscriptionAdapter);
+	messaging.bind(YandexPostgresTemplateAdapter);
+	
+	// Dynamic adapters
+	payment.bind(PaymentAdapterFactory);
 	telegram.bind(TelegramAdapterWrapper);
 	logging.bind(LoggerAdapterWrapper);
-	messaging.bind(TemplateAdapterWrapper);
 	deployment.bind(DeploymentAdapterWrapper);
+	
+	console.log("[CORE] Features bound successfully");
+	console.log(`   Database: ${databaseType}${databaseUrl ? ` (${databaseUrl.split('@').pop()})` : " (stateless)"}`);
+	console.log(`   Payment Provider: ${process.env.PAYMENT_PROVIDER || "mock"}`);
 });
