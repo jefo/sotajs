@@ -3,8 +3,7 @@ import { createPort } from "../../../../lib";
 export type CloudProfileDto = {
   name: string;
   folderId: string;
-  oauthToken?: string;      // Опционально
-  serviceAccountKey?: string; // Содержимое JSON-файла (для PRO-деплоя)
+  oauthToken?: string;
 };
 
 /**

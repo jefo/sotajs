@@ -17,10 +17,12 @@ import {
 	saveProfileCommand,
 	deployFunctionCommand,
 	deleteFunctionCommand,
+	initCloudCommand,
 } from "./application/commands";
 import { listFunctionsQuery } from "./application/queries";
 import { YandexIdentityAdapter } from "./infrastructure/adapters/yandex-identity.adapter";
 import { YandexCloudAdapter } from "./infrastructure/adapters/yandex-cloud.adapter";
+import { YandexCloudCliAdapter } from "./infrastructure/adapters/yandex-cloud-cli.adapter";
 import { join } from "path";
 
 async function runDemo() {
@@ -43,7 +45,7 @@ async function runDemo() {
 
 	// Initialize core with adapters
 	resetDI();
-	core.bindFeatures(({ cloudFunctions, identity }) => {
+	core.bindFeatures(({ cloudFunctions, identity, ycCli }) => {
 		identity.bind(
 			class extends YandexIdentityAdapter {
 				constructor() {
@@ -62,26 +64,34 @@ async function runDemo() {
 				}
 			},
 		);
+
+		ycCli.bind(YandexCloudCliAdapter);
 	});
+
+	// Step 0: Initialize cloud environment
+	console.log("🔧 Step 0: Initializing cloud environment...\n");
+	const initResult = await initCloudCommand({
+		oauthToken: OAUTH_TOKEN,
+		folderId: FOLDER_ID,
+		profileName: "demo-profile",
+		auto: true,
+	});
+
+	if (!initResult.success) {
+		console.log(`\n❌ Initialization failed: ${initResult.error}`);
+		console.log(`\n💡 Run 'bun run init.ts' first to set up your environment.\n`);
+		process.exit(1);
+	}
+
+	console.log();
 
 	const PROFILE_NAME = "demo-profile";
 	const FUNCTION_NAME = `sotajs-demo-${Date.now().toString().slice(-6)}`;
-	const SOURCE_PATH = join(process.cwd(), "examples/demo-project/index.ts");
+	const SOURCE_PATH = join(process.cwd(), "examples/cloud-functions/examples/demo-project/index.ts");
 
 	let functionId: string | null = null;
 
 	try {
-		// ============================================
-		// STEP 0: Setup Profile
-		// ============================================
-		console.log("\n📦 Step 0: Saving cloud profile to local database...");
-		await saveProfileCommand({
-			name: PROFILE_NAME,
-			oauthToken: OAUTH_TOKEN,
-			folderId: FOLDER_ID,
-		});
-		console.log(`✅ Profile '${PROFILE_NAME}' saved successfully.\n`);
-
 		// ============================================
 		// STEP 1: Deploy Function
 		// ============================================

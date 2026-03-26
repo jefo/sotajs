@@ -1,8 +1,10 @@
 import { defineCore } from "../../lib";
 import { CloudFunctionFeature } from "./application/ports/cloud-feature";
 import { IdentityFeature } from "./infrastructure/ports/identity-feature";
+import { YcCliFeature } from "./infrastructure/ports/yc-cli-feature";
 import { YandexCloudAdapter } from "./infrastructure/adapters/yandex-cloud.adapter";
 import { YandexIdentityAdapter } from "./infrastructure/adapters/yandex-identity.adapter";
+import { YandexCloudCliAdapter } from "./infrastructure/adapters/yandex-cloud-cli.adapter";
 
 /**
  * Composition Root: Application assembly
@@ -12,10 +14,11 @@ import { YandexIdentityAdapter } from "./infrastructure/adapters/yandex-identity
 export const core = defineCore({
   cloudFunctions: CloudFunctionFeature,
   identity: IdentityFeature,
+  ycCli: YcCliFeature,
 });
 
 // Bind feature to adapter
-core.bindFeatures(({ cloudFunctions, identity }) => {
+core.bindFeatures(({ cloudFunctions, identity, ycCli }) => {
   cloudFunctions.bind(class extends YandexCloudAdapter {
     constructor() {
       super({
@@ -32,6 +35,8 @@ core.bindFeatures(({ cloudFunctions, identity }) => {
       super("cloud-profiles.sqlite");
     }
   });
+
+  ycCli.bind(YandexCloudCliAdapter);
 });
 
 export type AppCore = typeof core;

@@ -22,7 +22,6 @@ export class YandexIdentityAdapter implements FeaturePorts<typeof IdentityFeatur
         name TEXT PRIMARY KEY,
         folderId TEXT,
         oauthToken TEXT,
-        serviceAccountKey TEXT,
         updated_at DATETIME
       )
     `);
@@ -31,13 +30,12 @@ export class YandexIdentityAdapter implements FeaturePorts<typeof IdentityFeatur
   async saveProfile(input: CloudProfileDto): Promise<void> {
     console.log(`💾 [SotaJS Cloud] Linking provider to profile: ${input.name}...`);
     this.db.prepare(`
-      INSERT OR REPLACE INTO profiles (name, folderId, oauthToken, serviceAccountKey, updated_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO profiles (name, folderId, oauthToken, updated_at)
+      VALUES (?, ?, ?, ?)
     `).run(
-      input.name, 
-      input.folderId, 
-      input.oauthToken || null, 
-      input.serviceAccountKey || null, 
+      input.name,
+      input.folderId,
+      input.oauthToken || null,
       new Date().toISOString()
     );
   }
@@ -50,7 +48,6 @@ export class YandexIdentityAdapter implements FeaturePorts<typeof IdentityFeatur
       name: row.name,
       folderId: row.folderId,
       oauthToken: row.oauthToken,
-      serviceAccountKey: row.serviceAccountKey,
     };
   }
 }
