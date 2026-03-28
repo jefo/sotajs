@@ -19,6 +19,9 @@ import {
 	YandexPostgresPlanAdapter,
 	YandexPostgresSubscriptionAdapter,
 	YandexPostgresTemplateAdapter,
+	SqlitePlanAdapter,
+	SqliteSubscriptionAdapter,
+	SqliteTemplateAdapter,
 	MockPaymentAdapter,
 	YookassaPaymentAdapter,
 	RobokassaPaymentAdapter,
@@ -26,7 +29,6 @@ import {
 	StripePaymentAdapter,
 	RealTelegramAdapter,
 	ConsoleLoggerAdapter,
-	CloudDeploymentAdapter,
 } from "./infrastructure";
 
 // Если включена симуляция сети - перехватываем fetch
@@ -48,6 +50,7 @@ export const core = defineCore({
  * Validate database configuration
  */
 const databaseType = process.env.DATABASE_TYPE || "postgres";
+console.log(`[COMPOSITION] Detected DATABASE_TYPE: ${databaseType}`);
 const databaseUrl = process.env.DATABASE_URL;
 
 if (databaseType === "postgres" && !databaseUrl) {
@@ -146,26 +149,28 @@ class LoggerAdapterWrapper {
 }
 
 /**
- * Deployment adapter wrapper
+ * Deployment adapter wrapper (STUB for local dev)
  */
 class DeploymentAdapterWrapper {
-	private adapter: CloudDeploymentAdapter;
-	
-	constructor() {
-		this.adapter = new CloudDeploymentAdapter();
-	}
-
 	async deploy(input: any): Promise<any> {
-		return this.adapter.deploy(input);
+		console.log("[STUB] Deploy called for:", input.name);
+		return { success: true, url: "https://stub.cloud.yandex.net/test", functionId: "test-id" };
 	}
 }
 
 // Bind adapters to features
 core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging, deployment }) => {
-	// PostgreSQL adapters (Yandex Managed PostgreSQL)
-	plans.bind(YandexPostgresPlanAdapter);
-	subscriptions.bind(YandexPostgresSubscriptionAdapter);
-	messaging.bind(YandexPostgresTemplateAdapter);
+	if (databaseType === "sqlite") {
+		console.log("[DI] Binding SQLite adapters");
+		plans.bind(SqlitePlanAdapter);
+		subscriptions.bind(SqliteSubscriptionAdapter);
+		messaging.bind(SqliteTemplateAdapter);
+	} else {
+		console.log("[DI] Binding PostgreSQL adapters");
+		plans.bind(YandexPostgresPlanAdapter);
+		subscriptions.bind(YandexPostgresSubscriptionAdapter);
+		messaging.bind(YandexPostgresTemplateAdapter);
+	}
 	
 	// Dynamic adapters
 	payment.bind(PaymentAdapterFactory);
@@ -174,6 +179,6 @@ core.bindFeatures(({ plans, subscriptions, payment, telegram, logging, messaging
 	deployment.bind(DeploymentAdapterWrapper);
 	
 	console.log("[CORE] Features bound successfully");
-	console.log(`   Database: ${databaseType}${databaseUrl ? ` (${databaseUrl.split('@').pop()})` : " (stateless)"}`);
+	console.log(`   Database: ${databaseType}${databaseUrl ? ` (${databaseUrl.split('@').pop()})` : " (local file)"}`);
 	console.log(`   Payment Provider: ${process.env.PAYMENT_PROVIDER || "mock"}`);
 });

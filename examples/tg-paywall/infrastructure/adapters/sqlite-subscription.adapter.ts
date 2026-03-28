@@ -11,11 +11,13 @@ export class SqliteSubscriptionAdapter
 {
 	private db: Database;
 
-	constructor(dbOrPath: Database | string = ":memory:") {
+	constructor(dbOrPath: Database | string = process.env.SQLITE_PATH || "paywall.sqlite") {
 		if (dbOrPath instanceof Database) {
 			this.db = dbOrPath;
 		} else {
-			this.db = new Database(dbOrPath);
+			// Очищаем путь от префикса file:, если он есть
+			const path = typeof dbOrPath === 'string' ? dbOrPath.replace('file:', '') : dbOrPath;
+			this.db = new Database(path);
 		}
 		this.initSchema();
 	}
@@ -83,14 +85,20 @@ export class SqliteSubscriptionAdapter
 	async findSubscriptionById(input: {
 		id: string;
 	}): Promise<SubscriptionDto | null> {
+		console.log(`[SqliteSubscriptionAdapter] Finding sub ${input.id}`);
 		const stmt = this.db.prepare(`
 			SELECT * FROM subscriptions WHERE id = ?
 		`);
 
 		const row = stmt.get(input.id) as any;
 
-		if (!row) return null;
+		if (!row) {
+			const count = this.db.prepare("SELECT COUNT(*) as count FROM subscriptions").get() as any;
+			console.log(`[SqliteSubscriptionAdapter] ❌ Subscription not found. Total rows in DB: ${count.count}`);
+			return null;
+		}
 
+		console.log(`[SqliteSubscriptionAdapter] ✅ Found sub ${row.id}`);
 		return {
 			id: row.id,
 			userId: row.user_id,

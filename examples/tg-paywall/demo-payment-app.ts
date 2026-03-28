@@ -8,6 +8,69 @@ const BOT_WEBHOOK_URL = process.env.BOT_WEBHOOK_URL || `http://lvh.me:4000/webho
 const sqliteDbPath = process.env.SQLITE_PATH || `${import.meta.dir}/paywall.sqlite`;
 const db = new Database(sqliteDbPath);
 
+// Инициализация таблиц для демо-режима
+db.run(`
+  CREATE TABLE IF NOT EXISTS plans (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    price INTEGER,
+    currency TEXT,
+    duration_days INTEGER,
+    access_level TEXT,
+    channel_id TEXT
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    plan_id TEXT,
+    status TEXT,
+    expires_at TEXT,
+    price INTEGER,
+    currency TEXT,
+    created_at TEXT,
+    updated_at TEXT
+  )
+`);
+
+// Миграция: добавляем expires_at, если таблица была создана старой версией скрипта
+try {
+  db.run("ALTER TABLE subscriptions ADD COLUMN expires_at TEXT");
+  console.log("🛠 Added missing 'expires_at' column to subscriptions table.");
+} catch (e) {
+  // Колонна уже существует или другая ошибка, игнорируем
+}
+
+// Автозаполнение тарифов (Seed)
+const existingPlans = db.prepare("SELECT COUNT(*) as count FROM plans").get() as { count: number };
+if (existingPlans.count === 0) {
+  console.log("🌱 Seeding SQLite database with default plans...");
+  const plans = [
+    { id: 'resident', name: '🚀 Career Accelerator', price: 2990, currency: 'RUB', duration_days: 30, access_level: 'resident', channel_id: '@accelerator_channel' },
+    { id: 'legend', name: '👑 Lifetime Legend', price: 14990, currency: 'RUB', duration_days: 9999, access_level: 'legend', channel_id: '@legend_channel' }
+  ];
+
+  const insert = db.prepare(`
+    INSERT INTO plans (id, name, price, currency, duration_days, access_level, channel_id)
+    VALUES ($id, $name, $price, $currency, $duration_days, $access_level, $channel_id)
+  `);
+
+  for (const plan of plans) {
+    insert.run({
+      $id: plan.id,
+      $name: plan.name,
+      $price: plan.price,
+      $currency: plan.currency,
+      $duration_days: plan.duration_days,
+      $access_level: plan.access_level,
+      $channel_id: plan.channel_id
+    });
+  }
+  console.log("✅ SQLite plans seeded.");
+}
+
 // Хранилище SMS кодов в памяти (для демо)
 const smsCodes = new Map<string, { code: string; subscriptionId: string; amount: number }>();
 
@@ -18,6 +81,7 @@ Bun.serve({
   port: Number(PORT),
   async fetch(req) {
     const url = new URL(req.url);
+    console.log(`[TMA-SERVER] ${req.method} ${url.pathname}`);
     const headers = {
       "Content-Type": "text/html",
       "ngrok-skip-browser-warning": "true"
@@ -48,8 +112,8 @@ Bun.serve({
         const now = new Date().toISOString();
         
         db.run(`
-          INSERT INTO subscriptions (id, user_id, plan_id, status, price, currency, created_at, updated_at)
-          VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)
+          INSERT INTO subscriptions (id, user_id, plan_id, status, expires_at, price, currency, created_at, updated_at)
+          VALUES (?, ?, ?, 'pending', NULL, ?, ?, ?, ?)
         `, subscriptionId, userId, planId, plan.price, plan.currency, now, now);
 
         console.log(`[TMA] Created subscription ${subscriptionId} for user ${userId}, plan ${planId}`);
@@ -698,12 +762,21 @@ Bun.serve({
         const signature = Buffer.from(`${subscriptionId}:${SIGNING_SECRET}`).toString("base64");
 
         console.log(`[GATEWAY] 💰 Processing payment for ${subscriptionId}...`);
+        console.log(`[GATEWAY] 📡 Sending webhook to: ${BOT_WEBHOOK_URL}`);
 
-        await fetch(BOT_WEBHOOK_URL, {
+        const response = await fetch(BOT_WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Signature": signature },
           body: JSON.stringify({ subscriptionId })
         });
+
+        if (response.ok) {
+          console.log(`[GATEWAY] ✅ Webhook delivered successfully!`);
+        } else {
+          const errorText = await response.text();
+          console.error(`[GATEWAY] ❌ Webhook delivery failed! Status: ${response.status}, Error: ${errorText}`);
+          return new Response(errorText, { status: response.status });
+        }
 
         return new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" } });
       } catch (e: any) {

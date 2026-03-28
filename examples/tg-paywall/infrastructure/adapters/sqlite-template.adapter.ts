@@ -1,15 +1,20 @@
 import { FeaturePorts } from "../../../../lib";
+import { MessagingFeature } from "../../application/features/messaging.feature";
 import { getTemplatePort, saveTemplatePort, deleteTemplatePort, MessageTemplateDto } from "../../application/ports/paywall.ports";
 import Database from "bun:sqlite";
 
-export class SqliteTemplateAdapter {
+export class SqliteTemplateAdapter
+	implements FeaturePorts<typeof MessagingFeature>
+{
 	private db: Database;
 
-	constructor(dbOrPath: Database | string = ":memory:") {
+	constructor(dbOrPath: Database | string = process.env.SQLITE_PATH || "paywall.sqlite") {
 		if (dbOrPath instanceof Database) {
 			this.db = dbOrPath;
 		} else {
-			this.db = new Database(dbOrPath);
+			// Очищаем путь от префикса file:, если он есть
+			const path = typeof dbOrPath === 'string' ? dbOrPath.replace('file:', '') : dbOrPath;
+			this.db = new Database(path);
 		}
 		this.initSchema();
 	}

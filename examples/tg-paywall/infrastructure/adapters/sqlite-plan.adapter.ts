@@ -8,11 +8,13 @@ export class SqlitePlanAdapter
 {
 	private db: Database;
 
-	constructor(dbOrPath: Database | string = ":memory:") {
+	constructor(dbOrPath: Database | string = process.env.SQLITE_PATH || "paywall.sqlite") {
 		if (dbOrPath instanceof Database) {
 			this.db = dbOrPath;
 		} else {
-			this.db = new Database(dbOrPath);
+			// Очищаем путь от префикса file:, если он есть
+			const path = typeof dbOrPath === 'string' ? dbOrPath.replace('file:', '') : dbOrPath;
+			this.db = new Database(path);
 		}
 		this.initSchema();
 	}
